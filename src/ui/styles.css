@@ -885,53 +885,6 @@ table.grid tr.sel td {
 
 /* ---------- Responsive ---------- */
 
-@media (max-width: 1400px) {
-  .game {
-    grid-template-columns: 210px 1fr;
-  }
-}
-@media (max-width: 1150px) {
-  .baseview,
-  .mapview,
-  .picker {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    height: auto;
-  }
-  .picker {
-    height: auto;
-    min-height: 100%;
-  }
-  .picker .map,
-  .mapview .map {
-    height: 58vh;
-  }
-  .side-panel {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-  .title-screen {
-    grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 900px) {
-  .game {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
-  }
-  .stockpanel {
-    max-height: 26vh;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .clock {
-    font-size: 20px;
-  }
-  .topbar > * {
-    padding: 6px 8px;
-  }
-}
-
 /* ---------- Overlay shell ---------- */
 
 .game {
@@ -1141,4 +1094,82 @@ table.grid tr.sel td {
 }
 .gearslot select {
   width: 100%;
+}
+
+/* ============================================================
+   Responsive — tablet (iPad) ≤1024px · mobile ≤720px
+   Đặt ở cuối file để đè base styles.
+   ============================================================ */
+
+/* Tablet ≤1024px: sidebar gọn, panel con xếp dưới canvas/map */
+@media (max-width: 1024px) {
+  .kho-sidebar {
+    flex-basis: 220px;
+    width: 220px;
+  }
+  .baseview,
+  .mapview,
+  .picker {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+  }
+  .picker {
+    height: auto;
+    min-height: 100%;
+  }
+  .picker .map,
+  .mapview .map {
+    height: 56vh;
+  }
+  .side-panel {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .title-screen {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile ≤720px: shell xếp dọc — map/canvas lên trên, kho xuống dưới */
+@media (max-width: 720px) {
+  .overlay-shell {
+    flex-direction: column;
+  }
+  .kho-sidebar {
+    order: 2;
+    flex: 0 0 auto;
+    width: 100%;
+    max-height: 42vh;
+    border-right: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .topstrip-main,
+  .topstrip-nav {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .topstrip-main::-webkit-scrollbar,
+  .topstrip-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .picker .map,
+  .mapview .map {
+    height: 48vh;
+  }
+  .baseview canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  /* Touch target ≥44px */
+  button,
+  select {
+    min-height: 44px;
+  }
+  .tabbar button,
+  .topstrip-main button,
+  .topstrip-nav button {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
 }
