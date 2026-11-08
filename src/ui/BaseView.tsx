@@ -10,7 +10,7 @@ import { clearCells, mergeRooms, paintRoom, placeStructures, removeStructures, r
 import { baseStats, canAfford, present } from '../sim/state';
 import type { Survivor } from '../sim/types';
 import type { ViewProps } from './Game';
-import { Icon, MODULE_ICONS, iconImage } from './icons';
+import { Icon, MODULE_ICONS, STRUCT_IMG, iconImage } from './icons';
 
 const strHash = (s: string) => {
   let h = 0;
@@ -235,11 +235,17 @@ export function BaseView({ s, site, refresh }: ViewProps) {
       }
     }
     if (floor === 0 && px >= 12) {
-      ctx.font = `${Math.floor(px * 0.75)}px sans-serif`;
-      ctx.fillStyle = '#0e0e0e';
       for (const [c, id] of Object.entries(st)) {
         const i = Number(c);
-        ctx.fillText(STRUCTS[id].icon, (i % it.w) * px + px / 2, Y(Math.floor(i / it.w)) + px / 2);
+        const img = iconImage(STRUCT_IMG[id], () => setTick((t) => t + 1));
+        if (img.complete && img.naturalWidth > 0) {
+          const sizePx = Math.floor(px * 0.8);
+          ctx.drawImage(img, (i % it.w) * px + (px - sizePx) / 2, Y(Math.floor(i / it.w)) + (px - sizePx) / 2, sizePx, sizePx);
+        } else {
+          ctx.fillStyle = '#0e0e0e';
+          ctx.font = `${Math.floor(px * 0.75)}px sans-serif`;
+          ctx.fillText(STRUCTS[id].icon, (i % it.w) * px + px / 2, Y(Math.floor(i / it.w)) + px / 2);
+        }
       }
     }
     if (isNight(s.t)) {
@@ -408,7 +414,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
               title={`${STRUCTS[t].desc} · mỗi ô: ${fmtCost(STRUCTS[t].cost)}, ${fmtDuration(STRUCTS[t].workSec)}`}
               onClick={() => (setTool(t), setPending(null))}
             >
-              {STRUCTS[t].icon} {STRUCTS[t].label}
+              <Icon src={STRUCT_IMG[t]} size={14} /> {STRUCTS[t].label}
             </button>
           ))}
           <button className={tool === 'demolish' ? 'on' : ''} disabled={floor !== 0} onClick={() => (setTool('demolish'), setPending(null))}>

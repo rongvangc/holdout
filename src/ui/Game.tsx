@@ -7,7 +7,7 @@ import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
-import { Icon, ITEM_ICONS } from './icons';
+import { Icon, ITEM_ICONS, SITE_IMG } from './icons';
 import { LawsView } from './LawsView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
@@ -31,7 +31,7 @@ export interface ViewProps {
 const EXPAND_STEP = 800;
 export const MAX_RADIUS = 3200;
 
-const SITE_ICON: Record<Site['kind'], string> = { base: '■', outpost: '▪', field: '❦' };
+
 
 export function fmtNum(v: number): string {
   if (v >= 10000) return `${(v / 1000).toFixed(0)}k`;
@@ -265,7 +265,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             const days = Math.min((xs.food + xs.meals + xs.rawFood) / (Math.max(1, n) * 2250), xs.water / (Math.max(1, n) * 3.3));
             return (
               <button key={x.id} className={x.id === site.id ? 'on' : ''} onClick={() => setSiteId(x.id)}>
-                {SITE_ICON[x.kind]} {x.name} · {n}
+                <Icon src={SITE_IMG[x.kind]} size={14} /> {x.name} · {n}
                 {n > 0 && days < 2 && <span className="red"> !</span>}
               </button>
             );

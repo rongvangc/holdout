@@ -24,23 +24,39 @@ export const ITEM_ICONS: Record<ItemId, string> = {
 };
 
 export const MODULE_ICONS: Record<ModuleId, string> = {
-  bedroom: P + 'items/other/sleeping-bag__512.png',
-  kitchen: P + 'items/other/portable-gas-stove__476.png',
-  storage: P + 'items/other/container__1734.png',
-  workshop: P + 'items/other/leatherman-multitool__448.png',
-  infirmary: P + 'items/medicine/medkit__414.png',
-  latrine: P + 'items/medicine/toilet-paper__498.png',
-  water_tank: P + 'items/other/gas-cylinder__517.png',
-  filter: P + 'items/other/water-filter__rt3iuxkakdlsyyk3zhv5o.png',
-  garden: P + 'items/medicine/plantain__2354.png',
-  herb_garden: P + 'items/nutrition/the-long-dark-sweet-dreams-herbal-tea__1798.png',
-  well: P + 'items/other/folding-shovel__503.png',
-  watchtower: P + 'items/other/binoculars__495.png',
-  rec_room: P + 'items/other/deck-of-cards__450.png',
-  bookshelf: P + 'items/other/book__480.png',
-  garage: P + 'items/other/key__520.png',
-  generator: P + 'items/other/jerrycan__451.png',
-  shelter: P + 'items/other/tent__454.png',
+  bedroom: "/icons/pixel/bedroom.png",
+  kitchen: "/icons/pixel/kitchen.png",
+  storage: "/icons/pixel/storage.png",
+  workshop: "/icons/pixel/workshop.png",
+  infirmary: "/icons/pixel/infirmary.png",
+  latrine: "/icons/pixel/latrine.png",
+  water_tank: "/icons/pixel/water_tank.png",
+  filter: "/icons/pixel/filter.png",
+  garden: "/icons/pixel/garden.png",
+  herb_garden: "/icons/pixel/herb_garden.png",
+  well: "/icons/pixel/well.png",
+  watchtower: "/icons/pixel/watchtower.png",
+  rec_room: "/icons/pixel/rec_room.png",
+  bookshelf: "/icons/pixel/bookshelf.png",
+  garage: "/icons/pixel/garage.png",
+  generator: "/icons/pixel/generator.png",
+  shelter: "/icons/pixel/shelter.png",
+};
+
+
+
+/** Pixel-art sheets: batch 1 (spec: docs/superpowers/specs/2026-11-08-pixel-icon-sheets-design.md). */
+export const SITE_IMG: Record<string, string> = {
+  base: '/icons/pixel/site_base.png',
+  outpost: '/icons/pixel/site_outpost.png',
+  field: '/icons/pixel/site_field.png',
+};
+export const STRUCT_IMG: Record<string, string> = {
+  wall: '/icons/pixel/struct_wall.png',
+  barricade: '/icons/pixel/struct_barricade.png',
+  spikes: '/icons/pixel/struct_spikes.png',
+  gate: '/icons/pixel/struct_gate.png',
+  tower: '/icons/pixel/struct_tower.png',
 };
 
 /** Decoded-image cache so the base-plan canvas can draw icons synchronously. */
