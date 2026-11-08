@@ -1,3 +1,4 @@
+import { ammoOptions } from '../data/calibers';
 import { ITEMS, itemLabel, type ItemId } from '../data/items';
 import type { GameState, Site } from './types';
 
@@ -33,10 +34,14 @@ const AMMO_RULES: [RegExp, ItemId][] = [
 const GENERIC_AMMO: ItemId = 'ammo_9x18-ammo';
 
 export const ammoFor = (weapon: ItemId): ItemId | null => {
+  // `caliber` is now a data field (see data/calibers.ts) — no more name guessing.
+  const calibre = ITEMS[weapon]?.caliber;
+  if (calibre) {
+    const best = ammoOptions(ITEMS, calibre).find((id) => id in ITEMS);
+    if (best) return best;
+  }
   const name = itemLabel(weapon);
   for (const [re, ammo] of AMMO_RULES) if (re.test(name) && ammo in ITEMS) return ammo;
-  // The catalog carries no calibre field, so anything unrecognised eats a common round
-  // rather than becoming a gun that can never be fired.
   return GENERIC_AMMO in ITEMS ? GENERIC_AMMO : null;
 };
 
@@ -163,3 +168,41 @@ export const describeWeapon = (w: WeaponPick | null): string =>
   w
     ? `${itemLabel(w.id)} (−${Math.round(w.mitigation * 100)}% sát thương${w.condition < 0.7 ? ', đã cũ' : ''})`
     : 'tay không';
+
+/** Tools and cookware wear out on the job; until now they were free forever. */
+export const TOOL_MECHANICS = new Set(['tool', 'cookware', 'camping']);
+
+export interface ToolPick {
+  id: ItemId;
+  durability: number;
+  condition: number;
+}
+
+/** The sturdiest tool the site owns, or null. */
+export function bestTool(site: Site): ToolPick | null {
+  let best: ToolPick | null = null;
+  for (const [id, def] of Object.entries(ITEMS)) {
+    if (!def.mechanic || !TOOL_MECHANICS.has(def.mechanic)) continue;
+    if (stockOf(site, id) < 1) continue;
+    const durability = Math.max(10, def.durability ?? 60);
+    if (!best || durability > best.durability) best = { id, durability, condition: conditionOf(site, id) };
+  }
+  return best;
+}
+
+/**
+ * Charge one job to the best tool. A tool with no durability in the catalogue
+ * (pots, blankets) is not tracked and never breaks.
+ */
+export function wearTool(site: Site, jobs = 1): { broke: boolean; id: ItemId | null } {
+  const tool = bestTool(site);
+  if (!tool) return { broke: false, id: null };
+  const next = conditionOf(site, tool.id) - jobs / tool.durability;
+  if (next > 0) {
+    setCondition(site, tool.id, next);
+    return { broke: false, id: tool.id };
+  }
+  site.stock[tool.id] = Math.max(0, stockOf(site, tool.id) - 1);
+  setCondition(site, tool.id, 1);
+  return { broke: true, id: tool.id };
+}

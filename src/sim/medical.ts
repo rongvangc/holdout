@@ -32,6 +32,8 @@ export function medKind(id: ItemId): MedKind | null {
   if (!def) return null;
   if (!['medicine', 'bandage', 'injection', 'medkit', 'hygiene'].includes(def.mechanic ?? '')) return null;
   for (const [re, kind] of MED_RULES) if (re.test(def.label)) return kind;
+  // `cures: true` trong catalog cũng là kháng sinh, kể cả khi tên không khớp từ khoá.
+  if (def.cures && ['medicine', 'injection'].includes(def.mechanic ?? '')) return 'antibiotic';
   return def.mechanic === 'bandage' ? 'bandage' : def.mechanic === 'medkit' ? 'medkit' : null;
 }
 

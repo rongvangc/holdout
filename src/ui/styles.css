@@ -1190,3 +1190,25 @@ table.grid tr.sel td {
     padding: 12px;
   }
 }
+
+/* Kho: tab nhóm + danh sách đầy đủ mọi item đang có. */
+.khotabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 8px;
+}
+.khotabs button {
+  font-size: 11px;
+  padding: 3px 7px;
+}
+.khotabs button.on {
+  background: var(--fg);
+  color: var(--bg);
+}
+.khodrawer td .ico {
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  vertical-align: middle;
+}

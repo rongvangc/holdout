@@ -3,7 +3,8 @@ import { push } from '../core/eventQueue';
 import { chance, int, pick, range, weighted } from '../core/rng';
 import { dayOf, isNight, MIN } from '../core/time';
 import { CATS } from '../data/categories';
-import { ITEMS, stockWeight, type ItemId, type Stock } from '../data/items';
+import { gearPool } from '../data/lootPools';
+import { ITEMS, itemLabel, stockWeight, type ItemId, type Stock } from '../data/items';
 import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
@@ -464,8 +465,18 @@ function rollContainers(s: GameState, world: World, buildingId: string, n: numbe
   let searched = 0;
   let full = false;
   let vehicle = false;
+  const pool = gearPool(b.cat);
   for (let i = 0; i < n && !full; i++) {
     searched++;
+    // Ngoài bảng vật tư tĩnh: chỗ lục còn có thể ra một món catalogue (áo, giáp, dụng cụ…).
+    if (pool.length && chance(s.rng, 0.3 + 0.02 * scav)) {
+      // weighted() trả về chính id (không phải tuple) — destructure sẽ lấy ký tự đầu.
+      const id = weighted(s.rng, pool);
+      const room = capKg - stockWeight(out);
+      const kg = Math.max(0.02, ITEMS[id]?.kgPerUnit ?? 0.5);
+      if (room >= kg) out[id] = (out[id] ?? 0) + 1;
+      else full = true;
+    }
     const rolls = 1 + (chance(s.rng, 0.35 + 0.03 * scav) ? 1 : 0);
     for (let r = 0; r < rolls; r++) {
       if (!chance(s.rng, 0.35 + 0.65 * lf)) continue;
@@ -622,7 +633,7 @@ export function onExpeditionEvent(s: GameState, world: World, eid: string): void
       .map(([k, v]) => [k, (v ?? 0) * keep]),
   ) as StockDelta;
   const got = Object.entries(brought)
-    .map(([k, v]) => `${ITEMS[k as ItemId].label} ${fmtAmt(v ?? 0)}`)
+    .map(([k, v]) => `${itemLabel(k)} ${fmtAmt(v ?? 0)}`)
     .join(', ');
   const report = e.report.join(' ');
   const name = e.target.name;

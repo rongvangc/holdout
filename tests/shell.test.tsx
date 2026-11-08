@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ITEMS, STOCK_ORDER } from '../src/data/items';
+import { ITEMS } from '../src/data/items';
 import { KhoDrawer } from '../src/ui/shell/KhoDrawer';
 import { OverlayShell } from '../src/ui/shell/OverlayShell';
 import { overlayReducer } from '../src/ui/shell/useOverlay';
@@ -28,12 +28,18 @@ describe('overlay shell', () => {
     expect(html).toContain('Nước sạch');
   });
 
-  it('renders every stock item in the warehouse drawer', () => {
+  it('renders the warehouse grouped by category, showing what is actually in stock', () => {
     const { s, site } = setup();
     const html = renderToStaticMarkup(<KhoDrawer s={s} site={site} />);
 
-    expect(STOCK_ORDER).toHaveLength(16);
-    for (const item of STOCK_ORDER) expect(html).toContain(ITEMS[item].label);
+    // Tab nhóm + mọi item đang có hàng của nhóm đang chọn (mặc định: Vật liệu).
+    expect(html).toContain('Vật liệu');
+    const held = Object.entries(site.stock).filter(([, n]) => (n ?? 0) > 0.01);
+    expect(held.length).toBeGreaterThan(3);
+    expect(html).toContain(`${held.length} loại`);
+    expect(html).toContain(ITEMS.wood.label);
+    // Đồ ăn nằm ở nhóm khác nên không hiện khi đang xem Vật liệu.
+    expect(html).not.toContain(ITEMS.meals.label);
   });
 
   it('opens kho as the active sheet after another sheet', () => {

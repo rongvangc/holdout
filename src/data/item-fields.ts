@@ -131,3 +131,29 @@ export function withDerivedAttack(items: Record<string, ItemDef>): Record<string
   }
   return items;
 }
+
+/**
+ * Insulation for clothing. The export carries no warmth value, so it comes from
+ * the mechanic: a coat keeps you warmer than gloves, boots less than a jacket.
+ * Clothing previously did nothing at all — 68 items of pure decoration.
+ */
+const INSULATION: Record<string, number> = {
+  clothes: 0.35,
+  boots: 0.15,
+  gloves: 0.08,
+  mask: 0.04,
+  helmet: 0.02,
+};
+
+export function withDerivedInsulation(items: Record<string, ItemDef>): Record<string, ItemDef> {
+  for (const def of Object.values(items)) {
+    const mech = def.mechanic;
+    if (!mech || !(mech in INSULATION)) continue;
+    if (def.insulation !== undefined) continue;
+    const tier = Math.max(1, Math.min(4, def.tier ?? 1));
+    // A heavier garment of the same kind is warmer.
+    const weight = Math.min(0.4, Math.max(0, (def.kgPerUnit - 0.8) * 0.08));
+    def.insulation = Math.round(Math.min(0.6, INSULATION[mech] * (1 + 0.08 * (tier - 1)) + weight) * 100) / 100;
+  }
+  return items;
+}

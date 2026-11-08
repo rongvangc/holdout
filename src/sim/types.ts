@@ -56,7 +56,7 @@ export interface Survivor {
    * Trang bị đang giữ, mỗi slot một món — món đã "cấp phát" bị trừ khỏi kho điểm.
    * Mòn/sửa vẫn tính theo loại (site.condition) như trước.
    */
-  gear?: { weapon?: ItemId; body?: ItemId; head?: ItemId; pack?: ItemId };
+  gear?: { weapon?: ItemId; body?: ItemId; head?: ItemId; pack?: ItemId; outfit?: ItemId };
   role: Role;
   hp: number;
   kcal: number;

@@ -5,7 +5,7 @@ import type { SkillId } from './data';
 import { dist } from '../world/geo';
 import { addStock, alert, baseStats, canAfford, log, newId, take } from './state';
 import { itemLabel as ITEMS_LABEL, type Stock } from '../data/items';
-import { conditionOf, repairCost, restoreWeapon } from './equipment';
+import { conditionOf, repairCost, restoreWeapon, wearTool } from './equipment';
 import type { GameState, Project, Site, StockDelta } from './types';
 
 // Parts are fabricated at a workshop and carried, so one anywhere unlocks tier 2.
@@ -268,7 +268,12 @@ export function moveProject(site: Site, id: string, dir: -1 | 1): void {
 
 export function applyBuildWork(s: GameState, site: Site, p: Project, sec: number): void {
   p.progress += sec;
-  if (p.progress < p.workTotal) return;
+  if (p.progress < p.workTotal) {
+    // Công việc tiêu hao dụng cụ dần dần, không đợi xong.
+    if (sec >= 1800) wearTool(site, 0.25);
+    return;
+  }
+  wearTool(site, 1);
   site.projects = site.projects.filter((x) => x !== p);
   if (p.kind === 'craft') {
     const rec = RECIPE_BY_ID[p.recipe ?? ''];

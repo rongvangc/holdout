@@ -8,7 +8,8 @@ import { advanceTo } from '../src/sim/engine';
 import { maxStationLevel, queueCraft, queueModule, queueDefense, upgradeModule } from '../src/sim/build';
 import { canAfford } from '../src/sim/state';
 import { MODULES } from '../src/data/modules';
-import { RECIPE_BY_ID } from '../src/data/recipes';
+import { RECIPE_BY_ID, RECIPES } from '../src/data/recipes';
+import { ITEMS } from '../src/data/items';
 import { launchExpedition, planExpedition } from '../src/sim/expedition';
 import { setCommute } from '../src/sim/commute';
 import { TEND_H_PER_M2_DAY } from '../src/sim/data';
@@ -201,6 +202,57 @@ function cookForTheDay(s: GameState, base: Site): void {
   }
 }
 
+
+/** Vật tư lõi phải có sẵn trước khi chế được bất cứ thứ gì. */
+const CORE_MATERIALS: [string, number][] = [
+  ['charcoal', 4],
+  ['thread', 8],
+  ['handle', 3],
+  ['nail', 10],
+  ['blade', 2],
+  ['tool_head', 2],
+  ['hinge', 4],
+  ['plate', 2],
+];
+
+/**
+ * Bot chế đồ: vật tư lõi trước, rồi vũ khí/giáp cho người chưa có.
+ * Trước đây bot chỉ loot nên toàn bộ nhánh chế tạo không hề được mô phỏng.
+ */
+function craftGear(s: GameState, base: Site): void {
+  const people = present(s, base).filter((v) => v.status === 'alive');
+  if (!people.length) return;
+
+  for (const [id, want] of CORE_MATERIALS) {
+    if ((base.stock[id] ?? 0) >= want) continue;
+    const r = RECIPES.find((x) => x.out === id);
+    if (!r || !canAfford(base, Object.fromEntries(r.in) as StockDelta)) continue;
+    if (!queueCraft(s, base, r.id)) return;
+  }
+
+  const share = (pick: (v: (typeof people)[number]) => boolean) => people.filter(pick).length / people.length;
+  const needWeapon = share((v) => !!v.gear?.weapon) < 0.6;
+  const needBody = share((v) => !!v.gear?.body) < 0.5;
+  const needHead = share((v) => !!v.gear?.head) < 0.5;
+  if (!needWeapon && !needBody && !needHead) return;
+
+  const score = (id: string) => (ITEMS[id]?.mitigation ?? 0) + (ITEMS[id]?.dmg ?? 0) / 12;
+  const pool = RECIPES.filter((r) => {
+    const d = ITEMS[r.out];
+    if (!d) return false;
+    const mech = d.mechanic ?? '';
+    if (needWeapon && d.category === 'weapon') return true;
+    if (needBody && ['armor_soft', 'armor_plate', 'vest'].includes(mech)) return true;
+    if (needHead && ['helmet', 'mask'].includes(mech)) return true;
+    return false;
+  }).sort((a, b) => score(b.out) - score(a.out));
+
+  for (const r of pool) {
+    if (!canAfford(base, Object.fromEntries(r.in) as StockDelta)) continue;
+    if (!queueCraft(s, base, r.id)) return; // đã vào hàng đợi, để dành lượt sau
+  }
+}
+
 export function botDay(s: GameState, world: World): void {
   const base = mainSite(s);
   const st = baseStats(s, base);
@@ -219,6 +271,7 @@ export function botDay(s: GameState, world: World): void {
   upgradeStations(s, base);
   buildStations(s, base);
   cookForTheDay(s, base);
+  craftGear(s, base);
   autoAssign(s);
   convoys(s, world, base);
 

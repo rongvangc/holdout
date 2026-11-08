@@ -7,6 +7,7 @@ import { FATIGUE_PER_HOUR, INTENSITY, KCAL_PER_HOUR, LAW_COOLDOWN_DAYS, LAW_DEFS
 import { feedOnRoad, onExpeditionEvent, runRoutes } from './expedition';
 import { killSurvivor, turnSurvivor } from './lifecycle';
 import { BLEED_HP_PER_HOUR, bleedOf } from './medical';
+import { insulation } from './gear';
 import { autoAssign, baseStats, log } from './state';
 import { hasTrait } from './survivors';
 import { chooseTask, finishTask, interrupt, sleepRate } from './tasks';
@@ -34,6 +35,13 @@ function integrate(s: GameState, dt: number): void {
     v.water -= WATER_ML_PER_HOUR * I.water * h * hotMult;
     if (kind === 'sleep') v.fatigue -= sleepRate(!!v.task?.inBed) * h * (bedQuality.get(v.siteId) ?? 1);
     else v.fatigue += FATIGUE_PER_HOUR * I.fatigue * h * (hasTrait(v, 'light_sleeper') ? 0.8 : 1);
+    // Rét: mặc gì cũng quyết định — trước đây quần áo không có tác dụng nào.
+    const cold = s.weather.tempC < 18 ? (18 - s.weather.tempC) / 18 : 0;
+    if (cold > 0) {
+      const exposure = cold * (1 - insulation(v));
+      v.fatigue += 0.6 * exposure * h;
+      if (s.weather.tempC < 12) v.hp -= 0.15 * exposure * h * (s.weather.rainMm > 40 ? 2 : 1);
+    }
     v.fatigue = Math.max(0, Math.min(100, v.fatigue));
     // Trên đường: ăn từ khẩu phần mang theo, không thì đói thật.
     if (v.location === 'expedition' && v.kcal < 1200) {

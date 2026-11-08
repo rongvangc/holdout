@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CATS } from '../src/data/categories';
 import { ITEMS } from '../src/data/items';
 import { RECIPES } from '../src/data/recipes';
+import { gearPool, POOL_CATS } from '../src/data/lootPools';
 import { ammoFor, bestWeapon, conditionOf, needsRepair, wearWeapon } from '../src/sim/equipment';
 import { isMonotone, isVegetable, MONOTONY_MEALS, rotFactor, SCURVY_DAYS } from '../src/sim/diet';
 import { applyBuildWork, queueRepair, stationLevel } from '../src/sim/build';
@@ -74,6 +75,8 @@ describe('ammunition is found, never made', () => {
   it('every cartridge the guns use appears in at least one loot table', () => {
     const lootIds = new Set<string>();
     for (const cat of Object.values(CATS)) for (const [id] of cat.loot) lootIds.add(id);
+    // Đạn cũng rơi từ pool theo loại nhà (data/lootPools.ts), không chỉ bảng tĩnh.
+    for (const cat of POOL_CATS) for (const [id] of gearPool(cat)) lootIds.add(id);
     const wanted = new Set<string>();
     for (const [id, d] of Object.entries(ITEMS)) {
       if (d.mechanic !== 'firearm') continue;

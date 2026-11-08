@@ -14,18 +14,20 @@ import {
  * stock); issuing it to a person reserves one unit so the same crowbar cannot
  * arm five people. Slots are deliberately few: weapon, body armour, head, pack.
  */
-export type GearSlot = 'weapon' | 'body' | 'head' | 'pack';
+export type GearSlot = 'weapon' | 'body' | 'head' | 'pack' | 'outfit';
 
-export const GEAR_SLOTS: GearSlot[] = ['weapon', 'body', 'head', 'pack'];
+export const GEAR_SLOTS: GearSlot[] = ['weapon', 'body', 'head', 'pack', 'outfit'];
 
 export const SLOT_LABEL: Record<GearSlot, string> = {
   weapon: 'Vũ khí',
   body: 'Giáp thân',
   head: 'Mũ',
   pack: 'Ba lô',
+  outfit: 'Quần áo',
 };
 
 const PACK_MECHANICS = new Set(['backpack', 'container']);
+const OUTFIT_MECHANICS = new Set(['clothes', 'boots', 'gloves']);
 const BODY_MECHANICS = new Set(['armor_soft', 'armor_plate', 'vest']);
 
 /** Which slot an item belongs in, or null when it is not wearable gear. */
@@ -37,6 +39,7 @@ export function slotFor(id: ItemId): GearSlot | null {
   if (BODY_MECHANICS.has(mech)) return 'body';
   if (ARMOR_MECHANICS.has(mech)) return mech === 'helmet' || mech === 'mask' ? 'head' : 'body';
   if (PACK_MECHANICS.has(mech)) return 'pack';
+  if (OUTFIT_MECHANICS.has(mech)) return 'outfit';
   return null;
 }
 
@@ -46,6 +49,7 @@ export function gearScore(id: ItemId): number {
   if (!def) return 0;
   const slot = slotFor(id);
   if (slot === 'pack') return def.capacity ?? 0;
+  if (slot === 'outfit') return def.insulation ?? 0;
   return def.mitigation ?? 0;
 }
 
@@ -54,7 +58,7 @@ export const gearLabel = (id: ItemId): string => {
   const slot = slotFor(id);
   if (!def) return id;
   if (slot === 'pack') return `${def.label} (+${Math.round(def.capacity ?? 26)} kg)`;
-  if (slot === 'weapon') return `${def.label} (−${Math.round((def.mitigation ?? 0) * 100)}% dmg)`;
+  if (slot === 'outfit') return `${def.label} (giữ ấm ${Math.round((def.insulation ?? 0) * 100)}%)`;
   return `${def.label} (−${Math.round((def.mitigation ?? 0) * 100)}% dmg)`;
 };
 
@@ -154,6 +158,16 @@ export function survivorArmor(v: Survivor): number {
   const body = v.gear?.body ? (ITEMS[v.gear.body]?.mitigation ?? 0) : 0;
   const head = v.gear?.head ? (ITEMS[v.gear.head]?.mitigation ?? 0) : 0;
   return Math.min(MITIGATION_CAP, 1 - (1 - body) * (1 - head));
+}
+
+/** How well this survivor is dressed for the cold (0..0.6). */
+export function insulation(v: Survivor): number {
+  let sum = 0;
+  for (const slot of GEAR_SLOTS) {
+    const id = v.gear?.[slot];
+    if (id) sum += ITEMS[id]?.insulation ?? 0;
+  }
+  return Math.min(0.6, sum);
 }
 
 /** Extra kilograms this survivor can haul thanks to their pack. */

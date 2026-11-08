@@ -1,4 +1,5 @@
-import { withDerivedArmor, withDerivedAttack, withDerivedWeaponClass } from './item-fields';
+import { withDerivedCaliber } from './calibers';
+import { withDerivedArmor, withDerivedAttack, withDerivedInsulation, withDerivedWeaponClass } from './item-fields';
 import { GENERATED_ITEMS } from './items.generated';
 import { FOOD_ITEMS } from './dishes';
 import { MATERIALS } from './materials';
@@ -51,6 +52,8 @@ export interface ItemDef {
   dmg?: number;
   /** Xuyên giáp tự nhiên của zombie (0..1). */
   pierce?: number;
+  /** Cách nhiệt 0..1 — giảm phạt rét khi trời < 18°C. */
+  insulation?: number;
   noise?: number; // heat added per fight when used
   rare?: boolean;
   capacity?: number; // kg carried (backpack/container)
@@ -107,8 +110,8 @@ const BASE_ITEMS: Record<string, ItemDef> = {
  * Ba lượt suy ra, theo đúng thứ tự: giáp → lớp vũ khí (công thức dựa vào nó)
  * → sát thương/xuyên giáp (cần lớp vũ khí).
  */
-export const ITEMS: Record<string, ItemDef> = withDerivedAttack(
-  withDerivedWeaponClass(withDerivedArmor({ ...BASE_ITEMS })),
+export const ITEMS: Record<string, ItemDef> = withDerivedCaliber(
+  withDerivedInsulation(withDerivedAttack(withDerivedWeaponClass(withDerivedArmor({ ...BASE_ITEMS })))),
 );
 
 /** Lookup that never throws — UI falls back to the id when a def is missing. */
