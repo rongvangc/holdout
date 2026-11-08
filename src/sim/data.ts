@@ -7,8 +7,10 @@ export type SkillId =
   | 'medical'
   | 'mechanics'
   | 'melee'
+  | 'ranged'
   | 'fitness'
-  | 'farming';
+  | 'farming'
+  | 'husbandry';
 
 export const SKILLS: Record<SkillId, string> = {
   stealth: 'Lén lút',
@@ -19,8 +21,10 @@ export const SKILLS: Record<SkillId, string> = {
   medical: 'Y tế',
   mechanics: 'Cơ khí',
   melee: 'Cận chiến',
+  ranged: 'Bắn súng',
   fitness: 'Thể lực',
   farming: 'Trồng trọt',
+  husbandry: 'Chăn nuôi',
 };
 
 export type Role = 'idle' | 'builder' | 'cook' | 'water' | 'farmer' | 'guard' | 'medic' | 'sanitation' | 'gatherer';
@@ -52,6 +56,8 @@ export const TRAITS: Record<TraitId, { label: string; desc: string }> = {
 
 export const BACKGROUNDS: { label: string; skills: Partial<Record<SkillId, number>> }[] = [
   { label: 'Bác sĩ', skills: { medical: 5, crafting: 1 } },
+  { label: 'Thợ săn', skills: { ranged: 5, melee: 1 } },
+  { label: 'Người chăn nuôi', skills: { husbandry: 5, farming: 1 } },
   { label: 'Y tá', skills: { medical: 3, cooking: 1 } },
   { label: 'Thợ hồ', skills: { construction: 5, fitness: 2 } },
   { label: 'Thợ mộc', skills: { construction: 3, crafting: 3 } },

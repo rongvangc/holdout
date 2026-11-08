@@ -94,9 +94,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (fed > 0) take(site, 'rawFood', fed);
     // Chăn thả ở ruộng đỡ 45% cỏ/cám.
     const graze = site.kind === 'field' ? 0.45 : 0.2;
+    // Người chăm có skill Chăn nuôi thì bầy khoẻ hơn.
+    const husbandry = home.reduce((a, m) => a + skill(m, 'husbandry'), 0) / pop;
     const care = Math.max(
       0,
-      Math.min(1, (0.55 * Math.min(1, fed / Math.max(0.01, need.feed * (1 - graze))) + 0.45 * Math.min(1, drank / Math.max(0.01, need.water))) * (1 + 0.1 * ((room.moduleLevel ?? 1) - 1))),
+      Math.min(1, (0.55 * Math.min(1, fed / Math.max(0.01, need.feed * (1 - graze))) + 0.45 * Math.min(1, drank / Math.max(0.01, need.water))) * (1 + 0.1 * ((room.moduleLevel ?? 1) - 1)) * (1 + 0.05 * husbandry)),
     );
 
     // Mổ thịt khi bầy vượt sức chứa hoặc khi kho lương thực cạn (giữ lại 2 con giống).

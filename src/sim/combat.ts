@@ -43,11 +43,16 @@ export function strikePower(site: Site, v: Survivor, type: ZombieType): number {
  */
 export function killShare(site: Site, members: Survivor[], type: ZombieType): number {
   if (!members.length) return 0;
-  const meleeAvg = members.reduce((a, m) => a + skill(m, 'melee'), 0) / members.length;
+  // Súng dùng skill Bắn súng, vũ khí cận chiến/bàn tay không dùng Cận chiến.
+  const combatAvg =
+    members.reduce((a, m) => {
+      const w = survivorWeapon(site, m);
+      return a + skill(m, w?.isFirearm ? 'ranged' : 'melee');
+    }, 0) / members.length;
   const power = members.reduce((sum, m) => sum + strikePower(site, m, type), 0);
   // After the first fighter, extra hands help less (they get in each other's way).
   const crowd = 1 + 0.55 * Math.log2(Math.max(1, members.length));
-  const skillBonus = 1 + 0.06 * meleeAvg;
+  const skillBonus = 1 + 0.06 * combatAvg;
   return Math.max(0, Math.min(0.95, (power * crowd * skillBonus) / 1.6));
 }
 
