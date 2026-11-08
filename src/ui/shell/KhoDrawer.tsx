@@ -9,21 +9,30 @@ import type { GameState, Site } from '../../sim/types';
 import { fmtNum } from '../Game';
 import { Icon, ITEM_ICONS } from '../icons';
 
-/** Nhóm hiển thị trong kho. Mọi item có `stock > 0` đều rơi vào một nhóm. */
-const GROUPS: { id: string; label: string; cats: string[] }[] = [
-  { id: 'material', label: 'Vật liệu', cats: ['material', 'component'] },
-  { id: 'weapon', label: 'Vũ khí', cats: ['weapon', 'ammo'] },
-  { id: 'armor', label: 'Giáp & đồ mặc', cats: ['armor', 'clothing'] },
-  { id: 'gear', label: 'Ba lô & túi', cats: ['container'] },
-  { id: 'food', label: 'Đồ ăn', cats: ['food', 'drink'] },
-  { id: 'medicine', label: 'Thuốc', cats: ['medicine'] },
-  { id: 'tool', label: 'Dụng cụ', cats: ['tool', 'cookware', 'camping', 'fire', 'electronic'] },
-  { id: 'other', label: 'Khác', cats: ['misc', 'none'] },
+/** Nhóm hiển thị trong kho — tách theo `mechanic` để module mới (súng/đạn/giáp/mũ/balo…) có tab riêng. */
+const GROUPS: { id: string; label: string; keys: string[] }[] = [
+  { id: 'firearm', label: 'Súng', keys: ['firearm'] },
+  { id: 'ammo', label: 'Đạn dược', keys: ['ammo'] },
+  { id: 'melee', label: 'Vũ khí cận chiến', keys: ['weapon_blade', 'weapon_blunt'] },
+  { id: 'armor', label: 'Giáp', keys: ['armor_plate', 'armor_soft', 'vest'] },
+  { id: 'headgear', label: 'Mũ & bảo hộ', keys: ['helmet', 'mask'] },
+  { id: 'clothing', label: 'Quần áo & giày', keys: ['clothes', 'boots', 'gloves'] },
+  { id: 'gear', label: 'Ba lô & túi', keys: ['backpack', 'container'] },
+  { id: 'electronic', label: 'Đồ điện tử', keys: ['electronic'] },
+  { id: 'food', label: 'Đồ ăn', keys: ['food'] },
+  { id: 'drink', label: 'Nước uống', keys: ['drink'] },
+  { id: 'medicine', label: 'Thuốc & băng', keys: ['medicine', 'bandage', 'medkit', 'injection'] },
+  { id: 'tool', label: 'Dụng cụ', keys: ['tool', 'cookware', 'camping', 'fire', 'hygiene'] },
+  { id: 'material', label: 'Vật liệu', keys: ['material', 'component', 'fuel', 'seed'] },
+  { id: 'other', label: 'Khác', keys: ['misc', 'none', 'vehicle'] },
 ];
 
+/** Ưu tiên `mechanic` (chi tiết), sau đó `category`; không khớp thì 'other'. */
 const groupOf = (id: ItemId): string => {
-  const cat = ITEMS[id]?.category ?? 'none';
-  return GROUPS.find((g) => g.cats.includes(cat))?.id ?? 'other';
+  const def = ITEMS[id];
+  const mech = def?.mechanic;
+  const cat = def?.category;
+  return GROUPS.find((g) => (mech && g.keys.includes(mech)) || (cat && g.keys.includes(cat)))?.id ?? 'other';
 };
 
 export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
