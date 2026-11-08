@@ -286,7 +286,7 @@ Năm thiết lập này đều là UI thuần, không đụng `GameState` — n�
 | H1+H2 phần trăm màn (mobile) | ≤18% | — | **14,1%** (119/844) |
 | Có danh sách "Cần quyết định" | có | ❌ | **✅ tối đa 3 dòng** |
 | Bấm cảnh báo → nhảy tới chỗ sửa (R1) | có | ❌ | **✅ kiểm bằng click chuột thật** |
-| Nút điều khiển (desktop) | ≤25 | 50 | **24** (13 HUD + 6 segmented + 5 công cụ) ✅ |
+| Nút điều khiển (desktop) | ≤25 | 50 | **22** (13 HUD + 5 segmented + 4 công cụ) ✅ |
 | Vùng chạm mobile <44 px | 0 | 38/38 | **0/55** ✅ |
 
 Tổng số nút trên màn: 41 khi nghỉ, 55 khi chọn phòng — nhưng chỉ **24 là nút điều

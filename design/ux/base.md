@@ -202,7 +202,7 @@ Ba cách xếp đã cân nhắc:
 | **Z1 Dải trạng thái** | 5 ô (định nghĩa ở `design/ux/hud.md` H1): lương · nước · người · phòng thủ · ngày giờ. Giường / tinh thần / điện là **On Demand** (bấm ô để xem) | luôn hiện, mọi tab |
 | **Z2 Thanh thời gian** | ngày, giờ, thời tiết, tốc độ, lưu | luôn hiện |
 | **Z3 Cần quyết định** | tối đa 3 cảnh báo sống còn, mỗi cái 1 nút | luôn hiện — thay sidebar 2.125 px |
-| **Z4 Ngăn nghề** | segmented: Mặt bằng · Chế tạo · Bếp · Trang bị · Điện | một ngăn mở tại một thời điểm |
+| **Z4 Ngăn nghề** | segmented: Mặt bằng · Công trình · Chế tạo · Bếp · Điện | một ngăn mở tại một thời điểm. **Trang bị không còn ở đây** — tồn kho thuộc drawer Kho, cấp phát thuộc tab Người, bảo trì (độ bền/đạn/sửa) thuộc Kho |
 | **Z5 Canvas** | mặt bằng điểm đang chọn | ≥60% diện tích desktop |
 | **Z6 Nhật ký** | 3 dòng gần nhất, gập được | đáy màn |
 
@@ -215,7 +215,7 @@ Bỏ hẳn: sidebar cuộn 7 mục, bảng kho 16 dòng luôn hiện, danh sách
 | Z1 | Ô trạng thái | stat cell | số + đơn vị + màu theo ngưỡng | bấm → nhảy tới ngăn liên quan | **MỚI** `status-cell` |
 | Z2 | Thanh thời gian | toolbar | ngày/giờ/thời tiết + 4 nút tốc độ | bấm, phím Space/1–4 | đã có, giữ |
 | Z3 | Danh sách cảnh báo | alert list | tối đa 3 dòng: mức + câu + 1 nút | bấm dòng hoặc nút | **MỚI** `alert-row` |
-| Z4 | Segmented nghề | tab strip | 5 ngăn + số mục | bấm, phím ←/→ | **MỚI** `segment` |
+| Z4 | Segmented nghề | tab strip | 5 ngăn | bấm, phím ←/→ | **MỚI** `segment` |
 | Z4 | Ô tìm kiếm | input | lọc theo tên | gõ | **MỚI** `filter-input` |
 | Z4 | Chip lọc | toggle chip | "Nấu được ngay" / "Thiếu NL" / "Khoá cấp" | bấm bật/tắt | **MỚI** `filter-chip` |
 | Z4 | Dòng hành động | list row | tên + 2–3 số + 1 nút | bấm → bottom sheet | **MỚI** `action-row` |

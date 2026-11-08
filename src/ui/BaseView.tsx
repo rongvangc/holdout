@@ -7,7 +7,6 @@ import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data
 import { availableRecipes } from '../data/recipes';
 import { KitchenPanel } from './KitchenPanel';
 import { ModulesPanel } from './ModulesPanel';
-import { GearPanel } from './GearPanel';
 import { APPLIANCES } from '../sim/power';
 import { foodFxLabel } from '../sim/diet';
 import {
@@ -81,7 +80,7 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   const [pending, setPending] = useState<number[] | null>(null);
   const [name, setName] = useState('');
   // One section visible at a time: the sidebar used to stack seven jobs at once.
-  const [section, setSection] = useState<'plan' | 'modules' | 'craft' | 'kitchen' | 'gear' | 'power'>('plan');
+  const [section, setSection] = useState<'plan' | 'modules' | 'craft' | 'kitchen' | 'power'>('plan');
   const [buildOpen, setBuildOpen] = useState(false);
   const [showAllModules, setShowAllModules] = useState(false);
   const [err, setErr] = useState('');
@@ -529,7 +528,6 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   useEffect(() => {
     if (!focusPanel) return;
     if (focusPanel === 'kitchen') setSection('kitchen');
-    else if (focusPanel === 'gear') setSection('gear');
     else if (focusPanel === 'craft' || focusPanel === 'defence') setSection('craft');
     else if (focusPanel === 'power') setSection('power');
   }, [focusPanel]);
@@ -654,7 +652,6 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
             ['modules', 'Công trình'],
             ['craft', 'Chế tạo'],
             ['kitchen', 'Bếp'],
-            ['gear', 'Trang bị'],
             ['power', 'Điện'],
           ] as const).map(([id, label]) => (
             <button key={id} role="tab" aria-selected={section === id} className={section === id ? 'on' : ''} onClick={() => setSection(id)}>
@@ -884,7 +881,6 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
         {section === 'modules' && <ModulesPanel s={s} site={site} refresh={refresh} />}
         {section === 'kitchen' && <KitchenPanel s={s} site={site} refresh={refresh} />}
 
-        {section === 'gear' && <GearPanel s={s} site={site} refresh={refresh} />}
 
         {section === 'power' && (<>
         <div className="label">Điện &amp; sưởi</div>

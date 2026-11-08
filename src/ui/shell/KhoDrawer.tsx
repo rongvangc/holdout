@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { FEATURES } from '../../sim/config';
 import { dayOf } from '../../core/time';
 import { ITEMS, stockWeight, type ItemId } from '../../data/items';
+import { ammoFor } from '../../sim/equipment';
+import { queueRepair, repairableWeapons, stationLevel } from '../../sim/build';
 import { baseStats, present } from '../../sim/state';
 import { GEAR_SLOTS } from '../../sim/gear';
 import { HERDS, herdCapacity } from '../../sim/livestock';
@@ -99,6 +101,47 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
       <div className="faint" style={{ marginTop: 4 }}>
         {held.length} loại · {fmtNum(stockWeight(stock))} kg · {issued} món đang cấp phát cho người
       </div>
+
+      {/* Bảo trì thuộc về kho: đồ mòn và súng thiếu đạn là chuyện của người giữ kho,
+          không phải của bảng cấp phát (tab Người) hay của màn xây dựng. */}
+      {(() => {
+        const worn = repairableWeapons(site);
+        const dry = Object.entries(ITEMS)
+          .filter(([id, d]) => d.mechanic === 'firearm' && (stock[id] ?? 0) >= 1)
+          .map(([id]) => ({ id, ammo: ammoFor(id), have: ammoFor(id) ? (stock[ammoFor(id)!] ?? 0) : 0 }))
+          .filter((g) => g.have <= 0);
+        if (!worn.length && !dry.length) return null;
+        const forgeLvl = stationLevel(site, 'forge');
+        return (
+          <>
+            <div className="dither" />
+            <div className="label">Cần bảo trì</div>
+            <div className="col" style={{ gap: 3 }}>
+              {worn.map((w) => (
+                <div key={w.id} className="row" style={{ gap: 6 }}>
+                  <span className="grow">{ITEMS[w.id]?.label ?? w.id}</span>
+                  <span className="amber">mòn {Math.round((1 - w.condition) * 100)}%</span>
+                  <button
+                    disabled={forgeLvl < 2}
+                    title={forgeLvl < 2 ? 'Cần Lò rèn cấp 2' : 'Sửa ở lò rèn'}
+                    onClick={() => {
+                      queueRepair(s, site, w.id);
+                    }}
+                  >
+                    Sửa
+                  </button>
+                </div>
+              ))}
+              {dry.map((g) => (
+                <div key={g.id} className="row" style={{ gap: 6 }}>
+                  <span className="grow">{ITEMS[g.id]?.label ?? g.id}</span>
+                  <span className="red">không có đạn</span>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      })()}
 
       <div className="dither" />
       <div className="label" title={'Số ngày trụ được với mức tiêu thụ của ' + here + ' người ở đây'}>

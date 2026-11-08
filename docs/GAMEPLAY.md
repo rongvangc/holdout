@@ -838,7 +838,7 @@ Mọi hệ thêm trong thời gian qua đều có chỗ thao tác, không chỉ 
 |---|---|---|
 | **Chế tạo (n)** | tab Căn cứ | 93 công thức, khoá theo cấp trạm, giá + thời gian, nút Chế |
 | **Bếp & món ăn** | tab Căn cứ | tồn nguyên liệu tươi, 12 món với kcal / tinh thần / **công dụng**, tồn kho, nút Nấu (báo rõ vì sao chưa nấu được) |
-| **Trang bị** | tab Căn cứ | vũ khí trong kho: % giảm sát thương, độ bền, **số đạn theo cỡ**; giáp đang có; danh sách món mòn + nút Sửa |
+| **Bảo trì** | drawer Kho | món mòn (% độ bền) + nút Sửa (cần Lò rèn cấp 2); súng **không có đạn đúng cỡ**. Tồn kho xem ở Kho, cấp phát xem ở tab Người — bảo trì là việc của kho |
 | **Điện & sưởi** | tab Căn cứ | kW đang chạy / tổng, nguồn + kWh ắc quy, từng thiết bị bật/tắt, thứ tự cắt tải, nguồn sưởi đang chạy |
 | **Cột "Cần"** | tab Người | mỗi người cần gì để điều trị (kháng sinh / cầm máu / thuốc / hồi HP / rửa vết thương) và **thiếu gì** |
 | **Điều trị ngay** | tab Người (chi tiết) | dùng vật tư ngay tại chỗ, không phải chờ y tá — kiểm đúng luật của AI (Y tế 4+ cho kháng sinh, 1 lần/người/ngày) |
