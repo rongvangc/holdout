@@ -52,7 +52,7 @@ const TOOLS: [Tool, string, string][] = [
   ['erase', '⌫ Bỏ khỏi phòng', 'Kéo chọn ô để tách khỏi phòng (thành hành lang/đất trống)'],
 ];
 
-export function BaseView({ s, site, refresh }: ViewProps) {
+export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   const it = site.interior;
   const [floor, setFloor] = useState(0);
   const [sel, setSel] = useState<string | null>(null);
@@ -510,6 +510,13 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   for (const m of Object.keys(MODULES)) stationLevels[m] = stationLevel(site, m as ModuleId);
   const recipes = availableRecipes(stationLevels as never);
   const st = baseStats(s, site);
+  // R1: a decision row can ask for a specific section; open it once.
+  useEffect(() => {
+    if (!focusPanel) return;
+    if (focusPanel === 'kitchen') setKitchenOpen(true);
+    if (focusPanel === 'gear') setGearOpen(true);
+    if (focusPanel === 'craft') setCraftOpen(true);
+  }, [focusPanel]);
   // Điện: nguồn nào đang cấp, thiết bị nào được bật, thiết bị nào bị cắt.
   const onSet = new Set(st.powerOn);
   const appliances = APPLIANCES.map((a) => ({ ...a, built: (stationLevels[a.module] ?? 0) > 0, on: onSet.has(a.module) }));

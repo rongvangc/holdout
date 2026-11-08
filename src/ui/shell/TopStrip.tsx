@@ -14,6 +14,9 @@ const TABS: [TabId, string][] = [
   ['log', 'Nhật ký'],
 ];
 
+/** "4.4" / "—" — the HUD shows a number, not a sentence (design/ux/hud.md E1–E5). */
+const num = (v: number) => (Number.isFinite(v) && v > 0 ? (v >= 10 ? String(Math.round(v)) : v.toFixed(1)) : '—');
+
 export function TopStrip({
   s,
   site,
@@ -47,12 +50,38 @@ export function TopStrip({
   return (
     <header className="topstrip">
       <div className="topstrip-main">
-        <div className="stat">
+        <div className="stat" title={`Ngày ${dayOf(s.t)} · ${fmtClock(s.t)}`}>
           <span className="label">Ngày</span>
-          <div className="row" style={{ gap: 10 }}>
-            <span className="clock">{dayOf(s.t)}</span>
+          <span className="v">
+            <b className="clock">{dayOf(s.t)}</b>
             <span className="clock dim">{fmtClock(s.t)}</span>
-          </div>
+          </span>
+        </div>
+        <div className={foodDays < 3 ? 'stat bad' : foodDays < 6 ? 'stat warn' : 'stat'} title={`Lương thực còn ${foodDays.toFixed(1)} ngày cho ${st.population} người`}>
+          <span className="label">Lương</span>
+          <span className="v">
+            {num(foodDays)}
+            <small>n</small>
+          </span>
+        </div>
+        <div className={waterDays < 2 ? 'stat bad' : waterDays < 4 ? 'stat warn' : 'stat'} title={`Nước uống còn ${waterDays.toFixed(1)} ngày`}>
+          <span className="label">Nước</span>
+          <span className="v">
+            {num(waterDays)}
+            <small>n</small>
+          </span>
+        </div>
+        <div className={st.beds < here ? 'stat warn' : 'stat'} title={`${alive.length} người sống · ${here} ở đây · ${st.beds} giường`}>
+          <span className="label">Người</span>
+          <span className="v">
+            {alive.length}
+            <span className="faint">/</span>
+            {here}
+          </span>
+        </div>
+        <div className={st.defenseStatic <= 0 ? 'stat bad' : st.defenseStatic < 15 ? 'stat warn' : 'stat'} title="Điểm phòng thủ khi bị tập kích đêm: gia cố + rào + tháp canh + công trình">
+          <span className="label">Thủ</span>
+          <span className="v">{Math.round(st.defenseStatic)}</span>
         </div>
         <div className="speed">
           {SPEED_LABEL.map((label, index) => (
@@ -60,38 +89,6 @@ export function TopStrip({
               {label}
             </button>
           ))}
-        </div>
-        <div className="stat topstrip-resource">
-          <span className="label">Tài nguyên</span>
-          <span className="v">
-            <span className={foodDays < 3 ? 'red' : ''}>Đồ ăn {foodDays.toFixed(1)} ngày</span>
-            <span className={waterDays < 2 ? 'red' : ''}>Nước sạch {waterDays.toFixed(1)} ngày</span>
-          </span>
-        </div>
-        <div className="stat">
-          <span className="label">Thời tiết</span>
-          <span className="v">
-            {s.weather.label} · {s.weather.tempC}°C{s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}
-          </span>
-          <span style={{ fontSize: 11 }}>{dayOf(s.t) <= s.hordeUntilDay ? <span className="red">■ Bầy zombie đi qua</span> : <span className="faint">□ Không có bầy</span>}</span>
-        </div>
-        <div className="stat">
-          <span className="label">Nhân lực</span>
-          <span className="v">
-            <b>{alive.length}</b> người<span className="faint">/</span><b>{here}</b> ở đây<span className="faint">/</span><b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
-          </span>
-        </div>
-        <div className="stat" title="Tình trạng điểm này: độ ồn, độ bẩn, xác chưa dọn">
-          <span className="label">Tình trạng điểm</span>
-          <span className="v">
-            <span className={site.heat > 45 ? 'red' : ''} title="Độ ồn — công việc ồn tăng nó lên; càng cao, đám zombie càng dễ chú ý tới điểm này">Ồn {Math.round(site.heat)}</span>
-            <span className="faint">/</span><span className={site.filth > 40 ? 'red' : ''} title="Độ bẩn — tăng nguy cơ bệnh cho người ở đây">Độ bẩn {Math.round(site.filth)}</span>
-            <span className="faint">/</span><span title="Xác người chết chưa xử lý — mỗi xác làm độ bẩn tăng mỗi ngày; worker làm Vệ sinh sẽ đốt (tốn gỗ) hoặc chôn">Xác chết {Math.round(site.corpses)}</span>
-          </span>
-        </div>
-        <div className="stat" title="Điểm phòng thủ của điểm này khi tập kích đêm: gia cố + rào + tháp canh + công trình">
-          <span className="label">Điểm phòng thủ</span>
-          <span className="v">{Math.round(st.defenseStatic)}</span>
         </div>
         <div className="grow topstrip-actions">
           <span className="ok">{saved}</span>

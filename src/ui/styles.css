@@ -910,9 +910,9 @@ table.grid tr.sel td {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  /* Topstrip và stage xếp dọc: strip không được đè lên nội dung. */
+  /* Topstrip, "Cần quyết định" và stage xếp dọc — ba hàng, không chồng nhau. */
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);
 }
 .topstrip {
@@ -1211,4 +1211,80 @@ table.grid tr.sel td {
   height: 20px;
   margin-right: 6px;
   vertical-align: middle;
+}
+
+/* ============================================================
+   HUD: 5-cell status strip + "Cần quyết định" list
+   Spec: design/ux/hud.md (H1 / H2). Targets: <=7 elements,
+   <=40 chars in H1, <=96px tall on mobile, >=44px touch.
+   ============================================================ */
+
+.topstrip .stat.bad .v,
+.topstrip .stat.bad .label { color: var(--red); }
+.topstrip .stat.warn .v,
+.topstrip .stat.warn .label { color: var(--amber); }
+.topstrip .stat .v small { font-size: 10px; color: var(--dim); font-weight: 400; }
+.topstrip .stat .v b.clock { font-size: 14px; }
+
+/* H2 — decisions. One row, one action, always leads to the fix (R1). */
+.decisions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.decisions-label {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-right: 4px;
+  border-right: 1px solid var(--line-strong);
+}
+.decisions-rows { display: flex; gap: 6px; }
+.decision {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 3px 8px 3px 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  min-height: 30px;
+}
+.decision .dot { width: 6px; height: 6px; flex: 0 0 auto; background: var(--faint); }
+.decision.bad .dot { background: var(--red); }
+.decision.warn .dot { background: var(--amber); }
+.decision-text { font-size: 11.5px; white-space: nowrap; }
+.decision button.mini {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 3px 7px;
+  min-height: 24px;
+  background: var(--btn);
+  border: 1px solid var(--line-strong);
+  color: var(--fg);
+}
+.decision button.mini.pri {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+.decision button.mini:hover { background: var(--btn-hover); }
+.decision button.mini.pri:hover { background: var(--red-deep); }
+
+/* Mobile: one decision visible, the rest scroll horizontally. */
+@media (max-width: 720px) {
+  .decisions { padding: 5px 8px; }
+  .decisions-label { display: none; }
+  .decision { min-height: 44px; }
+  .decision button.mini { min-height: 44px; min-width: 44px; padding: 4px 10px; }
+  .topstrip .stat { padding: 4px 8px; }
+  .topstrip .stat .label { font-size: 8.5px; }
+  .topstrip .stat .v { font-size: 12px; }
 }

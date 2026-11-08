@@ -273,6 +273,28 @@ Năm thiết lập này đều là UI thuần, không đụng `GameState` — n�
 
 ---
 
+## Measured After Implementation (2026-11-08)
+
+Đợt 1 + 2 đã làm; số đo lại trên app thật:
+
+| Tiêu chí | Mục tiêu | Trước | Sau |
+|---|---|---|---|
+| Ô trong H1 | 5 | 6 nhóm văn xuôi | **5 ô số** |
+| Ký tự trong H1 | ≤40 (số liệu) | 291 | **61** (gồm cả 5 nhãn) |
+| Node chữ trong H1 | ≤7 element | 30 | **10** (5 nhãn + 5 số) |
+| Chiều cao H1 (mobile) | ≤96 px | 96 px | **56 px** |
+| H1+H2 phần trăm màn (mobile) | ≤18% | — | **14,1%** (119/844) |
+| Có danh sách "Cần quyết định" | có | ❌ | **✅ tối đa 3 dòng** |
+| Bấm cảnh báo → nhảy tới chỗ sửa (R1) | có | ❌ | **✅ kiểm bằng click chuột thật** |
+| Nút bấm toàn màn (desktop) | ≤25 | 50 | 40 (chưa đạt — còn sidebar) |
+| Vùng chạm mobile <44 px | 0 | 38/38 | **4/40** (còn 4 nút tốc độ và zoom) |
+
+Còn lại: 40 nút vẫn quá mục tiêu 25 vì sidebar chưa tách theo ngăn (đợt 2 của
+`docs/ux/UI-AUDIT.md`); 4 nút tốc độ/zoom hẹp 31–41 px (đạt WCAG 2.5.8 24 px nhưng
+chưa đạt 44 px hai chiều).
+
+---
+
 ## Acceptance Criteria
 
 - [ ] H1 chiếm **≤96 px** chiều cao ở 390×844 và **≤72 px** ở 1280×800, đo bằng

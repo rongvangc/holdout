@@ -24,6 +24,8 @@ export interface ViewProps {
   setSite: (id: string) => void;
   refresh: () => void;
   expandWorld: (onProgress: (msg: string) => void) => Promise<string | null>;
+  /** Section a 'Cần quyết định' row asked to open (see ui/alerts.ts). */
+  focusPanel?: string | null;
 }
 
 const EXPAND_STEP = 800;
@@ -46,6 +48,8 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   const [toast, setToast] = useState<LogEntry | null>(null);
   const [saved, setSaved] = useState('');
   const [siteId, setSiteId] = useState(s.sites[0].id);
+  // R1: a decision row jumps to the tab *and* the section that can fix it.
+  const [focusPanel, setFocusPanel] = useState<string | null>(null);
   const lastDay = useRef(dayOf(s.t));
 
   useEffect(() => {
@@ -125,7 +129,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
     setSaved('Đã lưu');
     setTimeout(() => setSaved(''), 1500);
   };
-  const props: ViewProps = { s, world, site, setSite: setSiteId, refresh, expandWorld };
+  const props: ViewProps = { s, world, site, setSite: setSiteId, refresh, expandWorld, focusPanel };
 
   return (
     <div className="game">
@@ -136,6 +140,11 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         setSite={setSiteId}
         tab={tab}
         setTab={setTab}
+        onDecision={(d) => {
+          setTab(d.tab);
+          setFocusPanel(d.panel ?? null);
+          refresh();
+        }}
         speed={speed}
         setSpeed={setSpeed}
         saved={saved}
