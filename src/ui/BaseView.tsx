@@ -683,7 +683,8 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
                 <input placeholder="Tên phòng (tuỳ chọn)" value={name} maxLength={32} onChange={(e) => setName(e.target.value)} />
                 <div className="dim">
                   Phòng trong nhà cần dựng vách: {Math.ceil(pendingCells * DESIGN_LIMITS.partitionWoodPerCell)} gỗ,{' '}
-                  {fmtDuration(600 + pendingCells * DESIGN_LIMITS.partitionSecPerCell)}. Tối đa {DESIGN_LIMITS.maxRoomIndoor} m² trong nhà, {DESIGN_LIMITS.maxRoomOutdoor} m² ngoài sân.
+                  {fmtDuration(600 + pendingCells * DESIGN_LIMITS.partitionSecPerCell)}. Tối đa {DESIGN_LIMITS.maxRoomIndoor} m² trong nhà,{' '}
+                  {it.yardArea > DESIGN_LIMITS.maxRoomOutdoor ? `${DESIGN_LIMITS.maxRoomField} m² khoảnh ruộng` : `${DESIGN_LIMITS.maxRoomOutdoor} m² ngoài sân`}.
                 </div>
               </>
             )}

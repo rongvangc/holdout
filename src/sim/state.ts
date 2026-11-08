@@ -8,7 +8,7 @@ import { FENCE_DEFENSE_PER_LEVEL, FORTIFY_DEFENSE_PER_LEVEL } from '../data/modu
 import { structureEffects } from '../data/structures';
 import { dist } from '../world/geo';
 import type { World } from '../world/types';
-import { PEOPLE_PER_LATRINE, ROLES, TEND_H_PER_M2_DAY, type Role } from './data';
+import { FARM_M2_PER_WORKER, PEOPLE_PER_LATRINE, ROLES, type Role } from './data';
 import { issueGear } from './gear';
 import { DEFAULT_AUTO } from './automation';
 import { isActive, makeSurvivor, skill } from './survivors';
@@ -457,7 +457,8 @@ export function autoAssign(s: GameState, only?: Site): void {
       ['guard', Math.max(1, Math.round(n * 0.15))],
       ['water', waterWork ? Math.max(1, Math.round(n / 8)) : 0],
       // Vườn nhỏ (thuốc 8 m²) không cần một người làm cả ngày.
-      ['farmer', farmArea >= 20 ? Math.max(1, Math.ceil((farmArea * TEND_H_PER_M2_DAY) / 6)) : 0],
+      // Một nông dân chăm FARM_M2_PER_WORKER m² — cùng hằng số với tự mở vườn và bot.
+      ['farmer', farmArea >= 20 ? Math.ceil(farmArea / FARM_M2_PER_WORKER) : 0],
       ['cook', st.kitchen ? Math.max(1, Math.round(n / 8)) : 0],
       ['medic', n >= 4 ? 1 + Math.floor(n / 14) : 0],
       ['sanitation', n >= 6 ? Math.max(1, Math.round(n / 12)) : 0],

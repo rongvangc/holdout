@@ -151,8 +151,9 @@ function partition(rng: Rng, kinds: number[], w: number, h: number, kind: number
 
 export const roomsWith = (it: Interior, m: ModuleId) => it.rooms.filter((r) => r.module === m);
 
-export function canPlace(it: Interior, room: Room, m: { placement: string; minArea: number }): string | null {
+export function canPlace(it: Interior, room: Room, m: { placement: string; minArea: number; maxArea?: number }): string | null {
   if (room.area < m.minArea) return `Cần tối thiểu ${m.minArea} m²`;
+  if (m.maxArea && room.area > m.maxArea) return `Khoảnh quá lớn: tối đa ${m.maxArea} m² (chia nhỏ khoảnh trước)`;
   const top = room.floor === it.floors - 1;
   switch (m.placement) {
     case 'indoor':

@@ -13,6 +13,7 @@ import { canPlace } from '../src/base/interior';
 import { MODULES } from '../src/data/modules';
 import { RECIPE_BY_ID, RECIPES } from '../src/data/recipes';
 import { ITEMS } from '../src/data/items';
+import { FARM_M2_PER_WORKER } from '../src/sim/data';
 import { launchExpedition, planExpedition } from '../src/sim/expedition';
 import { setCommute } from '../src/sim/commute';
 import type { ModuleId } from '../src/data/modules';
@@ -85,7 +86,7 @@ function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
     const farmers = s.survivors.filter(
       (v) => v.status === 'alive' && (v.siteId === site.id || v.commute?.work === site.id) && v.role === 'farmer',
     ).length;
-    const covered = Math.max(1, farmers) * 1200;
+    const covered = Math.max(1, farmers) * FARM_M2_PER_WORKER;
     if (baseStats(s, site).gardenArea < covered) next = 'garden';
   }
   if (!next) return;

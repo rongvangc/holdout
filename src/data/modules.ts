@@ -53,6 +53,12 @@ export interface ModuleDef {
   color: string;
   placement: Placement;
   minArea: number;
+  /**
+   * Diện tích tối đa một khoảnh nhận công trình này. Vườn bị chặn ở 300 m² vì gieo
+   * tốn `m² × 40 s`: khoảnh lớn hơn thì một người không làm xong trong ngày và khoảnh
+   * đó vĩnh viễn trống (lỗi đã gặp với bot, người chơi cũng sẽ dính).
+   */
+  maxArea?: number;
   /** Giới hạn số công trình mỗi điểm (đếm cả project đang chờ). Không đặt = xếp chồng tự do. */
   maxPerSite?: number;
   needsWorkshop?: boolean;
@@ -190,6 +196,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#5f9a3a',
     placement: 'top_or_outdoor',
     minArea: 6,
+    maxArea: 300,
     workSec: (a) => 1 * H + a * 20,
     // Hàng rào + cuốc đất ~1 gỗ/200 m²: vườn lớn (ruộng) không bị 250 gỗ như trước.
     cost: (a) => ({ wood: Math.ceil(a / 200), seeds: 1 }),
@@ -205,6 +212,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#4fa77a',
     placement: 'top_or_outdoor',
     minArea: 4,
+    maxArea: 300,
     workSec: (a) => 1 * H + a * 20,
     cost: (a) => ({ wood: Math.ceil(a / 10), cloth: Math.ceil(a / 20) }),
     desc: 'Trồng dược liệu, chu kỳ 40 ngày. Thu hoạch: thuốc và băng gạc (cần vải khi thu băng). Farmer chăm như vườn thường.',

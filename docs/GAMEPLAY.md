@@ -770,8 +770,8 @@ Có test khoá luật "mỗi bậc phải có chỗ đọc số" (`tests/module-
 |---|---|---|---|
 | Rau muống | 475 kcal/m² / 30 ngày | **90 kcal/m² / 25 ngày** = 3,6 kcal/m²/ngày | 0,3 kg rau/m² mỗi lứa — đúng năng suất vườn |
 | Khoai lang | 1.720 / 110 ngày | **1.080 kcal/m² / 90 ngày** = 12 kcal/m²/ngày | cây lương thực: ~2 kg/m² mỗi vụ |
-| Chăm vườn | 0,005 h/m²/ngày | **0,003** | ~2.000 m² một người; 1 nông dân 8 h nuôi ~14 người |
-| Khoảnh ruộng | 800 m² | **5.000 m²** (điểm `field`) | 20 người cần ~3.750 m² khoai |
+| Chăm vườn | 0,005 h/m²/ngày | **0,008** | ~1.250 m² một người; 1 nông dân nuôi ~5–6 người |
+| Khoảnh ruộng | 800 m² | **2.000 m²** (điểm `field`, xem §12.18) | 20 người cần ~3.750 m² khoai → 2 khoảnh |
 | Giá làm vườn | ⌈m²/20⌉ gỗ | **⌈m²/200⌉** gỗ | vườn 5.000 m² trước đó tốn 250 gỗ |
 
 **Ở mức thực tế này:** 1 nông dân 8 h/ngày nuôi ~14 người; một khoảnh 5.000 m² khoai cho ~60.000 kcal/ngày (26 người) khi vào vụ; 1 bò cho 8 L sữa/ngày = 5.120 kcal (2,3 người); 20 con gà ≈ 1.000 kcal/ngày. Trồng trọt là **đầu tư dài hạn** (25–90 ngày mới có thu), trong 1–2 tháng đầu cộng đồng vẫn sống bằng đồ hộp lục soát được — đúng thực tế.
@@ -914,8 +914,9 @@ Kết quả 120 ngày × 4 seed: **4/4 sống hết**, dân 4–6, chết 12–2
 |---|---|---|---|
 | Khoảnh ruộng tối đa | 5.000 m² (0,5 ha) | **2.000 m² (0,2 ha)** | vườn hộ làm tay ở VN: 500–2.000 m²; 0,5 ha cần trâu/máy cày |
 | Công chăm vườn | 0,003 h/m²/ngày (3.300 m²/người) | **0,008 h/m²/ngày (~1.250 m²/người)** | một người 10 h/ngày chăm rau thâm canh |
-| Khoảnh vườn | ≤1.200 m² | **≤300 m² (ruộng) / ≤180 m² (sân)** | gieo 3,3 h, thu 2,5 h — vừa một buổi |
+| Khoảnh vườn | ≤1.200 m² | **≤300 m² (chặn ở `ModuleDef.maxArea`)** | gieo 3,3 h, thu 2,5 h — vừa một buổi; đặt vườn lên khoảnh lớn hơn sẽ bị từ chối kèm lý do |
 | Vườn tự mở | theo "người dự kiến" | **theo số nông dân thật × 1.200 m²** | trước đây mở tới 6.384 m² mà chỉ 1 nông dân, 6/39 khoảnh có cây |
+| Nguồn con số | mỗi nơi tự tính | **một hằng số `FARM_M2_PER_WORKER = 1200`** | chia vai trò, tự mở vườn và bot từng tính ba kiểu khác nhau (750 / 1.200 / 6.000 m²) |
 
 **Ba lỗi chuỗi cũng đã sửa** (chúng làm ruộng "có mà không trồng"):
 1. Người đi làm thuê ở ruộng bị đặt vai **thợ xây** chỉ vì ruộng có hạng mục *chưa trả tiền* → cả ruộng không còn nông dân. Giờ chỉ thành thợ xây khi có hạng mục **đã trả tiền**.

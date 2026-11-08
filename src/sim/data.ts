@@ -113,6 +113,14 @@ export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: num
 // (0,008 h/m²/ngày). Trước đây 0,003 = 3.300 m²/người — không ai làm nổi bằng tay.
 export const TEND_H_PER_M2_DAY = 0.008;
 
+/**
+ * Diện tích một nông dân chăm nổi trong một ngày công (~10 h).
+ * Dùng chung cho: chia vai trò (state.ts), tự mở vườn (automation.ts), bot (headless.ts)
+ * — trước đây mỗi nơi tự tính một kiểu nên lệch nhau (1 người được giao 750 m² ở chỗ
+ * này nhưng 1.200 m² ở chỗ khác).
+ */
+export const FARM_M2_PER_WORKER = 1200;
+
 export type ZombieType = 'walker' | 'runner' | 'screamer' | 'bloater' | 'brute' | 'stalker';
 export interface ZombieDef {
   label: string;
