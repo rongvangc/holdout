@@ -476,3 +476,63 @@ Mỗi luật sau khi đổi phải chờ 3 ngày mới đổi lại được.
 - `tests/`: kiểm tra dựng thế giới, tính tất định, đa điểm, lãnh thổ, thiết kế căn cứ.
 
 Khi chỉnh số, chạy bot vài seed khác nhau, ví dụ `-- 120 1`, `-- 120 2`, `-- 120 3`, để so sánh trước và sau.
+
+---
+
+## 12. Vật liệu, trạm và chế tạo (`data/items.ts`, `data/materials.ts`, `data/recipes.ts`, `sim/build.ts`, `sim/equipment.ts`)
+
+### 12.1 Danh mục item
+
+- `ItemId` là string, không phải union đóng. Registry gồm **16 item lõi** + **19 vật liệu tự viết** (`materials.ts`) + **647 item lấy từ bộ nội dung innawoods** (`items.generated.ts`, sinh bởi `scripts/mine-innawoods.mjs` + `scripts/gen-items.mjs`).
+- innawoods **không có công thức chế tạo và không có kg** (thuộc tính item chỉ có `year`/`singleHanded`), nên kg, độ bền và công thức đều do game tự định nghĩa.
+- Item lấy từ innawoods bị lọc: bỏ item mang tên IP game khác (STALKER/Metro/Fallout/EFT/The Long Dark), bỏ thứ vô nghĩa với sim (chìa khoá, bút, giấy), gộp trùng tên.
+- `normalizeStock()` chạy trong `migrate()` cho **cả save v1 và v2**: điền 0 cho id mới, bỏ id lạ, kẹp âm. Save cũ mở lên vẫn chơi được.
+
+### 12.2 Chuỗi vật liệu
+
+| Lớp | Item | Nguồn |
+|---|---|---|
+| L0 thô | gỗ, sắt vụn, vải, đá, đất sét, cát, dây thừng, cao su, muối, dầu ăn | lục soát, kiếm củi, đào |
+| L1 sơ chế | ván, đinh, than, vôi, gạch, chỉ | trạm |
+| L2 linh kiện | lưỡi, đầu dụng cụ, cán, bản lề, bánh răng, dây điện, tấm thép, lõi lọc, ắc quy, tấm pin mặt trời | trạm |
+| L3 thành phẩm | vũ khí, giáp, dụng cụ, món ăn, thuốc | trạm |
+
+**Muối chỉ lục soát được** — là nút cổ chai của mọi cách bảo quản.
+
+### 12.3 Trạm = module có cấp
+
+Cấp 1 là lúc xây xong; `ModuleDef.levels` là các bậc nâng tiếp; `Room.moduleLevel` là bậc hiện tại. Nâng cấp đi qua đúng hàng đợi xây (trả vật tư, ▲▼ đổi ưu tiên, thợ xây làm).
+
+| Trạm | Vị trí | Cấp 2 | Cấp 3 |
+|---|---|---|---|
+| Lò rèn | sân | tấm thép, vũ khí dài, dao | búa tạ, đồ nặng |
+| Xưởng mộc | trong nhà | đồ nặng, lều | khung ba lô |
+| Lò nung | sân | gạch chịu lửa, gốm | nung đêm ×2 |
+| Xưởng may | trong nhà | mũ cứng, ủng, giáp nhồi | giáp tấm, áo giáp |
+| Bếp hun khói | sân | hun nhanh | mẻ lớn |
+| Chum ủ | trong nhà | ủ thịt cá | mắm lâu năm |
+| Bàn thợ (cũ) | trong nhà | ắc quy, đèn dầu | pin mặt trời |
+| Bếp củi (cũ) | bất kỳ | mẻ 8000 kcal bằng than | đỡ tốn củi |
+
+### 12.4 Công thức
+
+- **74 công thức**: chuỗi vật liệu viết tay; mỗi *dạng* vũ khí/giáp có một công thức (biến thể thương hiệu chỉ nhặt được, không chế được); đồ ăn có công thức nấu và bảo quản.
+- Công thức khai báo `station` + `level`, nên **một công thức bị khoá sau đúng bậc nâng cấp mở nó**.
+- Chế tạo dùng `project.kind = 'craft'`: trả vật tư qua cổng `paid`, thợ xây làm, nhưng kỹ năng áp dụng là `crafting`/`mechanics` của công thức.
+- `upgradeFrom` biến công thức thành nâng cấp (tiêu món gốc): `Folding shovel → Shovel`, `Combat knife → Machete`.
+
+### 12.5 Trang bị trong trận
+
+Trang bị **tự cấp từ kho của điểm** (game quản lý cộng đồng, không phải đội hình có tên):
+
+- **Vũ khí**: chọn món giảm sát thương cao nhất đang có. `mitigation` giảm sát thương nhận, `biteMult` nhân vào khả năng bị cắn (giáo = 0.55), súng tăng heat khi bắn.
+- **Độ bền**: mỗi trận có xác suất `1/durability` gãy; gãy thì mất khỏi kho.
+- **Giáp**: cộng dồn thân/đầu/giáp che ngực rồi **kẹp 45%**.
+- **Tập kích đêm**: mỗi người gác được cộng `round(mitigation × 40)` phòng thủ; thua trận thì giáp giảm HP mất và giảm xác suất bị cắn.
+- **Đêm có điện**: `tấm pin mặt trời + ắc quy` (và không bão) cho `site.powered` mà không tốn xăng; nếu không thì máy phát đốt 24 L.
+
+### 12.6 Thức ăn
+
+- Mọi item có `kcal` đều ăn được, chọn món nặng/kcal cao trước.
+- Hỏng theo `rotPerDay` riêng: đồ hộp 0.5%/ngày, món tươi 6%/ngày; nắng nóng ×(nếu >1%), Kho có khoá giảm nửa.
+- Nấu (`bếp`), hun khói (`bếp hun khói`), muối chua (`chum ủ`) biến `rawFood` thành món để dành.
