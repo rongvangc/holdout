@@ -521,15 +521,18 @@ Cấp 1 là lúc xây xong; `ModuleDef.levels` là các bậc nâng tiếp; `Roo
 - Chế tạo dùng `project.kind = 'craft'`: trả vật tư qua cổng `paid`, thợ xây làm, nhưng kỹ năng áp dụng là `crafting`/`mechanics` của công thức.
 - `upgradeFrom` biến công thức thành nâng cấp (tiêu món gốc): `Folding shovel → Shovel`, `Combat knife → Machete`.
 
-### 12.5 Trang bị trong trận
+### 12.5 Trang bị theo từng người (`sim/gear.ts`)
 
-Trang bị **tự cấp từ kho của điểm** (game quản lý cộng đồng, không phải đội hình có tên):
+Trang bị là **của từng người**, không phải của kho. Mỗi người có 4 slot: **vũ khí · giáp thân · mũ · ba lô** (`Survivor.gear`).
 
-- **Vũ khí**: chọn món giảm sát thương cao nhất đang có. `mitigation` giảm sát thương nhận, `biteMult` nhân vào khả năng bị cắn (giáo = 0.55), súng tăng heat khi bắn.
-- **Độ bền**: mỗi trận có xác suất `1/durability` gãy; gãy thì mất khỏi kho.
-- **Giáp**: cộng dồn thân/đầu/giáp che ngực rồi **kẹp 45%**.
-- **Tập kích đêm**: mỗi người gác được cộng `round(mitigation × 40)` phòng thủ; thua trận thì giáp giảm HP mất và giảm xác suất bị cắn.
-- **Đêm có điện**: `tấm pin mặt trời + ắc quy` (và không bão) cho `site.powered` mà không tốn xăng; nếu không thì máy phát đốt 24 L.
+- **Cấp phát**: `equip()` lấy 1 món ra khỏi kho của điểm (nên một cây rựa không thể trang bị cho 5 người). Tháo ra thì món quay lại kho. Đổi món thì món cũ trả kho.
+- **Tự động**: mỗi sáng `autoAssign` gọi `issueGear()` — món tốt nhất trong kho được cấp cho người gác trước, rồi tới người có Cận chiến cao nhất. Ai đang cầm món yếu hơn món còn trong kho thì được nâng cấp.
+- **Slot hợp lệ**: súng/dao/gậy/búa → vũ khí; `armor_soft`/`armor_plate`/`vest` → giáp thân; `helmet`/`mask` → mũ; `backpack`/`container` → ba lô.
+- **Trong trận**: mỗi người gác dùng **vũ khí của chính mình** (`8 + 2×Cận chiến + round(mitigation×40)`), và mòn đúng món đó; súng bắn thì cộng heat. Sát thương vào ai thì **giáp của người đó** giảm (thân + mũ cộng dồn, kẹp **45%**), xác suất bị cắn cũng giảm theo.
+- **Đi viễn chinh**: vũ khí tốt nhất trong đội quyết định `biteMult`/tiếng ồn; giáp tính theo từng nạn nhân; **ba lô cộng sức chở** (`capacity`, mặc định 26 kg).
+- **Súng thiếu đạn thì không dùng được** — `canField()` kiểm tra kho của điểm đang đứng; cầm súng không đạn coi như tay không.
+- **Chết/ra đi**: người chết trong căn cứ → đồ **trả lại kho**; chết ngoài đường hoặc bỏ trốn → **mất đồ**.
+- **Độ mòn vẫn theo loại** (`site.condition`), không theo từng món: hai người cầm cùng một loại thì dùng chung độ mòn.
 
 ### 12.6 Thức ăn
 

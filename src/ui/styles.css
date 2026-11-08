@@ -1126,3 +1126,19 @@ table.grid tr.sel td {
 .baseview .canvaswrap.panning {
   user-select: none;
 }
+
+/* Trang bị theo từng người (tab Người). */
+.gearrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+.gearslot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gearslot select {
+  width: 100%;
+}

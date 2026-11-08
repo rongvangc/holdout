@@ -6,6 +6,8 @@ import { setCommute } from '../sim/commute';
 import { autoAssign, baseStats } from '../sim/state';
 import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
+import { ITEMS } from '../data/items';
+import { GEAR_SLOTS, SLOT_LABEL, availableGear, equip, gearLabel, packCapacity, survivorArmor, survivorWeapon } from '../sim/gear';
 import type { ViewProps } from './Game';
 
 const TASK_LABEL: Record<TaskKind, string> = {
@@ -234,6 +236,48 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             HP {Math.round(v.hp)} · {Math.round(v.kcal)} kcal · {Math.round(v.water)} ml · mệt {Math.round(v.fatigue)} · tinh thần {Math.round(v.morale)}
           </div>
           <div className="dim">{ROLES[v.role].desc}</div>
+
+          <div className="dither" />
+          <div className="label">Trang bị</div>
+          <div className="gearrow">
+            {GEAR_SLOTS.map((slot) => {
+              const held = v.gear?.[slot] ?? '';
+              const pool = availableGear(site, slot);
+              return (
+                <label key={slot} className="gearslot">
+                  <span className="faint">{SLOT_LABEL[slot]}</span>
+                  <select
+                    value={held}
+                    disabled={v.location !== 'base'}
+                    title={held ? gearLabel(held) : 'Chưa cấp phát'}
+                    onChange={(e) => {
+                      equip(site, v, slot, e.target.value || null);
+                      refresh();
+                    }}
+                  >
+                    <option value="">— không —</option>
+                    {held && (
+                      <option value={held}>
+                        {gearLabel(held)}
+                      </option>
+                    )}
+                    {pool.map((id) => (
+                      <option key={id} value={id}>
+                        {gearLabel(id)} · {Math.floor(site.stock[id] ?? 0)} trong kho
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              );
+            })}
+          </div>
+          <div className="row dim" style={{ flexWrap: 'wrap', gap: 10 }}>
+            <span title="Vũ khí đang cầm (đạn phải còn trong kho mới dùng được)">
+              Vũ khí: {v.gear?.weapon ? (survivorWeapon(site, v) ? ITEMS[v.gear.weapon]?.label : `${ITEMS[v.gear.weapon]?.label} (thiếu đạn)`) : 'tay không'}
+            </span>
+            <span title="Giáp thân + mũ cộng dồn, tối đa 45%">Giáp: −{Math.round(survivorArmor(v) * 100)}% sát thương</span>
+            <span title="Ba lô tăng sức chở khi đi viễn chinh">Sức chở thêm: +{packCapacity(v)} kg</span>
+          </div>
         </div>
       )}
 

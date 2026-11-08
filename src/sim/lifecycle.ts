@@ -1,6 +1,7 @@
 import { push } from '../core/eventQueue';
 import { chance, int } from '../core/rng';
 import { DAY, dayOf } from '../core/time';
+import { forfeitGear, returnGear } from './gear';
 import { addSurvivor, alert, log, mainSite, siteOf, take } from './state';
 import type { GameState, Survivor } from './types';
 
@@ -9,6 +10,11 @@ export function killSurvivor(s: GameState, v: Survivor, cause: string): void {
   v.status = 'dead';
   v.task = null;
   if (v.location !== 'expedition') siteOf(s, v).corpses += 1;
+  // Đồ trên người được đồng đội nhặt lại, trừ khi chết ngoài đường.
+  if (v.gear && Object.keys(v.gear).length) {
+    const back = v.location === 'expedition' ? forfeitGear(v) : returnGear(siteOf(s, v), v);
+    if (back.length) log(s, `${v.name}: nhặt lại ${back.length} món trang bị.`, 'info');
+  }
   s.stats.deaths++;
   s.recentDeaths++;
   for (const o of s.survivors) if (o.status === 'alive') o.morale = Math.max(0, o.morale - 8);
@@ -17,6 +23,7 @@ export function killSurvivor(s: GameState, v: Survivor, cause: string): void {
 }
 
 export function removeSurvivor(s: GameState, v: Survivor, why: string): void {
+  forfeitGear(v); // bỏ đi thì mang theo đồ
   if (v.status !== 'alive') return;
   v.status = 'gone';
   v.task = null;

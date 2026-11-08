@@ -50,6 +50,11 @@ export interface Survivor {
   xp: Record<SkillId, number>;
   /** Chosen self-study skill (Kệ sách); null = đọc ngẫu nhiên. */
   study?: SkillId | null;
+  /**
+   * Trang bị đang giữ, mỗi slot một món — món đã "cấp phát" bị trừ khỏi kho điểm.
+   * Mòn/sửa vẫn tính theo loại (site.condition) như trước.
+   */
+  gear?: { weapon?: ItemId; body?: ItemId; head?: ItemId; pack?: ItemId };
   role: Role;
   hp: number;
   kcal: number;
@@ -140,6 +145,8 @@ export interface Expedition {
   travelSec: number;
   searchSec: number;
   carried: Partial<Stock>;
+  /** Food and water packed for the trip; eaten on the way, never brought home. */
+  rations?: Partial<Stock>;
   capacityKg: number;
   report: string[];
   recruits: Survivor[];
