@@ -754,3 +754,11 @@ Cả **26 module** đều có bậc nâng cấp, và mỗi bậc đều đổi m
 Bot ưu tiên theo thứ tự: lọc nước → giếng → bể nước → y tế → vườn → kho → nhà vệ sinh → tháp canh → phòng ngủ → hầm lạnh → bếp, và giữ lại 80 gỗ / 40 sắt để không đói vật tư cho module kế tiếp.
 
 Có test khoá luật "mỗi bậc phải có chỗ đọc số" (`tests/module-levels.test.ts`), để không ai thêm bậc chỉ có chữ.
+
+### 12.12 Kho, nguồn item và quần áo
+
+- **Kho** (`ui/shell/KhoDrawer.tsx`): chia nhóm Vật liệu · Vũ khí · Giáp & đồ mặc · Ba lô · Đồ ăn · Thuốc · Dụng cụ · Khác; hiện **mọi item đang có hàng** (trước chỉ 16 id lõi), kèm kg và số món đang cấp phát cho người.
+- **Nguồn item** (`data/lootPools.ts`): ngoài bảng vật tư tĩnh, mỗi chỗ lục có ~30% ra một món catalogue theo loại nhà (`house` → quần áo/ba lô/dao; `police` → giáp/mũ/súng/đạn; `pharmacy` → thuốc…), trọng số giảm theo tier, `rare` ×0.3. Nhờ vậy **703/703 món đều lấy được** (trước: 147/703).
+- **Quần áo** có slot riêng (`outfit`) và chỉ số `insulation`: áo 35%, giày 15%, găng 8% (+tier, +khối lượng), kẹp 60%. Rét `tempC < 18` làm tăng mệt `0.6/h × (1 − cách nhiệt)`; dưới 12°C còn mất HP, mưa to ×2.
+- **Dụng cụ** mòn theo công việc: mỗi hạng mục xây/chế trừ `1/durability` của dụng cụ tốt nhất trong kho; mòn hết thì món đó rời kho.
+- **Đạn** dùng field `caliber` thật (`data/calibers.ts`), ưu tiên đúng cỡ trước, hộp hỗn hợp là phương án cuối.
