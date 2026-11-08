@@ -8,9 +8,10 @@ import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
 import { describeWeapon, wearWeapon } from './equipment';
-import { bestArmed, packCapacity, survivorArmor } from './gear';
+import { contactOf, killShare } from './combat';
+import { bestArmed, packCapacity } from './gear';
 import { applyFoodFx } from './diet';
-import { bleedOf, limbPenalty, PART_LABEL, rollWound } from './medical';
+import { bleedOf, PART_LABEL, rollWound } from './medical';
 import { applyBiteLaw, handleStrangers, killSurvivor, noteBite } from './lifecycle';
 import { addStock, alert, baseStats, log, makeSite, newId, siteById, siteOfSource, take } from './state';
 import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
@@ -391,18 +392,33 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
     e.fights++;
     const z = zombieType(s.rng, day, night);
     const def = ZOMBIES[z];
-    const victim = pick(s.rng, alive);
-    // Người cụt tay/chân chiến đấu kém hơn: tính vào sức mạnh trung bình của đội.
-    const meleeAvg = alive.reduce((a, m) => a + skill(m, 'melee') * limbPenalty(m), 0) / alive.length;
-    // Vũ khí tốt nhất trong đội (người cầm nó là người đánh) + giáp của chính nạn nhân.
     const armed = bestArmed(from, alive);
     const weapon = armed?.weapon ?? null;
-    const armour = survivorArmor(victim);
-    const mitigation = Math.min(0.6, (weapon?.mitigation ?? 0) + armour * (1 - (weapon?.mitigation ?? 0)));
-    const dmg =
-      ((def.dmg * range(s.rng, 0.5, 1.5) * (1 - 0.04 * meleeAvg) * (alive.some((m) => hasTrait(m, 'brave')) ? 0.8 : 1)) /
-        Math.sqrt(alive.length)) *
-      (1 - mitigation);
+    // Pha 1 — hạ trước khi nó áp sát: vũ khí (dmg) × xuyên giáp của nó.
+    const share = killShare(from, alive, z);
+    for (const m of alive) gainXp(m, 'melee', 3);
+    if (weapon && armed) {
+      const w = wearWeapon(s, from, weapon, 1);
+      if (w.broke) log(s, `${from.name}: ${describeWeapon(weapon)} của ${armed.owner.name} gãy sau trận.`, 'warn');
+    }
+    if (weapon?.isFirearm && weapon.noise) {
+      // A gunshot at night pulls the whole cell toward you.
+      from.heat = Math.min(100, from.heat + weapon.noise);
+      if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + weapon.noise);
+    }
+    if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + 2);
+    if (chance(s.rng, share)) {
+      // Hạ được trước khi nó chạm tới: không sát thương, không bị cắn.
+      e.kills = (e.kills ?? 0) + 1;
+      for (const m of alive) gainXp(m, 'melee', 3);
+      if (chance(s.rng, 0.35)) e.report.push(`Hạ một ${def.label}${armed ? ` bằng ${describeWeapon(weapon)}` : ' bằng tay không'}.`);
+      continue;
+    }
+    // Pha 2 — nó vào được: giáp của chính nạn nhân, bị `bypass` của loại zombie bào mòn.
+    const victim = pick(s.rng, alive);
+    const meleeAvg = alive.reduce((a, m) => a + skill(m, 'melee'), 0) / alive.length;
+    const contact = contactOf(from, victim, z, range(s.rng, 0.5, 1.5) * def.dmg);
+    const dmg = (contact.dmg * (1 - 0.04 * meleeAvg) * (alive.some((m) => hasTrait(m, 'brave')) ? 0.8 : 1)) / Math.sqrt(alive.length);
     victim.hp -= dmg;
     if (dmg >= 12 && chance(s.rng, Math.min(0.75, dmg / 40))) {
       const w = rollWound(dmg, (arr) => pick(s.rng, arr));
@@ -410,18 +426,9 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
       victim.woundPart = w.part;
       e.report.push(`${victim.name} bị rách ${PART_LABEL[w.part]} (−${Math.round(dmg)} HP, chảy máu).`);
     }
-    for (const m of alive) gainXp(m, 'melee', 6);
-    if (weapon?.isFirearm && weapon.noise) {
-      // A gunshot at night pulls the whole cell toward you.
-      from.heat = Math.min(100, from.heat + weapon.noise);
-      if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + weapon.noise);
-    }
-    if (weapon && armed) {
-      const w = wearWeapon(s, from, weapon, 1);
-      if (w.broke) log(s, `${from.name}: ${describeWeapon(weapon)} của ${armed.owner.name} gãy sau trận.`, 'warn');
-    }
-    if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + (z === 'screamer' ? 8 : 2));
-    if (chance(s.rng, (def.bite * (weapon?.biteMult ?? 1)) / Math.sqrt(alive.length))) {
+    for (const m of alive) gainXp(m, 'melee', 3);
+    if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + contact.heat);
+    if (chance(s.rng, contact.biteChance / Math.sqrt(alive.length))) {
       const seen = chance(s.rng, 0.7);
       noteBite(s, victim, seen);
       e.report.push(`${victim.name} bị ${def.label} cắn${seen ? '' : ' (không ai thấy)'}.`);

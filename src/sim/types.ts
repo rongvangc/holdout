@@ -72,8 +72,6 @@ export interface Survivor {
   woundPart?: 'arm' | 'leg' | 'torso' | 'head';
   /** Day the wound was cleaned with antiseptic (dirty wounds turn septic). */
   woundCleanedDay?: number;
-  /** Limb lost to amputation: permanent penalty. */
-  lostLimb?: boolean;
   sickDays: number;
   treatedToday: boolean;
   status: 'alive' | 'dead' | 'gone';
@@ -161,6 +159,8 @@ export interface Expedition {
   recruits: Survivor[];
   fights: number;
   avoided: number;
+  /** Zombie hạ được trước khi chúng áp sát (pha 1 của trận). */
+  kills?: number;
 }
 
 export interface LogEntry {

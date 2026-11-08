@@ -1,5 +1,5 @@
 import { ITEMS, type ItemId } from '../data/items';
-import type { GameState, Site, Survivor } from './types';
+import type { Survivor } from './types';
 
 /**
  * Medical layer.
@@ -55,15 +55,6 @@ export const ANTIBIOTIC_LIMIT = 60;
 export const ANTIBIOTIC_RELIEF = 40;
 /** Medical skill needed to administer antibiotics properly. */
 export const ANTIBIOTIC_SKILL = 4;
-/** Amputation requirements. */
-export const AMPUTATION_SKILL = 5;
-export const AMPUTATION_MEDICINE = 2;
-export const AMPUTATION_REGEN_PENALTY = 0.75; // melee output multiplier afterwards
-export const AMPUTATION_CARRY_PENALTY = 15; // kg off carrying capacity
-
-/** Legs and arms can be cut off; a neck or belly wound cannot. */
-export const canAmputate = (part: WoundPart | undefined): boolean => part === 'arm' || part === 'leg';
-
 export const PART_LABEL: Record<WoundPart, string> = {
   arm: 'tay',
   leg: 'chân',
@@ -101,59 +92,3 @@ export function rollWound(severity: number, rngPick: <T>(arr: readonly T[]) => T
   const bleed = severity >= 25 ? 3 : severity >= 12 ? 2 : 1;
   return { part, bleed: part === 'head' || part === 'torso' ? Math.min(BLEED_MAX, bleed + 1) : bleed };
 }
-
-/**
- * Amputation: the one way out of a lethal bite.
- *
- * Requires a level-2 infirmary (a place clean enough to cut), a medic with real
- * skill, two doses of medicine, a blade and a bandage. The survivor lives, but the
- * arm or leg is gone for good.
- */
-export function amputate(s: GameState, site: Site, victimId: string): string | null {
-  const v = s.survivors.find((x) => x.id === victimId);
-  if (!v || v.status !== 'alive') return 'Không có người này';
-  if (v.lostLimb) return 'Đã cắt rồi';
-  if (!v.infected && !v.bitten) return 'Người này không bị nhiễm';
-  if (!canAmputate(v.woundPart)) {
-    return v.woundPart ? `Vết cắn ở ${PART_LABEL[v.woundPart]} — không cắt được` : 'Chưa xác định vết cắn ở đâu';
-  }
-  const infirmary = site.interior.rooms.find((r) => r.module === 'infirmary' && (r.moduleLevel ?? 1) >= 2);
-  if (!infirmary) return 'Cần Phòng y tế cấp 2';
-  const doctor = s.survivors
-    .filter((x) => x.status === 'alive' && x.siteId === site.id && x.location === 'base')
-    .sort((a, b) => (b.xp.medical ?? 0) - (a.xp.medical ?? 0))[0];
-  if (!doctor) return 'Không có ai ở điểm này';
-  const docSkill = doctor.xp.medical ?? 0;
-  if (docSkill < AMPUTATION_SKILL) return `Cần người có Y tế ${AMPUTATION_SKILL}+ (cao nhất ở đây: ${docSkill})`;
-  if ((site.stock.medicine ?? 0) < AMPUTATION_MEDICINE) return `Cần ${AMPUTATION_MEDICINE} liều thuốc`;
-  const blade = findBlade(site);
-  if (!blade) return 'Cần một con dao/lưỡi trong kho';
-  if ((site.stock.bandage ?? 0) < 1) return 'Cần băng gạc';
-
-  site.stock[blade] = Math.max(0, (site.stock[blade] ?? 0) - 1);
-  site.stock.medicine -= AMPUTATION_MEDICINE;
-  site.stock.bandage -= 1;
-  v.infected = false;
-  v.bitten = false;
-  v.biteKnown = false;
-  v.infection = 0;
-  v.lostLimb = true;
-  v.bleed = 2; // the stump has to be watched for a while
-  v.hp = Math.max(1, v.hp - 25);
-  v.fatigue = Math.min(100, v.fatigue + 25);
-  v.morale = Math.max(0, v.morale - 15);
-  return null;
-}
-
-/** Cheapest bladed item in the store, used as the surgeon's knife. */
-function findBlade(site: Site): ItemId | null {
-  const cut = (Object.entries(ITEMS) as [string, (typeof ITEMS)[string]][])
-    .filter(([id, d]) => (site.stock[id] ?? 0) >= 1 && d.cls === 'short_blade')
-    .sort(([, a], [, b]) => a.kgPerUnit - b.kgPerUnit);
-  return cut.length ? cut[0][0] : null;
-}
-
-/** Combat strength after a lost limb (0.75) — applied where damage is dealt. */
-export const limbPenalty = (v: Survivor): number => (v.lostLimb ? AMPUTATION_REGEN_PENALTY : 1);
-/** Carrying capacity lost with a limb. */
-export const limbCarryPenalty = (v: Survivor): number => (v.lostLimb ? AMPUTATION_CARRY_PENALTY : 0);

@@ -3,12 +3,14 @@ import { chance, int, range } from '../core/rng';
 import { DAY, dayOf, dayOfYear, HOUR, monthOf, nextClock } from '../core/time';
 import type { World } from '../world/types';
 import { dist } from '../world/geo';
-import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY } from './data';
+import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY, ZOMBIES } from './data';
 import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
-import { survivorArmor, survivorWeapon } from './gear';
+import { armourAgainst, killShare } from './combat';
+import { survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
+import { zombieType } from './zombies';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
-import { bleedOf, CLEAN_SEPSIS_CHANCE, limbPenalty, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
+import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
@@ -297,11 +299,16 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   // Traps thin the wave first, but can never stop more than 70% of it.
   const strength = Math.max(raw * 0.3, raw - structureEffects(site.interior.structures).spikes);
   const guards = home.filter((v) => v.task?.kind === 'guard');
+  // Đợt tập kích là hỗn hợp loại zombie của đêm đó — loại quyết định sát thương & khả năng cắn.
+  const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true));
+  const wave = waveTypes.map((t) => ZOMBIES[t]);
+  const waveDmg = wave.reduce((a, z) => a + z.dmg, 0) / wave.length;
+  const waveBite = wave.reduce((a, z) => a + z.bite, 0) / wave.length;
   // Ai cầm gì thì đánh bằng món đó — trang bị là của từng người, không phải của kho.
   let defense = st.defenseStatic;
   for (const g of guards) {
     const w = survivorWeapon(site, g);
-    defense += (8 + 2 * skill(g, 'melee') * limbPenalty(g) + weaponDefense(w)) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
+    defense += (8 + 2 * skill(g, 'melee') + weaponDefense(w)) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
     if (w) {
       const worn = wearWeapon(s, site, w, 1);
       if (worn.broke) log(s, `${site.name}: ${describeWeapon(w)} của ${g.name} gãy trong đêm.`, 'warn');
@@ -310,6 +317,10 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   }
   defense += (home.length - guards.length) * 1.5;
   if (guards.length || st.watchtowers) defense *= 1.15;
+  // Pha 1: người gác hạ được bao nhiêu trước khi bầy vào tới tường.
+  const hardest = waveTypes.reduce((a, b) => (ZOMBIES[b].hp * (1 - ZOMBIES[b].armor) > ZOMBIES[a].hp * (1 - ZOMBIES[a].armor) ? b : a), waveTypes[0]);
+  const preKill = guards.length ? killShare(site, guards, hardest) : 0;
+  defense *= 1 + 0.5 * preKill;
 
   site.corpses += Math.round(Math.min(strength, defense) / 12);
   site.heat = Math.min(100, site.heat + 5);
@@ -336,8 +347,9 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   const shuffled = [...home].sort(() => range(s.rng, -1, 1));
   // Giáp của từng người biến trận đòn thành vết bầm: mất ít HP hơn, ít bị cắn hơn.
   for (const v of shuffled.slice(0, hurt)) {
-    const armour = survivorArmor(v);
-    const hit = range(s.rng, 10, 40) * (1 - armour);
+    const zType = waveTypes[int(s.rng, 0, waveTypes.length - 1)];
+    const armour = armourAgainst(v, zType);
+    const hit = (range(s.rng, 0.5, 1.5) * waveDmg) / 2 * (1 - armour);
     v.hp -= hit;
     // A hard hit tears something open: bleeding starts and needs a medic.
     if (hit >= 12) {
@@ -345,7 +357,7 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
       v.bleed = Math.min(3, Math.max(bleedOf(v), w.bleed));
       v.woundPart = w.part;
     }
-    if (chance(s.rng, 0.2 * (1 - armour))) {
+    if (chance(s.rng, (waveBite * (1 - armour)) / 0.5)) {
       v.bitten = true;
       v.biteKnown = true;
       if (chance(s.rng, 0.65)) v.infected = true;

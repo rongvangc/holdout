@@ -8,7 +8,6 @@ import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
 import { ITEMS } from '../data/items';
 import { GEAR_SLOTS, SLOT_LABEL, availableGear, equip, gearLabel, packCapacity, survivorArmor, survivorWeapon } from '../sim/gear';
-import { amputate } from '../sim/medical';
 import type { ViewProps } from './Game';
 
 const TASK_LABEL: Record<TaskKind, string> = {
@@ -55,7 +54,6 @@ function topSkills(v: Survivor): [SkillId, number][] {
 
 export function PeopleView({ s, world, site, refresh }: ViewProps) {
   const [sel, setSel] = useState<string | null>(null);
-  const [msg, setMsg] = useState('');
   const [onlyHere, setOnlyHere] = useState(false);
   const people = s.survivors.filter((v) => v.status === 'alive' && (!onlyHere || v.siteId === site.id));
   const siteName = (id: string) => s.sites.find((x) => x.id === id)?.name ?? '?';
@@ -210,7 +208,6 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                 {p.biteKnown && <span className="tag red">Bị cắn</span>}
                 {(p.bleed ?? 0) > 0 && <span className="tag red">Chảy máu {p.bleed}</span>}
                 {p.infected && <span className="tag red">Nhiễm {Math.round(p.infection ?? 0)}%</span>}
-                {p.lostLimb && <span className="tag amber">Cụt chi</span>}
                 {p.hp < 50 && <span className="tag red">Bị thương</span>}
               </td>
             </tr>
@@ -242,26 +239,13 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
           </div>
           <div className="dim">{ROLES[v.role].desc}</div>
           {v.woundPart && (
-            <div className="row" style={{ gap: 6 }}>
-              <span className="dim">
-                Vết thương: {v.woundPart === 'arm' ? 'tay' : v.woundPart === 'leg' ? 'chân' : v.woundPart === 'head' ? 'đầu' : 'thân'}
-                {(v.bleed ?? 0) > 0 ? ` · chảy máu ${v.bleed}/3` : ' · đã cầm máu'}
-              </span>
-              {(v.infected || v.bitten) && !v.lostLimb && (
-                <button
-                  title="Cắt bỏ tay/chân bị cắn để cứu mạng. Cần Phòng y tế cấp 2, người có Y tế 5+, 2 liều thuốc, 1 dao, 1 băng."
-                  onClick={() => {
-                    const err = amputate(s, site, v.id);
-                    setMsg(err ?? `Đã cắt chi cho ${v.name}.`);
-                    if (!err) refresh();
-                  }}
-                >
-                  Cắt chi...
-                </button>
-              )}
+            <div className="dim">
+              Vết thương:{' '}
+              {v.woundPart === 'arm' ? 'tay' : v.woundPart === 'leg' ? 'chân' : v.woundPart === 'head' ? 'đầu' : 'thân'}
+              {(v.bleed ?? 0) > 0 ? ` · chảy máu ${v.bleed}/3` : ' · đã cầm máu'}
+              {v.infected ? ` · nhiễm trùng ${Math.round(v.infection ?? 0)}%` : ''}
             </div>
           )}
-          {msg && <div className={msg.startsWith('Đã') ? 'ok' : 'amber'}>{msg}</div>}
 
           <div className="dither" />
           <div className="label">Trang bị</div>

@@ -673,17 +673,12 @@ Trước đây sim chỉ biết hai thứ: "bệnh" (`sickDays`) và "bị cắn
 - Nhiễm trùng tiến triển như cũ: +100 trong 3,5 ngày, đủ 100 → biến thành zombie.
 - **Kháng sinh** (`khang_sinh`, item mới — catalog innawoods không có): dùng khi nhiễm < 60, người có Y tế 4+, giảm **−40**; về 0 thì khỏi hẳn. Quá 60 thì vô phương.
 - Kháng sinh **chỉ lục soát được** (hiệu thuốc, phòng khám, bệnh viện), không chế tạo.
+- **Vết cắn cũng đi qua đường này**: nhiễm do bị cắn cũng là `infection`, nên kháng sinh dùng sớm (< 60, Y tế 4+) cứu được. Không có kháng sinh thì 3,5 ngày sau biến thành zombie — đó là toàn bộ lối thoát, không có phẫu thuật cắt chi.
 
-### 13.3 Cắt chi — lối thoát duy nhất của vết cắn
-
-Điều kiện: vết cắn ở **tay hoặc chân** (thân/đầu thì chịu), Phòng y tế **cấp 2**, người mổ có **Y tế 5+**, **2 liều thuốc + 1 dao + 1 băng gạc**.
-
-Kết quả: hết nhiễm trùng hoàn toàn, nhưng **vĩnh viễn −25% sức chiến đấu, −15 kg sức chở**, −15 tinh thần, mất 25 HP, và còn chảy máu 2 bậc phải theo dõi.
-
-### 13.4 Phân loại bệnh nhân
+### 13.3 Phân loại bệnh nhân
 
 Y tá chọn theo thứ tự: **nhiễm trùng còn chữa được → chảy máu → bệnh → HP thấp → rửa vết thương**. Mỗi người vẫn 1 lần được điều trị/ngày.
 
-### 13.5 Item y tế có tác dụng
+### 13.4 Item y tế có tác dụng
 
 `medKind()` phân loại item theo tên, nên **72 item y tế trong catalog đều vào được một trong 8 nhóm** (garo, băng cầm máu, băng, sát trùng, kháng sinh, giảm đau, truyền dịch, medkit) thay vì chỉ 2 id như trước.
