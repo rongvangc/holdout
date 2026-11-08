@@ -103,6 +103,15 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   }
   updateMorale(s, site, home, st.beds, st.recRoom);
 
+  // Máy phát điện: đốt 24 L (2 L/h × 12 h đêm) để đêm hôm đó không còn ×0.75 tăng thêm ở tasks.workMult.
+  if (st.generator && site.stock.fuel >= 24) {
+    take(site, 'fuel', 24);
+    site.powered = true;
+    site.heat = Math.min(100, site.heat + 6);
+    log(s, `${site.name}: máy phát chạy đêm, tiêu 24 L xăng.`, 'info');
+  } else {
+    site.powered = false;
+  }
   site.heat = Math.max(0, site.heat - 12);
   // Slow wear: walls and fences rot without upkeep, repair work tops them back up.
   if (site.fortify.level) site.fortify.hp = Math.max(0, site.fortify.hp - 0.25);

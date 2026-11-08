@@ -139,7 +139,7 @@ export function applyBuildWork(s: GameState, site: Site, p: Project, sec: number
   if (p.kind === 'module') {
     const room = site.interior.rooms.find((r) => r.id === p.roomId)!;
     room.module = p.module;
-    if (p.module === 'garden') site.plots[room.id] = { roomId: room.id, crop: null, growth: 0, tendedToday: 0, plantedDay: 0 };
+    if (p.module === 'garden' || p.module === 'herb_garden') site.plots[room.id] = { roomId: room.id, crop: null, growth: 0, tendedToday: 0, plantedDay: 0 };
   } else if (p.kind === 'partition') {
     const room = site.interior.rooms.find((r) => r.id === p.roomId);
     if (room) room.walled = true;

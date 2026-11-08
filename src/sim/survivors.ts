@@ -68,6 +68,7 @@ export function makeSurvivor(rng: Rng, id: string, day: number): Survivor {
     background: bg.label,
     traits,
     xp,
+    study: null as SkillId | null,
     role: 'idle',
     hp: range(rng, 70, 100),
     kcal: range(rng, 1400, 2600),

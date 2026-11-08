@@ -566,23 +566,44 @@ hr.thick {
   overflow: auto;
   padding: 12px;
 }
-.stockpanel table {
-  width: 100%;
-  border-collapse: collapse;
+.stockgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 4px;
 }
-.stockpanel td {
-  padding: 3px 0;
-  border-bottom: 1px dotted var(--line);
-  font-size: 12px;
+.stockcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
 }
-.stockpanel td .ico {
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-}
-.stockpanel td:last-child {
-  text-align: right;
+.stockcell .qty {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--fg);
   font-variant-numeric: tabular-nums;
+}
+.stockcell .unit {
+  font-size: 10px;
+  color: var(--faint);
+}
+.stockcell.faint .qty,
+.stockcell.faint .unit {
+  color: var(--faint);
+}
+.facility {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.feedmore {
+  align-self: stretch;
+  font-size: 11px;
+  padding: 4px 8px;
 }
 .center {
   display: grid;

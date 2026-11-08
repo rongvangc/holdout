@@ -48,6 +48,8 @@ export interface Survivor {
   background: string;
   traits: TraitId[];
   xp: Record<SkillId, number>;
+  /** Chosen self-study skill (Kệ sách); null = đọc ngẫu nhiên. */
+  study?: SkillId | null;
   role: Role;
   hp: number;
   kcal: number;
@@ -179,6 +181,8 @@ export interface Site {
   filth: number;
   corpses: number;
   wellDrawnToday: number;
+  /** Đêm có máy phát chạy (đặt ở nhịp ngày, tốn 24 L xăng). */
+  powered?: boolean;
   claimedDay: number;
 }
 

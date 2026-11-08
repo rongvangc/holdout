@@ -330,8 +330,9 @@ export function autoAssign(s: GameState, only?: Site): void {
     const paid = site.projects.some((p) => p.paid);
     const lowMaterials = (site.stock.wood < 40 || site.projects.some((p) => !p.paid)) && (site.heat < 40 || site.stock.wood < 15);
     const field = site.kind === 'field';
+    const farmArea = st.gardenArea + st.herbArea;
     const want: [Role, number][] = [
-      ['farmer', st.gardenArea ? Math.ceil((st.gardenArea * TEND_H_PER_M2_DAY) / 6) : 0],
+      ['farmer', farmArea ? Math.ceil((farmArea * TEND_H_PER_M2_DAY) / 6) : 0],
       ['guard', Math.max(1, Math.round(n * 0.15))],
       ['cook', st.kitchen ? Math.max(1, Math.round(n / 8)) : 0],
       ['water', st.filter || st.kitchen || st.well ? Math.max(1, Math.round(n / 8)) : 0],

@@ -8,7 +8,7 @@ import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
 import { applyBiteLaw, handleStrangers, killSurvivor, noteBite } from './lifecycle';
-import { addStock, alert, log, makeSite, newId, siteById, siteOfSource, take } from './state';
+import { addStock, alert, baseStats, log, makeSite, newId, siteById, siteOfSource, take } from './state';
 import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
 import { interrupt } from './tasks';
 import type { Expedition, GameState, Site, StockDelta, Survivor } from './types';
@@ -166,8 +166,10 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
             : 10 * MIN;
   const oneWay = kind === 'claim' || (kind === 'convoy' && !!o.relocate);
   const legs = oneWay ? 1 : 2;
-  const fuelL = o.mode === 'car' ? ((pathLen * legs) / 1000) * FUEL_L_PER_KM : 0;
-  const capacityKg = members.reduce((a, m) => a + 22 + 2 * skill(m, 'fitness'), 0) + (o.mode === 'car' ? 250 : 0);
+  const garageAtFrom = baseStats(s, from).garage;
+  const fuelPerKm = o.mode === 'car' && garageAtFrom ? 0.08 : FUEL_L_PER_KM;
+  const fuelL = o.mode === 'car' ? ((pathLen * legs) / 1000) * fuelPerKm : 0;
+  const capacityKg = members.reduce((a, m) => a + 22 + 2 * skill(m, 'fitness'), 0) + (o.mode === 'car' ? (garageAtFrom ? 330 : 250) : 0);
   const cargoKg = stockWeight(o.cargo ?? {});
 
   const day = dayOf(s.t);

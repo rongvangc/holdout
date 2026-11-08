@@ -3,7 +3,7 @@ import { dayOf, HOUR } from '../core/time';
 import type { World } from '../world/types';
 import { payProjects } from './build';
 import { dayEvent, raidEvent, strangersEvent } from './daily';
-import { FATIGUE_PER_HOUR, INTENSITY, KCAL_PER_HOUR, LAW_COOLDOWN_DAYS, LAW_DEFS, WATER_ML_PER_HOUR, type LawId, type Laws, type Role } from './data';
+import { FATIGUE_PER_HOUR, INTENSITY, KCAL_PER_HOUR, LAW_COOLDOWN_DAYS, LAW_DEFS, WATER_ML_PER_HOUR, type LawId, type Laws, type Role, type SkillId } from './data';
 import { onExpeditionEvent, runRoutes } from './expedition';
 import { killSurvivor, turnSurvivor } from './lifecycle';
 import { autoAssign, baseStats, log } from './state';
@@ -90,6 +90,12 @@ export function advanceTo(s: GameState, world: World, target: number): void {
     dispatch(s, world, nx.ev, nx.t);
     if (++guard > 200000) throw new Error('Simulation runaway');
   }
+}
+
+export function setStudy(s: GameState, sid: string, sk: SkillId | null): void {
+  const v = s.survivors.find((x) => x.id === sid);
+  if (!v || v.study === sk) return;
+  v.study = sk;
 }
 
 export function setRole(s: GameState, sid: string, role: Role): void {

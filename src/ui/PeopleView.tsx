@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { fmtDuration } from '../core/time';
 import { ROLES, SKILLS, TRAITS, type Role, type SkillId } from '../sim/data';
-import { setRole } from '../sim/engine';
+import { setRole, setStudy } from '../sim/engine';
 import { setCommute } from '../sim/commute';
-import { autoAssign } from '../sim/state';
+import { autoAssign, baseStats } from '../sim/state';
 import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
 import type { ViewProps } from './Game';
@@ -99,6 +99,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             <th>Tên</th>
             <th>Điểm</th>
             <th title="Ngủ ở nhà, ban ngày đi bộ sang điểm khác làm việc">Đi làm ở</th>
+            <th title="Đọc sách đúng skill đã gán (cần Kệ sách)">Tự học</th>
             <th>Vai trò</th>
             <th>Đang làm</th>
             <th>HP</th>
@@ -137,6 +138,23 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                         {x.name}
                       </option>
                     ))}
+                </select>
+              </td>
+              <td>
+                <select
+                  value={p.study ?? ''}
+                  disabled={p.location !== 'base' || !baseStats(s, site).bookshelf}
+                  onChange={(e) => {
+                    setStudy(s, p.id, e.target.value === '' ? null : (e.target.value as SkillId));
+                    refresh();
+                  }}
+                >
+                  <option value="">Ngẫu nhiên</option>
+                  {(Object.keys(SKILLS) as SkillId[]).map((k) => (
+                    <option key={k} value={k}>
+                      {SKILLS[k]}
+                    </option>
+                  ))}
                 </select>
               </td>
               <td>

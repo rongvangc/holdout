@@ -8,7 +8,8 @@
 
 ## Game assets
 - Icon vật phẩm/đồ hoạ trong game lấy từ innawoods.net (pixel art cộng đồng): tải về local `public/icons/innawoods/` kèm manifest.json + script fetch chạy lại được — nguồn asset mặc định cho icon game, tách khỏi UI chrome. Confidence: 0.7
-� UI "không chi tiết, khó đọc" và yêu cầu nâng cấp — UI nên đầy đủ thông tin nhưng trình bày dễ đọc, không làm sơ sài. Confidence: 0.6
+�- UI "không chi tiết, khó đọc" và yêu cầu nâng cấp — UI nên đầy đủ thông tin nhưng trình bày dễ đọc, không làm sơ sài. Confidence: 0.6
+- Thích hiển thị vật phẩm bằng icon (pixel art) trong UI/log thay vì chỉ text — ví dụ nhật ký sự kiện nên kèm icon + số lượng vật phẩm kiếm được cho sinh động. Confidence: 0.7
 
 ## Workflow
 - Khi được đưa danh sách vấn đề/vá lỗi để chọn, muốn xử lý hết tất cả luôn thay vì chỉ chọn phần bug nghiêm trọng — đề xuất fix toàn bộ (kể cả QoL/độ sâu gameplay), không chọn lọc. Confidence: 0.6

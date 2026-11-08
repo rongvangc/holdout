@@ -13,6 +13,7 @@ import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
 import { ReadoutBar } from './ReadoutBar';
+import { facilityChips } from './readout';
 import { saveGame } from './save';
 
 // Game seconds per real second.
@@ -119,7 +120,6 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
 
   const site = siteById(s, siteId);
   const st = baseStats(s, site);
-  const here = present(s, site).length;
   const alive = s.survivors.filter((v) => v.status === 'alive');
   const refresh = () => bump();
   const expandWorld = async (onProgress: (msg: string) => void): Promise<string | null> => {
@@ -145,7 +145,6 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
     setTimeout(() => setSaved(''), 1500);
   };
   const props: ViewProps = { s, world, site, setSite: setSiteId, refresh, expandWorld };
-  const pop = Math.max(1, st.population);
   const stock = site.stock;
 
   return (
@@ -194,53 +193,27 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
 
       <div className="stockpanel">
         <div className="label">Kho · {site.name}</div>
-        <table>
-          <tbody>
-            {STOCK_ORDER.map((k) => (
-              <tr key={k}>
-                <td className={stock[k] < 0.5 ? 'faint' : ''}>
-                  <Icon src={ITEM_ICONS[k]} size={20} /> {ITEMS[k].label}
-                </td>
-                <td>
-                  {fmtNum(stock[k])} <span className="faint">{ITEMS[k].unit}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="dither" />
-        <div className="label">Đủ dùng ({here} người)</div>
-        <div className="kv">
-          <span>Ăn</span>
-          <span className={(stock.food + stock.meals + stock.rawFood) / (pop * 2250) < 3 ? 'red' : ''}>
-            {((stock.food + stock.meals + stock.rawFood) / (pop * 2250)).toFixed(1)} ngày
-          </span>
-          <span>Uống</span>
-          <span className={stock.water / (pop * 3.3) < 2 ? 'red' : ''}>{(stock.water / (pop * 3.3)).toFixed(1)} ngày</span>
-          <span>Nước bẩn</span>
-          <span>
-            {Math.round(stock.dirtyWater)}/{st.waterCapacity} L
-          </span>
-          <span>Củi gom</span>
-          <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết (đi xa hơn)'}</span>
+        <div className="stockgrid">
+          {STOCK_ORDER.map((k) => (
+            <div
+              key={k}
+              className={`stockcell${stock[k] < 0.5 ? ' faint' : ''}`}
+              title={k === 'dirtyWater' ? `Nước bẩn/mưa: ${Math.round(stock[k])}/${st.waterCapacity} L` : `${ITEMS[k].label}: ${fmtNum(stock[k])} ${ITEMS[k].unit}`}
+            >
+              <Icon src={ITEM_ICONS[k]} size={24} />
+              <span className="qty">{fmtNum(stock[k])}</span>
+              <span className="unit">{ITEMS[k].unit}</span>
+            </div>
+          ))}
         </div>
         <div className="dither" />
-        <div className="label">Điểm này</div>
-        <div className="kv">
-          <span>Nhà vệ sinh</span>
-          <span className={st.latrines * 20 < st.population ? 'amber' : ''}>
-            {st.latrines} ({st.latrines * 20} người)
-          </span>
-          <span>Gia cố</span>
-          <span>
-            cấp {site.fortify.level} · {Math.round(site.fortify.hp)}%
-          </span>
-          <span>Rào</span>
-          <span>
-            cấp {site.fence.level} · {Math.round(site.fence.hp)}%
-          </span>
-          <span>Viễn chinh</span>
-          <span>{s.expeditions.length} đội</span>
+        <div className="facility">
+          {facilityChips(s, site).map((c) => (
+            <div key={c.id} className={`chip tone-${c.tone}`} title={c.hint}>
+              <StatusIcon name={c.icon} size={14} />
+              <span>{c.text}</span>
+            </div>
+          ))}
         </div>
         {s.gameOver && (
           <>
@@ -291,9 +264,12 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
       </div>
 
       <div className="feed">
-        {s.log.slice(-60).map((e, i) => (
+        {s.log.slice(-6).map((e, i) => (
           <LogLine key={i} e={e} />
         ))}
+        <button className="feedmore" onClick={() => setTab('log')}>
+          Nhật ký →
+        </button>
       </div>
 
       {toast && (

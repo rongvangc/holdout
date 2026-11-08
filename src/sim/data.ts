@@ -93,10 +93,11 @@ export const SLEEP_FLOOR_PER_HOUR = 9;
 export const HYGIENE_L_PER_DAY = 10; // Sphere: ~15 L total incl. drinking & cooking
 export const PEOPLE_PER_LATRINE = 20;
 
-export type CropId = 'rau' | 'khoai';
+export type CropId = 'rau' | 'khoai' | 'thuoc';
 export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: number }> = {
   rau: { label: 'Rau muống', days: 30, kcalPerM2: 475 },
   khoai: { label: 'Khoai lang', days: 110, kcalPerM2: 1720 },
+  thuoc: { label: 'Dược liệu', days: 40, kcalPerM2: 0 },
 };
 // ~6 h of hand labour keeps ~1200 m² of vegetables going (smallholder scale).
 export const TEND_H_PER_M2_DAY = 0.005;

@@ -98,6 +98,8 @@ export const STATUS_ICONS: Record<string, string> = {
   fence: '<path d="M3 3 H4 V14 H3 Z M8 3 H9 V14 H8 Z M13 3 H14 V14 H13 Z"/><path d="M2 6 H15 V8 H2 Z M2 10 H15 V12 H2 Z"/>',
   // Viễn chinh: mũi tên hành quân
   expedition: '<path d="M2 6 H10 V3 L14 7 V9 L10 13 V10 H2 Z"/>',
+  // Củi gom: khúc gỗ có vân cắt (lỗ xuyên)
+  salvage: '<path fill-rule="evenodd" d="M2 5 H14 V11 H2 Z M4 7 H6 V9 H4 Z M10 7 H12 V9 H10 Z"/>',
 };
 
 export function StatusIcon({ name, size = 16 }: { name: string; size?: number }): JSX.Element {

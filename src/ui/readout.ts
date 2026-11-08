@@ -24,7 +24,7 @@ export interface Readout {
 }
 
 export interface Chip {
-  id: 'heat' | 'filth' | 'corpses' | 'latrine' | 'fortify' | 'fence' | 'expeditions';
+  id: 'heat' | 'filth' | 'corpses' | 'latrine' | 'fortify' | 'fence' | 'expeditions' | 'salvage';
   icon: string;
   text: string;
   tone: Tone;
@@ -142,6 +142,13 @@ export function facilityChips(s: GameState, site: Site): Chip[] {
       text: `${s.expeditions.length} đội`,
       tone: 'ok',
       hint: `${s.expeditions.length} đội đang ngoài`,
+    },
+    {
+      id: 'salvage',
+      icon: 'salvage',
+      text: site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg` : 'hết',
+      tone: site.salvageLeft.wood > 0 ? 'ok' : 'warn',
+      hint: site.salvageLeft.wood > 0 ? `Củi gom tại điểm: ${Math.round(site.salvageLeft.wood)} kg còn` : 'Củi gom tại điểm: hết (đi xa hơn)',
     },
   ];
 }

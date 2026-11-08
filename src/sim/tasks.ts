@@ -12,9 +12,9 @@ import type { GameState, Site, Survivor, Task, TaskKind } from './types';
 const KCAL_MAX = 2800;
 const WATER_MAX = 3200;
 
-export function workMult(s: GameState, v: Survivor, sk?: SkillId): number {
+export function workMult(s: GameState, v: Survivor, sk?: SkillId, site?: Site): number {
   let m = speed(v, sk);
-  if (isNight(s.t)) m *= 0.75; // no electric light
+  if (isNight(s.t) && !site?.powered) m *= 0.75; // no electric light (Máy phát điện chạy thì bỏ hệ số)
   if (s.laws.noise) m *= 0.85;
   return m;
 }
@@ -47,7 +47,7 @@ export function finishTask(s: GameState, v: Survivor): void {
   switch (task.kind) {
     case 'build': {
       const p = site.projects.find((x) => x.id === task.target);
-      if (p) applyBuildWork(s, site, p, sec * workMult(s, v, 'construction'));
+      if (p) applyBuildWork(s, site, p, sec * workMult(s, v, 'construction', site));
       xp(s, v, 'construction', h);
       addHeat(s, site, 0.3, h);
       break;
@@ -75,7 +75,8 @@ export function finishTask(s: GameState, v: Survivor): void {
     case 'plant': {
       const plot = site.plots[task.target ?? ''];
       if (plot && f >= 0.99) {
-        plot.crop = (task.amount ?? 0) > 0 ? 'khoai' : 'rau';
+        const room = site.interior.rooms.find((r) => r.id === plot.roomId);
+        plot.crop = room?.module === 'herb_garden' ? 'thuoc' : (task.amount ?? 0) > 0 ? 'khoai' : 'rau';
         plot.growth = 0;
         plot.plantedDay = Math.floor(s.t / 86400) + 1;
         log(s, `${v.name} gieo ${CROPS[plot.crop].label} ở ${site.name}.`);
@@ -87,7 +88,7 @@ export function finishTask(s: GameState, v: Survivor): void {
     }
     case 'tend': {
       const plot = site.plots[task.target ?? ''];
-      if (plot) plot.tendedToday += h * workMult(s, v, 'farming');
+      if (plot) plot.tendedToday += h * workMult(s, v, 'farming', site);
       xp(s, v, 'farming', h);
       break;
     }
@@ -95,14 +96,29 @@ export function finishTask(s: GameState, v: Survivor): void {
       const plot = site.plots[task.target ?? ''];
       if (plot?.crop && f >= 0.99) {
         const room = site.interior.rooms.find((r) => r.id === plot.roomId);
-        const kcal = CROPS[plot.crop].kcalPerM2 * (room?.area ?? 0);
-        const seeds = Math.max(1, Math.round((room?.area ?? 0) / 100));
-        addStock(s, site, { rawFood: kcal, seeds });
-        s.stats.harvestedKcal += kcal;
-        log(s, `${site.name}: thu hoạch ${CROPS[plot.crop].label} +${Math.round(kcal).toLocaleString('vi')} kcal (giữ lại ngọn/dây để trồng tiếp).`, 'good', {
-          rawFood: kcal,
-          seeds,
-        });
+        const area = room?.area ?? 0;
+        if (plot.crop === 'thuoc') {
+          // Vườn thuốc: mỗi 40 ngày cho a/12 liều thuốc và tối đa a/6 băng (băng tốn 0.25 vải/cuộn).
+          const medicine = area / 12;
+          let bandage = area / 6;
+          const clothNeed = bandage * 0.25;
+          if (site.stock.cloth < clothNeed) {
+            bandage = site.stock.cloth / 0.25;
+            if (bandage < 0.2) bandage = 0;
+          }
+          if (bandage > 0) take(site, 'cloth', bandage * 0.25);
+          addStock(s, site, { medicine, bandage });
+          log(s, `${site.name}: thu hoạch dược liệu +${medicine.toFixed(1)} liều thuốc` + (bandage > 0 ? ` +${bandage.toFixed(1)} băng gạc.` : '.'), 'good', { medicine, bandage });
+        } else {
+          const kcal = CROPS[plot.crop].kcalPerM2 * area;
+          const seeds = Math.max(1, Math.round(area / 100));
+          addStock(s, site, { rawFood: kcal, seeds });
+          s.stats.harvestedKcal += kcal;
+          log(s, `${site.name}: thu hoạch ${CROPS[plot.crop].label} +${Math.round(kcal).toLocaleString('vi')} kcal (giữ lại ngọn/dây để trồng tiếp).`, 'good', {
+            rawFood: kcal,
+            seeds,
+          });
+        }
         plot.crop = null;
         plot.growth = 0;
       }
@@ -122,14 +138,14 @@ export function finishTask(s: GameState, v: Survivor): void {
           p.sickDays = 0;
           log(s, `${v.name} chữa khỏi bệnh cho ${p.name}.`, 'good');
         }
-        if (task.amount === 2) p.hp = Math.min(100, p.hp + 15 * workMult(s, v, 'medical'));
+        if (task.amount === 2) p.hp = Math.min(100, p.hp + 15 * workMult(s, v, 'medical', site));
         p.treatedToday = true;
       }
       xp(s, v, 'medical', h);
       break;
     }
     case 'clean':
-      site.filth = Math.max(0, site.filth - 10 * h * workMult(s, v, 'fitness'));
+      site.filth = Math.max(0, site.filth - 10 * h * workMult(s, v, 'fitness', site));
       xp(s, v, 'fitness', h * 0.5);
       break;
     case 'corpses': {
@@ -139,7 +155,7 @@ export function finishTask(s: GameState, v: Survivor): void {
       break;
     }
     case 'gather': {
-      const m = workMult(s, v, 'fitness') * h;
+      const m = workMult(s, v, 'fitness', site) * h;
       const fromBase = site.salvageLeft.wood > 0;
       const k = fromBase ? 1 : 0.5;
       const wood = Math.min(fromBase ? site.salvageLeft.wood : Infinity, 4 * m * k);
@@ -153,17 +169,24 @@ export function finishTask(s: GameState, v: Survivor): void {
       break;
     }
     case 'read':
-      if (f >= 0.99) {
-        const sk = pick(s.rng, Object.keys(SKILLS) as SkillId[]);
-        if (gainXp(v, sk, 30 * h)) log(s, `${v.name} đọc sách, lên cấp ${SKILLS[sk]}.`, 'good');
-      }
-      v.morale = Math.min(100, v.morale + 1 * h);
+      applyReadResult(s, v, h);
       break;
     case 'leisure':
       v.morale = Math.min(100, v.morale + (baseStats(s, site).recRoom ? 3 : 1.5) * h);
       break;
     default:
       if (role && task.kind !== 'sleep' && task.kind !== 'eat' && task.kind !== 'drink') xp(s, v, role, h * 0.2);
+  }
+}
+
+/** Hoàn tất một lần đọc: đúng skill tự học (nếu đã gán qua Kệ sách) — không set thì random như cũ. */
+export function applyReadResult(s: GameState, v: Survivor, h: number): void {
+  if (h >= 0.99) {
+    const sk = v.study ?? pick(s.rng, Object.keys(SKILLS) as SkillId[]);
+    if (gainXp(v, sk, 30 * h)) log(s, `${v.name} đọc sách, lên cấp ${SKILLS[sk]}.`, 'good');
+    v.morale = Math.min(100, v.morale + 1 * h);
+  } else {
+    v.morale = Math.min(100, v.morale + 1 * h);
   }
 }
 
@@ -231,7 +254,7 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
     }
     case 'cook': {
       if (st.kitchen && stock.rawFood >= 300 && stock.wood >= 0.5 && stock.meals < pop * 2200) {
-        const amount = take(site, 'rawFood', 3000 * workMult(s, v, 'cooking'));
+        const amount = take(site, 'rawFood', 3000 * workMult(s, v, 'cooking', site));
         take(site, 'wood', 0.5);
         start(s, v, 'cook', 'light', 1500, { amount });
         return true;
@@ -245,18 +268,25 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
         const room = site.interior.rooms.find((r) => r.id === plot.roomId);
         if (!room) continue;
         if (plot.crop && plot.growth >= 1) {
-          start(s, v, 'harvest', 'moderate', (room.area * 30) / workMult(s, v, 'farming'), { target: plot.roomId });
+          start(s, v, 'harvest', 'moderate', (room.area * 30) / workMult(s, v, 'farming', site), { target: plot.roomId });
           return true;
         }
-        if (!plot.crop && stock.seeds >= 1 && !night) {
-          take(site, 'seeds', 1);
-          // Same kcal/m²/day either way: fast greens when hungry, storable potato otherwise.
-          const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 30;
-          start(s, v, 'plant', 'light', (room.area * 40) / workMult(s, v, 'farming'), {
-            target: plot.roomId,
-            amount: hungry ? 0 : 1,
-          });
-          return true;
+        if (!plot.crop && !night) {
+          if (room.module === 'herb_garden') {
+            // Vườn thuốc không tốn hạt giống.
+            start(s, v, 'plant', 'light', (room.area * 40) / workMult(s, v, 'farming', site), { target: plot.roomId });
+            return true;
+          }
+          if (stock.seeds >= 1) {
+            take(site, 'seeds', 1);
+            // Same kcal/m²/day either way: fast greens when hungry, storable potato otherwise.
+            const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 30;
+            start(s, v, 'plant', 'light', (room.area * 40) / workMult(s, v, 'farming', site), {
+              target: plot.roomId,
+              amount: hungry ? 0 : 1,
+            });
+            return true;
+          }
         }
         if (plot.crop && plot.tendedToday < room.area * TEND_H_PER_M2_DAY && !night) {
           start(s, v, 'tend', 'moderate', HOUR, { target: plot.roomId });
@@ -317,19 +347,19 @@ function waterWork(s: GameState, v: Survivor, site: Site, st: BaseStats, pop: nu
   const stock = site.stock;
   if (stock.water < pop * 8 && stock.dirtyWater >= 2) {
     if (st.filter) {
-      const amount = take(site, 'dirtyWater', 12 * workMult(s, v, 'crafting'));
+      const amount = take(site, 'dirtyWater', 12 * workMult(s, v, 'crafting', site));
       start(s, v, 'filter', 'light', HOUR, { amount });
       return true;
     }
     if (st.kitchen && stock.wood >= 1) {
-      const amount = take(site, 'dirtyWater', 8 * workMult(s, v, 'crafting'));
+      const amount = take(site, 'dirtyWater', 8 * workMult(s, v, 'crafting', site));
       take(site, 'wood', 1);
       start(s, v, 'boil', 'light', HOUR, { amount });
       return true;
     }
   }
   if (st.well && stock.dirtyWater < st.waterCapacity - 50 && site.wellDrawnToday < 1500) {
-    start(s, v, 'draw', 'moderate', HOUR, { amount: 120 * workMult(s, v, 'fitness') });
+    start(s, v, 'draw', 'moderate', HOUR, { amount: 120 * workMult(s, v, 'fitness', site) });
     return true;
   }
   return false;

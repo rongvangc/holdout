@@ -150,12 +150,13 @@ describe('siteChips', () => {
 });
 
 describe('facilityChips', () => {
-  it('latrine warn khi thiếu, fortify/fence đúng text, expeditions "0 đội"', () => {
+  it('latrine warn khi thiếu, fortify/fence đúng text, expeditions "0 đội", salvage củi gom', () => {
     const { s, site } = setup();
     site.fortify = { level: 2, hp: 78.4 };
     site.fence = { level: 1, hp: 100 };
+    site.salvageLeft.wood = 120;
     const chips = facilityChips(s, site);
-    expect(chips.map((c) => c.id)).toEqual(['latrine', 'fortify', 'fence', 'expeditions']);
+    expect(chips.map((c) => c.id)).toEqual(['latrine', 'fortify', 'fence', 'expeditions', 'salvage']);
     const st = baseStats(s, site);
     expect(chips[0].text).toBe(String(st.latrines));
     expect(chips[0].tone).toBe(st.latrines * 20 < st.population ? 'warn' : 'ok');
@@ -166,5 +167,13 @@ describe('facilityChips', () => {
     expect(chips[2].hint).toBe('Rào: cấp 1 · 100% HP');
     expect(chips[3].text).toBe('0 đội');
     expect(chips[3].hint).toBe('0 đội đang ngoài');
+    expect(chips[4].text).toBe('120 kg');
+    expect(chips[4].tone).toBe('ok');
+    expect(chips[4].hint).toBe('Củi gom tại điểm: 120 kg còn');
+    site.salvageLeft.wood = 0;
+    const c2 = facilityChips(s, site);
+    expect(c2[4].text).toBe('hết');
+    expect(c2[4].tone).toBe('warn');
+    expect(c2[4].hint).toBe('Củi gom tại điểm: hết (đi xa hơn)');
   });
 });
