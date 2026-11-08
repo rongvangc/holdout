@@ -177,7 +177,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             <span className="faint">/</span>
             <span className={site.filth > 40 ? 'red' : ''} title="Độ bẩn — tăng nguy cơ bệnh cho người ở đây">Độ bẩn {Math.round(site.filth)}</span>
             <span className="faint">/</span>
-            <span title="Số xác chết chưa dọn — người dọn mỗi ngày">Xác {Math.round(site.corpses)}</span>
+            <span title="Xác người chết chưa xử lý — mỗi xác làm độ bẩn tăng mỗi ngày; worker làm Vệ sinh sẽ đốt (tốn gỗ) hoặc chôn">Xác chết {Math.round(site.corpses)}</span>
           </span>
         </div>
         <div className="stat" title="Điểm phòng thủ của điểm này khi tập kích đêm: gia cố + rào + tháp canh + công trình">
@@ -198,7 +198,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
       </div>
 
       <div className="stockpanel">
-        <div className="label">Tồn kho · {site.name}</div>
+        <div className="label">Kho · {site.name}</div>
         <table>
           <tbody>
             {STOCK_ORDER.map((k) => (
