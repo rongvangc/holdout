@@ -23,7 +23,6 @@ export type ModuleId =
   | 'kiln'
   | 'tailor'
   | 'smokehouse'
-  | 'crock'
   | 'cellar'
   | 'lighting'
   | 'fridge'
@@ -587,21 +586,6 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     levels: [
       { cost: { clay: 24, stone: 16, wood: 10 }, workSec: 8 * H, note: 'Cấp 2: hỏng chỉ còn 35% tốc độ thường' },
       { cost: { stone: 30, plate: 2 }, workSec: 12 * H, note: 'Cấp 3: hầm sâu, 25% tốc độ thường' },
-    ],
-  },
-  crock: {
-    label: 'Chum ủ',
-    icon: '◍',
-    color: '#6a8a6a',
-    placement: 'indoor',
-    minArea: 2,
-    maxPerSite: 2,
-    workSec: () => 1 * H,
-    cost: () => ({ clay: 10, wood: 2, salt: 1 }),
-    desc: 'Muối chua rau củ, ủ mắm. Không cần nhiệt, nhưng cần muối.',
-    levels: [
-      { cost: { clay: 12, wood: 4, salt: 3 }, workSec: 2 * H, note: 'Cấp 2: ủ được thịt cá, thêm chum' },
-      { cost: { clay: 16, salt: 6 }, workSec: 3 * H, note: 'Cấp 3: ủ mắm lâu năm, tinh thần cao' },
     ],
   },
   shelter: {

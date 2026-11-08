@@ -44,8 +44,6 @@ const FOOD_RECIPES: Recipe[] = [
   { id: 'r_meals', out: 'meals', qty: 3000, station: 'kitchen', level: 1, in: [['rawFood', 3000], ['water', 2], ['wood', 0.5]], workSec: 25 * MIN, skill: 'cooking', note: 'Nấu một mẻ cơm cho cả điểm' },
   { id: 'r_meals_big', out: 'meals', qty: 8000, station: 'kitchen', level: 2, in: [['rawFood', 8000], ['water', 5], ['wood', 1]], workSec: 45 * MIN, skill: 'cooking', note: 'Bếp cấp 2: nấu mẻ lớn bằng than' },
   { id: 'r_dry', out: 'food', qty: 4000, station: 'smokehouse', level: 1, in: [['rawFood', 4000], ['salt', 1], ['wood', 2]], workSec: 3 * HOUR, skill: 'cooking', note: 'Hun khói: để được hàng chục ngày' },
-  { id: 'r_pickle', out: 'food', qty: 3500, station: 'crock', level: 1, in: [['rawFood', 3500], ['salt', 1], ['dirtyWater', 2]], workSec: 6 * HOUR, skill: 'cooking', note: 'Muối chua: không cần lửa, cần muối' },
-  { id: 'r_pickle_meat', out: 'food', qty: 3000, station: 'crock', level: 2, in: [['rawFood', 3000], ['salt', 2], ['oil', 0.5]], workSec: 8 * HOUR, skill: 'cooking', note: 'Chum cấp 2: ủ mặn' },
 ];
 
 /** Cooking: rawFood is the bulk, one fresh ingredient is what makes it a meal. */
@@ -61,8 +59,8 @@ const DISH_RECIPES: Recipe[] = [
   { id: 'rd_ca_kho', out: 'mon_ca_kho', qty: 3, station: 'kitchen', level: 2, in: [['ca', 1.5], ['rawFood', 600], ['salt', 0.3]], workSec: 90 * MIN, skill: 'cooking', note: 'Kho lâu, cần bếp cấp 2' },
   { id: 'rd_thit_kho', out: 'mon_thit_kho', qty: 3, station: 'kitchen', level: 2, in: [['thit', 1.5], ['rawFood', 600], ['salt', 0.4]], workSec: 2 * HOUR, skill: 'cooking', note: 'Món đám cưới. Cần bếp cấp 2' },
   { id: 'rd_banh_mi', out: 'mon_banh_mi', qty: 6, station: 'kiln', level: 2, in: [['bot', 1], ['water', 2]], workSec: 2 * HOUR, skill: 'cooking', note: 'Cần lò nung cấp 2' },
-  { id: 'r_pho_mai', out: 'pho_mai', qty: 2, station: 'crock', level: 1, in: [['sua', 4], ['salt', 0.2]], workSec: 90 * MIN, skill: 'cooking', note: 'Sữa để được lâu: phô mai giữ hàng tháng' },
-  { id: 'rd_dua_muoi', out: 'mon_dua_muoi', qty: 6, station: 'crock', level: 1, in: [['rau', 2], ['salt', 0.4], ['dirtyWater', 2]], workSec: 4 * HOUR, skill: 'cooking', note: 'Ủ chua: để được hàng tháng, có vitamin' },
+  { id: 'r_pho_mai', out: 'pho_mai', qty: 2, station: 'kitchen', level: 2, in: [['sua', 4], ['salt', 0.2]], workSec: 90 * MIN, skill: 'cooking', note: 'Sữa để được lâu: phô mai giữ hàng tháng' },
+  { id: 'rd_dua_muoi', out: 'mon_dua_muoi', qty: 6, station: 'kitchen', level: 1, in: [['rau', 2], ['salt', 0.4], ['dirtyWater', 2]], workSec: 4 * HOUR, skill: 'cooking', note: 'Ủ chua: để được hàng tháng, có vitamin' },
 ];
 
 /** Form → bill of materials. This is the rule set that scales to every weapon in the catalog. */

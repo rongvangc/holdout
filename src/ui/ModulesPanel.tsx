@@ -121,7 +121,6 @@ function effectOf(id: ModuleId, site: Site, st: ReturnType<typeof baseStats>, ro
     case 'kiln':
     case 'tailor':
     case 'smokehouse':
-    case 'crock':
       return `trạm chế tạo cấp ${stationLevel(site, id)}`;
     default:
       return `${rooms.length} phòng`;

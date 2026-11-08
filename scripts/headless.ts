@@ -205,7 +205,7 @@ function upgradeStations(s: GameState, base: Site): void {
 }
 
 /** Crafting stations are opt-in: only queue what the pantry can pay for today. */
-const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'crock', 'smokehouse', 'kiln', 'carpentry', 'generator', 'lighting', 'fridge', 'water_pump', 'power_tools', 'electric_fence', 'radio'];
+const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'smokehouse', 'kiln', 'carpentry', 'generator', 'lighting', 'fridge', 'water_pump', 'power_tools', 'electric_fence', 'radio'];
 /** Queue a craft for the first input the site is short of, if a recipe exists. */
 function craftMissing(s: GameState, base: Site, cost: Partial<Record<string, number>>): boolean {
   if (base.stock.wood < 160 || base.stock.scrap < 80) return false;
@@ -234,7 +234,7 @@ function buildStations(s: GameState, base: Site): void {
   if (base.stock.wood < woodGate || base.stock.scrap < (supplyFirst ? 25 : 60)) return;
   const stable = pop > 0 && food > pop * 2250 * 10;
   const have = new Set(base.interior.rooms.filter((r) => r.module).map((r) => r.module!));
-  const SUPPLY: ModuleId[] = ['barn', 'coop', 'pond', 'smokehouse', 'cellar', 'crock'];
+  const SUPPLY: ModuleId[] = ['barn', 'coop', 'pond', 'smokehouse', 'cellar'];
   const order = supplyFirst ? [...SUPPLY, ...STATION_ORDER.filter((x) => !SUPPLY.includes(x))] : STATION_ORDER;
   for (const id of order) {
     if (have.has(id)) continue;

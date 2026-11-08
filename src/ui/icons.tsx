@@ -47,7 +47,6 @@ export const MODULE_ICONS: Record<ModuleId, string> = {
   kiln: "/icons/pixel/filter.png",
   tailor: "/icons/pixel/storage.png",
   smokehouse: "/icons/pixel/kitchen.png",
-  crock: "/icons/pixel/storage.png",
   cellar: "/icons/pixel/storage.png",
   lighting: "/icons/pixel/rec_room.png",
   fridge: "/icons/pixel/storage.png",

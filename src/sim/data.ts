@@ -104,7 +104,8 @@ export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: num
   // Năng suất THẬT (không còn 78 kcal/m²/ngày):
   //  rau muống: ~0,3 kg/m² mỗi lứa 25 ngày ≈ 90 kcal/m² → 3,6 kcal/m²/ngày
   //  khoai lang: ~2 kg/m² mỗi vụ 100 ngày ≈ 1.200 kcal/m² → 12 kcal/m²/ngày (cây lương thực)
-  rau: { label: 'Rau muống', days: 25, kcalPerM2: 90 },
+  // 0,4 kg/m² mỗi lứa 25 ngày ≈ 120 kcal/m² (rau là cây bổ sung, khoai là cây calo).
+  rau: { label: 'Rau muống', days: 25, kcalPerM2: 120 },
   khoai: { label: 'Khoai lang', days: 90, kcalPerM2: 1080 },
   thuoc: { label: 'Dược liệu', days: 40, kcalPerM2: 0 },
 };

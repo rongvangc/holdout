@@ -405,13 +405,21 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
           // Giống để dành từ vụ trước (nhánh harvest trả lại); vườn thuốc không tốn giống.
           if (!herb && stock.seeds < 1) continue;
           if (!herb) take(site, 'seeds', 1);
-          // Luôn giữ một vòng rau (25 ngày) để có thu hoạch sớm; phần còn lại trồng khoai
-          // (90 ngày) để dành. Trước đây cả ruộng trồng khoai nên 3 tháng đầu không có gì ăn.
-          const hasRau = Object.values(site.plots).some((p) => p.crop === 'rau');
-          const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 30;
+          // Luôn giữ MỘT vòng rau (25 ngày) để có thu hoạch sớm; phần còn lại trồng khoai
+          // (90 ngày) vì khoai cho 12 kcal/m²/ngày so với rau 3,6 — gấp hơn 3 lần.
+          // Lỗi cũ: hễ kho dưới 30 ngày lương là gieo rau cho TOÀN BỘ khoảnh, đúng lúc
+          // cần calo nhất lại trồng cây ít calo nhất → năng suất chỉ còn 1/3.
+          const storedDays = (stock.food + stock.rawFood + stock.meals) / (pop * 2250);
+          const urgent = storedDays < 12; // còn quá ít thì dồn hết sang rau (25 ngày)
+          // 1/3 số khoảnh giữ rau để có thu hoạch rải đều (mỗi ~7 ngày một khoảnh chín),
+          // 2/3 trồng khoai — cây calo. Trước đây hoặc toàn rau (đói) hoặc toàn khoai
+          // (3 tháng không có gì ăn).
+          const plots = Object.values(site.plots);
+          const rauNow = plots.filter((p) => p.crop === 'rau').length;
+          const wantRau = urgent || rauNow < Math.max(1, Math.ceil(plots.length / 3));
           start(s, v, 'plant', 'light', (room.area * 40) / workMult(s, v, 'farming', site), {
             target: plot.roomId,
-            amount: hungry || herb || !hasRau ? 0 : 1,
+            amount: herb || wantRau ? 0 : 1,
           });
           return true;
         }

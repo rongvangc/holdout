@@ -513,7 +513,6 @@ Cấp 1 là lúc xây xong; `ModuleDef.levels` là các bậc nâng tiếp; `Roo
 | Lò nung | sân | nung đêm, đỡ tốn củi | nung đêm ×2 |
 | Xưởng may | trong nhà | mũ cứng, ủng, giáp nhồi | giáp tấm, áo giáp |
 | Bếp hun khói | sân | hun nhanh | mẻ lớn |
-| Chum ủ | trong nhà | ủ thịt cá | mắm lâu năm |
 | Bàn thợ (cũ) | trong nhà | ắc quy, đèn dầu | pin mặt trời |
 | Bếp củi (cũ) | bất kỳ | mẻ 8000 kcal | đỡ tốn củi |
 
@@ -551,7 +550,7 @@ Trang bị là **của từng người**, không phải của kho. Mỗi ngườ
 
 - Mọi item có `kcal` đều ăn được, chọn món nặng/kcal cao trước.
 - Hỏng theo `rotPerDay` riêng: đồ hộp 0.5%/ngày, món tươi 6%/ngày; nắng nóng ×(nếu >1%), Kho có khoá giảm nửa.
-- Nấu (`bếp`), hun khói (`bếp hun khói`), muối chua (`chum ủ`) biến `rawFood` thành món để dành.
+- Nấu (`bếp củi`) và hun khói (`bếp hun khói`) biến `rawFood` thành món để dành. Dưa muối và phô mai cũng làm ở bếp — chúng là đồ ăn, không phải một nghề riêng.
 
 ### 12.7 Đạn và độ mòn (`sim/equipment.ts`)
 
@@ -596,7 +595,7 @@ Món ăn (kcal/phần · tinh thần khi ăn · trạm/cấp):
 | Cá kho | 2100 | **+8** | bếp **2** |
 | Thịt kho | 2600 | **+10** | bếp **2** |
 | Bánh mì | 1300 | +2 | lò nung 2 |
-| Dưa muối | 400 | +3 | chum ủ 1 (hỏng 4%/ngày) |
+| Dưa muối | 400 | +3 | bếp 1 (hỏng 4%/ngày) |
 
 - **Chọn món trước**: người sống sót ăn món có tinh thần cao nhất đang có, rồi mới tới cơm/đồ khô. Tinh thần cộng thêm tối đa +12/bữa.
 - Vì mỗi món là một item riêng, **nhàm món trở thành cơ chế thật**: ăn mãi thịt kho cũng chán như ăn mãi cơm.
@@ -790,7 +789,7 @@ Chuồng gà và ao cá chỉ là đạm quy mô nhỏ. **Trại chăn nuôi** m
 - **Yêu cầu**: sân ≥ 12 m², tối đa 2 trại/điểm, cấp 1 cần 26 gỗ + 6 dây. Nước: **uống nước bẩn trước**, chỉ lấy nước sạch khi người còn dư ≥ 3 ngày.
 - **Chăn thả**: ở điểm `field` hệ số cỏ = 1 (đỡ 45% cám), trong sân phố = 0,55. Sữa cũng nhân theo cỏ.
 - **Sản phẩm**: `sua` (640 kcal/L, hỏng 12%/ngày), `thit` khi mổ, và **phân bón**: điểm có trại thì cây lớn nhanh **+25%**.
-- **Phô mai**: công thức `r_pho_mai` (chum ủ cấp 1): 4 L sữa + 0,2 muối → 2 phô mai (3.200 kcal/kg, hỏng 0,4%/ngày).
+- **Phô mai**: công thức `r_pho_mai` (bếp cấp 2): 4 L sữa + 0,2 muối → 2 phô mai (3.200 kcal/kg, hỏng 0,4%/ngày).
 - **Ồn**: heat +1/ngày mỗi trại — nuôi nhiều thì dễ bị tập kích hơn.
 - **Thiếu nước/cám** → sữa còn 30%, log cảnh báo, độ bẩn tăng.
 
