@@ -232,7 +232,7 @@ export const MATERIALS: Record<string, ItemDef> = {
     category: 'component',
     tier: 3,
     mechanic: 'power_source',
-    icon: P + 'items/electronic/solar-charger__x.png',
+    icon: P + 'items/electronics/solar-charger__511.png',
     desc: 'Lục soát hiếm ở toà nhà văn phòng/trạm điện. Sạc ắc quy bằng nắng.',
   },
  };

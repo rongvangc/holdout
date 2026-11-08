@@ -108,6 +108,23 @@ export const DISHES: Record<string, ItemDef> = {
     cureDays: 1,
   }),
 };
+/** Icon cho từng món: món nấu lấy icon nguyên liệu gần nhất trong bộ innawoods. */
+const DISH_ICONS: Record<string, string> = {
+  mon_com: 'items/nutrition/rice__285.png',
+  mon_com_rau: 'items/nutrition/soup-stock__263.png',
+  mon_chao: 'items/nutrition/soup-stock__263.png',
+  mon_khoai: 'items/nutrition/potatoes__456.png',
+  mon_canh: 'items/nutrition/soup-stock__263.png',
+  mon_rau_xao: 'items/nutrition/buckwheat__723.png',
+  mon_ca_kho: 'items/nutrition/soup-stock__263.png',
+  mon_thit_kho: 'items/nutrition/tinned-meat__266.png',
+  mon_trung_chien: 'items/nutrition/rice__285.png',
+  mon_dau_hu: 'items/nutrition/buckwheat__723.png',
+  mon_banh_mi: 'items/nutrition/loaf-of-white-bread__2460.png',
+  mon_dua_muoi: 'items/nutrition/buckwheat__723.png',
+};
+for (const [id, icon] of Object.entries(DISH_ICONS)) if (DISHES[id]) DISHES[id].icon = P + icon;
+
 
 /** Everything the cooking layer adds. */
 export const FOOD_ITEMS: Record<string, ItemDef> = { ...INGREDIENTS, ...DISHES };
