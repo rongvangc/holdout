@@ -15,19 +15,16 @@ function setup() {
   site.stock.scrap = 800;
   site.stock.cloth = 400;
   site.stock.stone = 400;
-  site.stock.charcoal = 100;
   site.stock.clay = 200;
   site.stock.tools = 5;
   site.stock.parts = 20;
   site.stock.salt = 20;
   site.stock.rawFood = 50000;
   site.stock.water = 300;
-  site.stock.brick = 300;
   site.stock.plate = 40;
   site.stock.gear = 20;
   site.stock.wire = 40;
   site.stock.stone = 400;
-  site.stock.charcoal = 100;
   return { s, site };
 }
 

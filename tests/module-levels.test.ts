@@ -17,13 +17,11 @@ function setup() {
   site.stock.wire = 60;
   site.stock.cloth = 400;
   site.stock.thread = 200;
-  site.stock.brick = 400;
   site.stock.lime = 200;
   site.stock.clay = 400;
   site.stock.stone = 400;
   site.stock.plank = 100;
   site.stock.hinge = 60;
-  site.stock.charcoal = 200;
   site.stock.medicine = 40;
   site.stock.rope = 60;
   site.stock.tools = 6;

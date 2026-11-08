@@ -183,7 +183,7 @@ export function queueRepair(s: GameState, site: Site, weaponId: string): string 
   const cond = conditionOf(site, weaponId);
   if (cond >= 0.98) return 'Món này còn mới';
   const cost = repairCost({ id: weaponId, mitigation: 0, biteMult: 1, durability: 60, noise: 0, isFirearm: false, ammo: null, condition: cond });
-  const delta = { scrap: cost.scrap, charcoal: cost.charcoal } as StockDelta;
+  const delta = { scrap: cost.scrap, wood: cost.wood } as StockDelta;
   if (!canAfford(site, delta)) return `Thiếu vật tư: ${fmtCostShort(delta)}`;
   if (site.projects.some((p) => p.kind === 'repair' && p.recipe === weaponId)) return 'Đang sửa món này rồi';
   site.projects.push({

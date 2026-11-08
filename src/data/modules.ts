@@ -82,8 +82,8 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: () => ({ wood: 10, scrap: 6 }),
     desc: 'Nấu gạo/khoai thành bữa ăn, đun sôi nước bẩn (tốn củi). Không có bếp, đồ sống chỉ ăn được một nửa năng lượng.',
     levels: [
-      { cost: { scrap: 10, brick: 8, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: nấu mẻ lớn bằng than' },
-      { cost: { brick: 20, plate: 2, wood: 8 }, workSec: 7 * H, note: 'Cấp 3: bếp cho cả điểm, đỡ tốn củi' },
+      { cost: { scrap: 10, stone: 8, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: nấu mẻ lớn bằng than' },
+      { cost: { stone: 20, plate: 2, wood: 8 }, workSec: 7 * H, note: 'Cấp 3: bếp cho cả điểm, đỡ tốn củi' },
     ],
   },
   storage: {
@@ -142,7 +142,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Chuẩn Sphere: 1 nhà vệ sinh / 20 người. Thiếu → bẩn → dịch bệnh.',
     levels: [
       { cost: { wood: 6, clay: 10, stone: 6 }, workSec: 2 * H, note: 'Cấp 2: 25 người/nhà' },
-      { cost: { brick: 8, lime: 6 }, workSec: 4 * H, note: 'Cấp 3: 30 người/nhà, đỡ mùi' },
+      { cost: { stone: 8, lime: 6 }, workSec: 4 * H, note: 'Cấp 3: 30 người/nhà, đỡ mùi' },
     ],
   },
   water_tank: {
@@ -172,7 +172,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Lọc nước bẩn → sạch 12 L/giờ, không tốn củi.',
     levels: [
       { cost: { scrap: 14, cloth: 6, wood: 8 }, workSec: 4 * H, note: 'Cấp 2: 18 L/giờ' },
-      { cost: { plate: 2, charcoal: 4, cloth: 6 }, workSec: 7 * H, note: 'Cấp 3: 24 L/giờ' },
+      { cost: { plate: 2, clay: 4, cloth: 6 }, workSec: 7 * H, note: 'Cấp 3: 24 L/giờ' },
     ],
   },
   garden: {
@@ -216,7 +216,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Nguồn nước bẩn ổn định ~1500 L/ngày. Phải cách nhà vệ sinh tối thiểu 10 m.',
     levels: [
       { cost: { scrap: 18, rope: 6, wood: 10 }, workSec: 6 * H, note: 'Cấp 2: 2000 L/ngày' },
-      { cost: { plate: 3, gear: 1, brick: 8 }, workSec: 9 * H, note: 'Cấp 3: 2500 L/ngày, bơm tay' },
+      { cost: { plate: 3, gear: 1, stone: 8 }, workSec: 9 * H, note: 'Cấp 3: 2500 L/ngày, bơm tay' },
     ],
   },
   watchtower: {
@@ -309,7 +309,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Rèn lưỡi, đầu dụng cụ, đinh, bản lề. Cần than và Bàn thợ trước.',
     levels: [
       { cost: { scrap: 24, wood: 12, stone: 10 }, workSec: 5 * H, note: 'Cấp 2: mở lưỡi thép, tấm thép, sửa vũ khí hỏng' },
-      { cost: { plate: 6, gear: 2, brick: 20 }, workSec: 9 * H, note: 'Cấp 3: mở thép tôi, nhanh gấp đôi' },
+      { cost: { plate: 6, gear: 2, stone: 20 }, workSec: 9 * H, note: 'Cấp 3: mở thép tôi, nhanh gấp đôi' },
     ],
   },
   carpentry: {
@@ -339,7 +339,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Nung than, vôi, gạch. Sinh khói — heat tăng khi chạy.',
     levels: [
       { cost: { stone: 30, clay: 16, wood: 10 }, workSec: 6 * H, note: 'Cấp 2: thêm gạch chịu lửa, nung gốm' },
-      { cost: { brick: 40, plate: 2 }, workSec: 10 * H, note: 'Cấp 3: nung cả đêm, sản lượng ×2' },
+      { cost: { stone: 40, plate: 2 }, workSec: 10 * H, note: 'Cấp 3: nung cả đêm, sản lượng ×2' },
     ],
   },
   tailor: {
@@ -369,7 +369,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Hun cá/thịt bằng khói củi. Đồ hun để được hàng chục ngày.',
     levels: [
       { cost: { wood: 16, stone: 12, rope: 4 }, workSec: 4 * H, note: 'Cấp 2: hun nhanh hơn, đỡ tốn củi' },
-      { cost: { brick: 24, plate: 1 }, workSec: 6 * H, note: 'Cấp 3: hun cả mẻ lớn mỗi ngày' },
+      { cost: { stone: 24, plate: 1 }, workSec: 6 * H, note: 'Cấp 3: hun cả mẻ lớn mỗi ngày' },
     ],
   },
   coop: {
@@ -399,7 +399,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Ao thả cá: bắt được cá mỗi vài ngày. Cần nước, cá chết nếu ao bẩn quá.',
     levels: [
       { cost: { wood: 18, stone: 10, rope: 6 }, workSec: 6 * H, note: 'Cấp 2: vớt được nhiều hơn' },
-      { cost: { lime: 16, brick: 12 }, workSec: 10 * H, note: 'Cấp 3: ao sạch quanh năm, sản lượng ×1.5' },
+      { cost: { lime: 16, stone: 12 }, workSec: 10 * H, note: 'Cấp 3: ao sạch quanh năm, sản lượng ×1.5' },
     ],
   },
   cellar: {
@@ -414,7 +414,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Hầm đất dưới tầng trệt: mọi thức ăn hỏng chậm hơn một nửa.',
     levels: [
       { cost: { clay: 24, stone: 16, wood: 10 }, workSec: 8 * H, note: 'Cấp 2: hỏng chỉ còn 35% tốc độ thường' },
-      { cost: { brick: 30, plate: 2 }, workSec: 12 * H, note: 'Cấp 3: hầm sâu, 25% tốc độ thường' },
+      { cost: { stone: 30, plate: 2 }, workSec: 12 * H, note: 'Cấp 3: hầm sâu, 25% tốc độ thường' },
     ],
   },
   crock: {
@@ -429,7 +429,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     desc: 'Muối chua rau củ, ủ mắm. Không cần nhiệt, nhưng cần muối.',
     levels: [
       { cost: { clay: 12, wood: 4, salt: 3 }, workSec: 2 * H, note: 'Cấp 2: ủ được thịt cá, thêm chum' },
-      { cost: { brick: 16, salt: 6 }, workSec: 3 * H, note: 'Cấp 3: ủ mắm lâu năm, tinh thần cao' },
+      { cost: { clay: 16, salt: 6 }, workSec: 3 * H, note: 'Cấp 3: ủ mắm lâu năm, tinh thần cao' },
     ],
   },
   shelter: {

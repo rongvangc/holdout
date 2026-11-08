@@ -101,16 +101,6 @@ export const MATERIALS: Record<string, ItemDef> = {
     icon: P + 'items/other/bolts__457.png',
     desc: 'Rèn từ sắt vụn. Giảm lượng sắt cần cho tường và đồ gỗ.',
   },
-  charcoal: {
-    label: 'Than',
-    unit: 'kg',
-    kgPerUnit: 1,
-    category: 'material',
-    tier: 1,
-    mechanic: 'material',
-    icon: P + 'items/other/ingot__920.png',
-    desc: 'Nung gỗ thiếu khí. Cháy nóng hơn củi: rèn, nung, nấu nhanh.',
-  },
   lime: {
     label: 'Vôi',
     unit: 'kg',
@@ -120,16 +110,6 @@ export const MATERIALS: Record<string, ItemDef> = {
     mechanic: 'material',
     icon: P + 'items/medicine/pills__411.png',
     desc: 'Nung đá. Vữa xây, khử trùng chuồng trại và hố xí.',
-  },
-  brick: {
-    label: 'Gạch',
-    unit: 'viên',
-    kgPerUnit: 2.5,
-    category: 'material',
-    tier: 1,
-    mechanic: 'material',
-    icon: P + 'items/other/ingot__920.png',
-    desc: 'Nung đất sét. Tường chắc hơn tôn, không bị bão bẻ.',
   },
   thread: {
     label: 'Chỉ',

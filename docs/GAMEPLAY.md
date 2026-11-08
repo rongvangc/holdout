@@ -496,7 +496,7 @@ Khi chỉnh số, chạy bot vài seed khác nhau, ví dụ `-- 120 1`, `-- 120 
 | Lớp | Item | Nguồn |
 |---|---|---|
 | L0 thô | gỗ, sắt vụn, vải, đá, đất sét, cát, dây thừng, cao su, muối, dầu ăn | lục soát, kiếm củi, đào |
-| L1 sơ chế | ván, đinh, than, vôi, gạch, chỉ | trạm |
+| L1 sơ chế | ván, đinh, vôi, chỉ | trạm |
 | L2 linh kiện | lưỡi, đầu dụng cụ, cán, bản lề, bánh răng, dây điện, tấm thép, lõi lọc, ắc quy, tấm pin mặt trời | trạm |
 | L3 thành phẩm | vũ khí, giáp, dụng cụ, món ăn, thuốc | trạm |
 
@@ -510,12 +510,12 @@ Cấp 1 là lúc xây xong; `ModuleDef.levels` là các bậc nâng tiếp; `Roo
 |---|---|---|---|
 | Lò rèn | sân | tấm thép, vũ khí dài, dao | búa tạ, đồ nặng |
 | Xưởng mộc | trong nhà | đồ nặng, lều | khung ba lô |
-| Lò nung | sân | gạch chịu lửa, gốm | nung đêm ×2 |
+| Lò nung | sân | nung đêm, đỡ tốn củi | nung đêm ×2 |
 | Xưởng may | trong nhà | mũ cứng, ủng, giáp nhồi | giáp tấm, áo giáp |
 | Bếp hun khói | sân | hun nhanh | mẻ lớn |
 | Chum ủ | trong nhà | ủ thịt cá | mắm lâu năm |
 | Bàn thợ (cũ) | trong nhà | ắc quy, đèn dầu | pin mặt trời |
-| Bếp củi (cũ) | bất kỳ | mẻ 8000 kcal bằng than | đỡ tốn củi |
+| Bếp củi (cũ) | bất kỳ | mẻ 8000 kcal | đỡ tốn củi |
 
 ### 12.4 Công thức
 
@@ -560,7 +560,7 @@ Trang bị là **của từng người**, không phải của kho. Mỗi ngườ
 - **Đạn không chế tạo được** — chỉ nhặt được khi lục soát (đồn công an: 12 ga/9×18/7.62×39/30-06; cửa hàng vật liệu: .22; chợ: 12 ga). Có test khoá luật này (`tests/diet-and-repair.test.ts`).
 - Trang bị có **độ mòn 0..1** cho từng loại trong kho. Mỗi trận mòn `1/durability`; mòn làm giảm hiệu lực (còn 55% hiệu lực khi mòn hết cỡ).
 - Mòn về 0: **một món gãy** (rời kho), phần còn lại thành 1 kg sắt vụn.
-- **Sửa**: Lò rèn cấp 2+, tốn `max(1, mòn×4)` sắt + 1 than nếu mòn > 50%, 30 phút công. Sửa xong độ mòn về 1.
+- **Sửa**: Lò rèn cấp 2+, tốn `max(1, mòn×4)` sắt + 1 gỗ nếu mòn > 50%, 30 phút công. Sửa xong độ mòn về 1.
 
 ### 12.8 Chế độ ăn (`sim/diet.ts`)
 
@@ -638,7 +638,7 @@ Ba lỗi cân bằng đã sửa (có test chặn):
 
 1. **Nấu ăn tạo kcal từ hư không**: bảng dinh dưỡng cũ cho 1200 kcal gạo ra 10.400 kcal (×8,7). Nay mỗi món ≈ 0,95–1,0 lần năng lượng đầu vào; test `cooking conserves calories` chặn mọi công thức vượt 102%.
 2. **Ăn vượt khẩu phần**: `ceil()` khiến mỗi bữa lấy 2 phần cho nhu cầu 1 → đổi sang `floor`.
-3. **Trạm cấp 1 đòi gạch** (mà gạch cần lò nung) → kẹt hàng đợi vĩnh viễn. Cấp 1 nay dùng đá/đất sét/gỗ; gạch chỉ dùng cho nâng cấp.
+3. **Trạm cấp 1 đòi vật liệu phải chế** (mà chế lại cần chính trạm đó) → kẹt hàng đợi vĩnh viễn. Cấp 1 nay chỉ dùng vật liệu thô.
 4. **Món không được ăn**: `takeDish` lọc `morale > 0` nên cơm trắng bị bỏ qua; nay mọi món có cờ `dish` được ưu tiên trước đồ nhặt được.
 
 ### 12.13 Bot học nấu ăn (`scripts/headless.ts`)
@@ -735,9 +735,9 @@ Công thức khai báo `station` + `level`, nên cấp trạm còn là **công t
 ### 14.3 Chi phí nâng cấp
 
 **Cấp 2 chỉ dùng vật liệu thô** (gỗ, sắt vụn, vải, đá, đất sét, dây) — nâng được ngay khi có trạm, không cần lò nung.
-**Cấp 3 mới đòi đồ chế** (tấm thép, gạch, than, bánh răng, dây điện).
+**Cấp 3 mới đòi đồ chế** (tấm thép, bánh răng, dây điện, vôi).
 
-Lý do: bản đầu tôi cho cấp 2 đòi `gạch`/`than`/`tấm thép`, mà những thứ đó lại cần lò nung/lò rèn — nên bot chỉ nâng được 2 bậc trong 90 ngày. Sửa xong thì bot nâng **10 module lên cấp 2**.
+Lý do: bản đầu tôi cho cấp 2 đòi vật liệu phải chế, mà chế lại cần lò nung/lò rèn — nên bot chỉ nâng được 2 bậc trong 90 ngày. Sửa xong thì bot nâng **10 module lên cấp 2**.
 
 ### 14.4 Không còn module nào thiếu bậc
 

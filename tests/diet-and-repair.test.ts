@@ -14,7 +14,6 @@ function setup() {
   const s = newGame(world, b.id, 11, new Date(2026, 5, 1));
   const site = s.sites[0];
   site.stock.scrap = 500;
-  site.stock.charcoal = 100;
   return { s, site };
 }
 

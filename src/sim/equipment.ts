@@ -118,9 +118,9 @@ export function armorMitigation(site: Site): number {
 /** Flat defence a weapon adds to a night guard (the sim's guard term is ~8 + 2*melee). */
 export const weaponDefense = (w: WeaponPick | null): number => (w ? Math.round(w.mitigation * 40) : 0);
 
-export const repairCost = (w: WeaponPick): { scrap: number; charcoal: number } => {
+export const repairCost = (w: WeaponPick): { scrap: number; wood: number } => {
   const missing = 1 - w.condition;
-  return { scrap: Math.max(1, Math.round(missing * 4)), charcoal: missing > 0.5 ? 1 : 0 };
+  return { scrap: Math.max(1, Math.round(missing * 4)), wood: missing > 0.5 ? 1 : 0 };
 };
 
 export const needsRepair = (w: WeaponPick | null): boolean => !!w && w.condition < 0.98;
