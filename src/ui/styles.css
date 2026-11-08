@@ -1340,3 +1340,27 @@ table.grid tr.sel td {
 @media (max-width: 720px) {
   .side-panel .seg button { min-height: 44px; font-size: 11px; }
 }
+
+/* Inline help (src/ui/hints.tsx). Tooltips do not exist on touch, so the same
+   text renders as a visible muted line when the "Giải thích" switch is on. */
+.hint-line {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--dim);
+  font-weight: 400;
+  margin-top: 2px;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.toolbar-hint {
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.4;
+  padding: 4px 0 2px;
+  white-space: normal;
+}
+.toolbar-hint b { color: var(--fg); font-weight: 600; }
+/* Keep tap targets while hints are on. */
+.modlist button .hint-line { text-align: left; }

@@ -208,6 +208,24 @@ Ba cách xếp đã cân nhắc:
 
 Bỏ hẳn: sidebar cuộn 7 mục, bảng kho 16 dòng luôn hiện, danh sách module 22 nút luôn hiện.
 
+### Touch-first help (thay cho tooltip)
+
+Không có hover trên cảm ứng, mà UI có **70 `title=`** — nghĩa là trên mobile gần như
+mọi giải thích *không tồn tại*. Cách xử lý:
+
+| Cơ chế | Mô tả |
+|---|---|
+| Nút **"? Giải thích"** | bật/tắt trong thanh thời gian; lưu `localStorage` |
+| `<Hint text>` | khi bật, hiện chính câu `title` cũ thành **dòng chữ mờ ngay dưới** mục đó |
+| `title` vẫn giữ | để desktop vẫn hover được — hai kênh song song, một nguồn chữ |
+
+Đã gắn vào: danh sách module trong phòng, danh sách công trình của điểm
+(`ModulesPanel`), dòng công thức ở ngăn Chế tạo, dòng món ăn ở ngăn Bếp, mô tả công
+trình ngoài sân khi mở "Xây".
+
+Quy tắc cho nội dung mới: **câu giải thích phải nằm ở `desc`/`note` trong data**, không
+viết trực tiếp vào tooltip — như vậy nó tự hiện được cả hai kênh.
+
 ### Component Inventory
 
 | Zone | Component | Loại | Nội dung | Tương tác | Pattern |

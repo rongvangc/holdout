@@ -3,6 +3,7 @@ import { MODULE_ICONS, Icon } from './icons';
 import { maxStationLevel, stationLevel } from '../sim/build';
 import { baseStats } from '../sim/state';
 import { HERDS } from '../sim/livestock';
+import { Hint } from './hints';
 import type { PanelProps } from './KitchenPanel';
 import type { GameState, Site } from '../sim/types';
 
@@ -158,6 +159,7 @@ export function ModulesPanel({ s, site, refresh }: PanelProps) {
             <tr key={r.module} onClick={() => select(r.module)} style={{ cursor: 'pointer' }}>
               <td>
                 <Icon src={MODULE_ICONS[r.module]} size={18} /> {r.label}
+                <Hint text={MODULES[r.module]?.desc} />
               </td>
               <td>{r.count}</td>
               <td className={r.level < r.maxLevel ? 'dim' : ''}>

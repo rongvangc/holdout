@@ -5,6 +5,7 @@ import { fmtDuration } from '../core/time';
 import { queueCraft, stationLevel } from '../sim/build';
 import { foodFxLabel } from '../sim/diet';
 import { canAfford } from '../sim/state';
+import { Hint } from './hints';
 import type { GameState, Site } from '../sim/types';
 import { Icon, ITEM_ICONS } from './icons';
 
@@ -55,7 +56,10 @@ export function KitchenPanel({ s, site, refresh }: PanelProps) {
               <span className={(def.morale ?? 0) > 0 ? 'ok' : 'faint'} style={{ minWidth: 52 }}>
                 {(def.morale ?? 0) > 0 ? `+${def.morale} TT` : '—'}
               </span>
-              <span className="dim grow" style={{ flex: 1 }}>{fx || def.desc}</span>
+              <span className="dim grow" style={{ flex: 1 }}>
+                {fx || def.desc}
+                <Hint text={def.desc} />
+              </span>
               <span className={stock > 0.5 ? '' : 'faint'} style={{ minWidth: 34 }}>
                 {Math.round(stock)} phần
               </span>

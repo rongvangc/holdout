@@ -831,6 +831,11 @@ Trại/chuồng giữ một **bầy** (`room.herdState`), không phải một co
 
 ## 18. Bảng điều khiển (UI) cho các hệ mới
 
+> **Giải thích không cần hover**: nút **"? Giải thích"** bật chế độ hiện mô tả thành dòng
+> chữ dưới mỗi mục (module, công trình, công thức, món ăn). Trước đây các giải thích này
+> chỉ nằm trong `title=` nên **vô hình trên điện thoại**. Câu mô tả sống trong
+> `desc`/`note` của data, nên nó phục vụ cả tooltip desktop lẫn dòng chữ trên mobile.
+
 Mọi hệ thêm trong thời gian qua đều có chỗ thao tác, không chỉ nằm trong log:
 
 | Bảng | Ở đâu | Làm được gì |

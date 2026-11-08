@@ -5,6 +5,7 @@ import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
 import { availableRecipes } from '../data/recipes';
+import { Hint } from './hints';
 import { KitchenPanel } from './KitchenPanel';
 import { ModulesPanel } from './ModulesPanel';
 import { APPLIANCES } from '../sim/power';
@@ -621,6 +622,16 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
             </>
           )}
         </div>
+        {isStruct && (
+          <div className="toolbar-hint">
+            <b>{STRUCTS[tool as StructId].label}</b> — {STRUCTS[tool as StructId].desc} · mỗi ô:{' '}
+            {fmtCost(STRUCTS[tool as StructId].cost)}, {fmtDuration(STRUCTS[tool as StructId].workSec)}
+          </div>
+        )}
+        <Hint
+          className="toolbar-hint"
+          text={buildOpen ? 'Công trình ngoài sân: chọn loại rồi kéo trên mặt bằng. Viền = chỉ mép vùng chọn, Kín = lấp đầy.' : undefined}
+        />
         <canvas ref={canvas} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp} />
         <div className="row dim legend" style={{ marginTop: 6 }}>
           <span>
@@ -758,6 +769,7 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
                         {def.label}
                         <br />
                         <span className={canAfford(site, cost) ? 'faint' : 'amber'}>{why ?? fmtCost(cost)}</span>
+                        <Hint text={def.desc} />
                       </span>
                       <span className="dim">{fmtDuration(def.workSec(room.area))}</span>
                     </button>
@@ -868,6 +880,7 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
                     {ITEMS[r.out]?.label ?? r.out} ×{r.qty}
                     <br />
                     <span className={afford ? 'faint' : 'amber'}>{fmtCost(Object.fromEntries(r.in))}</span>
+                    <Hint text={r.note ?? (ITEMS[r.out]?.desc ?? undefined)} />
                   </span>
                   <span className="dim">{outKg ? `${outKg.toFixed(1)} kg` : ''}</span>
                 </button>
