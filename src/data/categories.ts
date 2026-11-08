@@ -29,6 +29,10 @@ const HOME: LootEntry[] = [
   ['fire_matches', 6, 1, 2],
   ['tool_awl', 2, 1, 1],
   ['cook_pan', 2, 1, 1],
+  // Trang bị dân dụng: dao bếp, dao nhỏ, ba lô leo núi
+  ['wpn_kitchen-knife', 4, 1, 1],
+  ['wpn_small-knife', 3, 1, 1],
+  ['pack_hiking-backpack', 2, 1, 1],
 ];
 
 export const CATS: Record<BuildingCat, CatDef> = {
@@ -163,6 +167,10 @@ export const CATS: Record<BuildingCat, CatDef> = {
       ['ammo_7-62x39-ammo', 2, 5, 15],
       ['ammo_30-06-ammo', 1, 2, 5],
       ['fire_flare', 4, 1, 2],
+      ['blnt_police-baton', 6, 1, 1],
+      ['wpn_combat-knife', 4, 1, 1],
+      ['vest_alice', 3, 1, 1],
+      ['pack_patrol-backpack', 3, 1, 1],
     ],
   },
   fuel: {
@@ -194,6 +202,8 @@ export const CATS: Record<BuildingCat, CatDef> = {
       ['tool_axe', 4, 1, 1],
       ['elec_cable-set', 4, 1, 1],
       ['ammo_22-lr-ammo', 2, 10, 30],
+      ['wpn_machete', 5, 1, 1],
+      ['wpn_crowbar', 5, 1, 1],
     ],
   },
   car_repair: {

@@ -43,6 +43,7 @@ const dish = (
   rotPerDay: rot,
   morale,
   fx,
+  dish: true,
   desc,
 });
 
@@ -58,49 +59,49 @@ export const INGREDIENTS: Record<string, ItemDef> = {
 
 /** Dishes: `meals` stays the plain staple; these are what people actually want. */
 export const DISHES: Record<string, ItemDef> = {
-  mon_com: dish('Cơm trắng', 0.6, 2600, 0.4, 0, 'Món nền. No bụng, không có gì để chê nhưng cũng không ai vui.', {
+  mon_com: dish('Cơm trắng', 0.6, 810, 0.4, 0, 'Món nền. No bụng, không có gì để chê nhưng cũng không ai vui.', {
     heal: 2,
   }),
-  mon_com_rau: dish('Cơm + rau', 0.9, 2800, 0.35, 4, 'Cơm với rau xào. Bữa ăn bình thường của người Việt.', {
+  mon_com_rau: dish('Cơm + rau', 0.8, 880, 0.35, 4, 'Cơm với rau xào. Bữa ăn bình thường của người Việt.', {
     heal: 4,
     vitamin: true,
   }),
-  mon_chao: dish('Cháo', 1.1, 1500, 0.25, 6, 'Dễ ăn, ấm bụng — món cho người bệnh. Nhanh khỏi, đỡ mệt.', {
+  mon_chao: dish('Cháo', 0.9, 500, 0.25, 6, 'Dễ ăn, ấm bụng — món cho người bệnh. Nhanh khỏi, đỡ mệt.', {
     heal: 8,
     fatigue: 15,
     cureDays: 1,
     water: 200,
   }),
-  mon_khoai: dish('Khoai luộc', 0.8, 1900, 0.15, 0, 'Rẻ, để được lâu, ăn chán nhưng không bao giờ hỏng nhanh.', {
+  mon_khoai: dish('Khoai luộc', 0.8, 660, 0.15, 0, 'Rẻ, để được lâu, ăn chán nhưng không bao giờ hỏng nhanh.', {
     heal: 1,
   }),
-  mon_canh: dish('Canh rau', 1.2, 700, 0.35, 3, 'Bù nước và vitamin. Ăn canh là uống nước.', {
+  mon_canh: dish('Canh rau', 0.8, 120, 0.35, 3, 'Bù nước và vitamin. Ăn canh là uống nước.', {
     water: 400,
     vitamin: true,
   }),
-  mon_rau_xao: dish('Rau xào', 0.7, 950, 0.3, 4, 'Cần dầu mỡ. Giữ được vitamin.', {
+  mon_rau_xao: dish('Rau xào', 0.5, 90, 0.3, 4, 'Cần dầu mỡ. Giữ được vitamin.', {
     vitamin: true,
     heal: 3,
   }),
-  mon_ca_kho: dish('Cá kho', 0.8, 2100, 0.22, 8, 'Món ngon nhất thường ngày. Đạm và canxi.', {
+  mon_ca_kho: dish('Cá kho', 0.8, 765, 0.22, 8, 'Món ngon nhất thường ngày. Đạm và canxi.', {
     heal: 6,
     vitamin: true,
   }),
-  mon_thit_kho: dish('Thịt kho', 0.9, 2600, 0.22, 10, 'Đám cưới trong nhà tận thế. Hồi sức rõ rệt.', {
+  mon_thit_kho: dish('Thịt kho', 0.9, 1035, 0.22, 10, 'Đám cưới trong nhà tận thế. Hồi sức rõ rệt.', {
     heal: 12,
     fatigue: 10,
   }),
-  mon_trung_chien: dish('Trứng chiên', 0.3, 800, 0.18, 6, 'Nhanh, thơm, nhiều đạm — tốt cho người đang lành vết thương.', {
+  mon_trung_chien: dish('Trứng chiên', 0.25, 210, 0.18, 6, 'Nhanh, thơm, nhiều đạm — tốt cho người đang lành vết thương.', {
     heal: 10,
   }),
-  mon_dau_hu: dish('Đậu hũ', 0.6, 950, 0.3, 3, 'Đạm rẻ từ đậu. Không ngon nhưng bổ và rẻ.', {
+  mon_dau_hu: dish('Đậu hũ', 0.6, 433, 0.3, 3, 'Đạm rẻ từ đậu. Không ngon nhưng bổ và rẻ.', {
     heal: 5,
   }),
-  mon_banh_mi: dish('Bánh mì', 0.4, 1300, 0.18, 2, 'Cần lò nung. Nhẹ, để được lâu, mang đi viễn chinh được.', {
+  mon_banh_mi: dish('Bánh mì', 0.2, 525, 0.18, 2, 'Cần lò nung. Nhẹ, để được lâu, mang đi viễn chinh được.', {
     travel: true,
     heal: 1,
   }),
-  mon_dua_muoi: dish('Dưa muối', 0.7, 400, 0.04, 3, 'Chua, giòn, để được hàng tháng, đủ vitamin C cho cả mùa đông.', {
+  mon_dua_muoi: dish('Dưa muối', 0.3, 60, 0.04, 3, 'Chua, giòn, để được hàng tháng, đủ vitamin C cho cả mùa đông.', {
     vitamin: true,
     cureDays: 1,
   }),

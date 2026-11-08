@@ -5,7 +5,10 @@ import { DAY, HOUR, dayOf, timeOfDay } from '../src/core/time';
 import { dist } from '../src/world/geo';
 import { newGame, autoAssign, baseStats, mainSite, present } from '../src/sim/state';
 import { advanceTo } from '../src/sim/engine';
-import { queueModule, queueDefense } from '../src/sim/build';
+import { queueCraft, queueModule, queueDefense } from '../src/sim/build';
+import { canAfford } from '../src/sim/state';
+import { MODULES } from '../src/data/modules';
+import { RECIPE_BY_ID } from '../src/data/recipes';
 import { launchExpedition, planExpedition } from '../src/sim/expedition';
 import { setCommute } from '../src/sim/commute';
 import { TEND_H_PER_M2_DAY } from '../src/sim/data';
@@ -44,7 +47,7 @@ function sendLoot(s: GameState, world: World, from: Site, team: string[]): void 
   const st = baseStats(s, from);
   const needWater = from.stock.water + from.stock.dirtyWater < st.population * 10;
   const foodLow = from.stock.food + from.stock.rawFood + from.stock.meals < st.population * 2250 * 14;
-  const matsLow = from.stock.wood < 60 || from.stock.scrap < 30 || from.projects.some((p) => !p.paid);
+  const matsLow = from.stock.wood < 60 || from.stock.scrap < 30;
   if (needWater && world.waterPoints.length) {
     const wp = [...world.waterPoints].sort((a, b) => dist(a.pos, from.centroid) - dist(b.pos, from.centroid))[0];
     launchExpedition(s, world, { fromSite: from.id, members: team, target: { type: 'water', id: wp.id }, mode: 'walk' });
@@ -127,6 +130,47 @@ function convoys(s: GameState, world: World, base: Site): void {
 let useFields = true;
 
 /** Simple "player" bot used by tests and `npm run sim` to sanity-check balance. */
+/**
+ * The bot cooks like a player would: keep a buffer of raw calories, prefer the
+ * tastiest dish the kitchen can actually make right now.
+ */
+/** Crafting stations are opt-in: only queue what the pantry can pay for today. */
+const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'crock', 'smokehouse', 'kiln', 'carpentry'];
+function buildStations(s: GameState, base: Site): void {
+  if (base.projects.length) return;
+  const have = new Set(base.interior.rooms.filter((r) => r.module).map((r) => r.module!));
+  for (const id of STATION_ORDER) {
+    if (have.has(id)) continue;
+    const def = MODULES[id];
+    const room = base.interior.rooms.find((r) => !r.module && !r.walled === false);
+    if (room) {
+      const cost = def.cost(room.area);
+      if (!canAfford(base, cost)) continue; // do not wedge the queue on a module we cannot pay
+    }
+    if (!queueModule(s, base, base.interior.rooms.find((r) => !r.module)?.id ?? '', id)) return;
+  }
+}
+
+function cookForTheDay(s: GameState, base: Site): void {
+  if (base.projects.length > 2) return;
+  const st = baseStats(s, base);
+  if (!st.kitchen) return;
+  const pop = present(s, base).length;
+  if (!pop) return;
+  const buffer = base.stock.rawFood + base.stock.meals + base.stock.food;
+  if (buffer < pop * 2250 * 4) return; // do not cook while the pantry is thin
+  const done = (id: string) => base.stock[id] ?? 0;
+  // A dish is worth cooking if we lack it and have the ingredient in the pantry.
+  const want = ['rd_thit_kho', 'rd_ca_kho', 'rd_com_rau', 'rd_canh', 'rd_com', 'rd_chao'];
+  for (const id of want) {
+    const r = RECIPE_BY_ID[id];
+    if (!r) continue;
+    if (done(r.out) > 8) continue;
+    const why = queueCraft(s, base, id);
+    if (!why) return;
+  }
+}
+
 export function botDay(s: GameState, world: World): void {
   const base = mainSite(s);
   const st = baseStats(s, base);
@@ -142,6 +186,8 @@ export function botDay(s: GameState, world: World): void {
     buildNext(s, f, WANT_FIELD);
     if (!f.projects.length && f.fence.level < 1) queueDefense(s, f, 'fence');
   }
+  buildStations(s, base);
+  cookForTheDay(s, base);
   autoAssign(s);
   convoys(s, world, base);
 

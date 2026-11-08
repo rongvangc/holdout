@@ -216,13 +216,14 @@ function takeDish(s: GameState, site: Site, want: number): { kcal: number; kind:
   let morale = 0;
   let units = 0;
   const fx: FoodFx = {};
-  const dishes = (Object.entries(ITEMS_LIB) as [string, { kcal?: number; morale?: number; label: string }][])
-    .filter(([id, d]) => (d.morale ?? 0) > 0 && (site.stock[id] ?? 0) > 0)
+  const dishes = (Object.entries(ITEMS_LIB) as [string, ItemDef][])
+    .filter(([id, d]) => d.dish && (site.stock[id] ?? 0) > 0)
     .sort((a, b) => (b[1].morale ?? 0) - (a[1].morale ?? 0) || (b[1].kcal ?? 0) - (a[1].kcal ?? 0));
   for (const [id, def] of dishes) {
     if (kcal >= want) break;
     const per = def.kcal ?? 0;
-    const wantUnits = Math.min(site.stock[id] ?? 0, Math.ceil((want - kcal) / Math.max(1, per)));
+    // floor, not ceil: taking a second portion for 100 kcal of need wastes a whole meal.
+    const wantUnits = Math.min(site.stock[id] ?? 0, Math.max(1, Math.floor((want - kcal) / Math.max(1, per))));
     const used = take(site, id, wantUnits);
     if (used <= 0) continue;
     kcal += used * per;

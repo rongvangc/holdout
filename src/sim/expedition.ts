@@ -3,11 +3,13 @@ import { push } from '../core/eventQueue';
 import { chance, int, pick, range, weighted } from '../core/rng';
 import { dayOf, isNight, MIN } from '../core/time';
 import { CATS } from '../data/categories';
-import { ITEMS, stockWeight, type ItemId } from '../data/items';
+import { ITEMS, stockWeight, type ItemId, type Stock } from '../data/items';
 import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
-import { armorMitigation, bestWeapon, describeWeapon, wearWeapon } from './equipment';
+import { describeWeapon, wearWeapon } from './equipment';
+import { bestArmed, packCapacity, survivorArmor } from './gear';
+import { applyFoodFx } from './diet';
 import { applyBiteLaw, handleStrangers, killSurvivor, noteBite } from './lifecycle';
 import { addStock, alert, baseStats, log, makeSite, newId, siteById, siteOfSource, take } from './state';
 import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
@@ -170,7 +172,9 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
   const garageAtFrom = baseStats(s, from).garage;
   const fuelPerKm = o.mode === 'car' && garageAtFrom ? 0.08 : FUEL_L_PER_KM;
   const fuelL = o.mode === 'car' ? ((pathLen * legs) / 1000) * fuelPerKm : 0;
-  const capacityKg = members.reduce((a, m) => a + 22 + 2 * skill(m, 'fitness'), 0) + (o.mode === 'car' ? (garageAtFrom ? 330 : 250) : 0);
+  const capacityKg =
+    members.reduce((a, m) => a + 22 + 2 * skill(m, 'fitness') + packCapacity(m), 0) +
+    (o.mode === 'car' ? (garageAtFrom ? 330 : 250) : 0);
   const cargoKg = stockWeight(o.cargo ?? {});
 
   const day = dayOf(s.t);
@@ -218,6 +222,95 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
   };
 }
 
+/** kcal a party needs for a trip of `sec` seconds, with a 30% cushion. */
+const rationKcal = (n: number, sec: number) => n * 70 * (sec / 3600) * 1.3;
+
+/**
+ * Pack rations for a trip: light travel food first (it is what it is for), then
+ * anything edible, then water. Taken from the site stock so the cost is visible.
+ */
+function packRations(_s: GameState, from: Site, n: number, sec: number): StockDelta {
+  const out: StockDelta = {};
+  let need = rationKcal(n, sec);
+  const takeFood = (id: ItemId) => {
+    const kcal = ITEMS[id]?.kcal ?? 0;
+    if (kcal <= 0) return;
+    const units = Math.min(from.stock[id] ?? 0, Math.ceil(need / kcal));
+    const got = take(from, id, units);
+    if (got > 0) {
+      out[id] = (out[id] ?? 0) + got;
+      need -= got * kcal;
+    }
+  };
+  // Travel rations first, then the tastiest things (they would spoil anyway).
+  const foods = (Object.entries(ITEMS) as [string, (typeof ITEMS)[string]][])
+    .filter(([id, d]) => (d.kcal ?? 0) > 0 && (d.mechanic === 'food') && (from.stock[id] ?? 0) > 0)
+    .sort(([, a], [, b]) => Number(!!b.fx?.travel) - Number(!!a.fx?.travel) || (b.kcal ?? 0) - (a.kcal ?? 0));
+  for (const [id] of foods) {
+    if (need <= 0) break;
+    takeFood(id);
+  }
+  // Legacy calorie buckets, if that is all there is.
+  for (const id of ['meals', 'food', 'rawFood'] as ItemId[]) {
+    if (need <= 0) break;
+    const units = Math.min(from.stock[id] ?? 0, Math.ceil(need));
+    const got = take(from, id, units);
+    if (got > 0) {
+      out[id] = (out[id] ?? 0) + got;
+      need -= got;
+    }
+  }
+  const water = take(from, 'water', Math.min(from.stock.water, n * 3 * (sec / 86400) + 1));
+  if (water > 0) out.water = water;
+  return out;
+}
+
+/** Feed one member from the party's rations. Returns kcal actually eaten. */
+export function feedOnRoad(_s: GameState, e: Expedition, v: Survivor, deficit: number): number {
+  const r = e.rations ?? {};
+  let got = 0;
+  let morale = 0;
+  let fx: import('../data/items').FoodFx | undefined;
+  const ids = Object.keys(r).filter((id) => id !== 'water' && (r[id] ?? 0) > 0);
+  // Eat the tastiest first: a hot dish on the road is worth more than dry rice.
+  ids.sort((a, b) => ((ITEMS[b]?.morale ?? 0) - (ITEMS[a]?.morale ?? 0)) || ((ITEMS[b]?.kcal ?? 0) - (ITEMS[a]?.kcal ?? 0)));
+  for (const id of ids) {
+    if (got >= deficit) break;
+    const def = ITEMS[id];
+    const per = def?.kcal ?? 0;
+    if (per <= 0) continue;
+    const want = Math.min(r[id] ?? 0, Math.ceil((deficit - got) / per));
+    const used = takeStock(r, id, want);
+    if (used <= 0) continue;
+    got += used * per;
+    morale += used * (def?.morale ?? 0);
+    if (def?.fx) {
+      fx ??= {};
+      for (const k of ['heal', 'fatigue', 'water', 'cureDays'] as const) {
+        const val = def.fx[k];
+        if (typeof val === 'number') fx[k] = (fx[k] ?? 0) + val * used;
+      }
+      if (def.fx.vitamin) fx.vitamin = true;
+    }
+  }
+  if (got > 0) {
+    v.kcal += got;
+    if (morale) v.morale = Math.min(100, v.morale + Math.min(12, morale));
+    applyFoodFx(v, fx);
+    const w = takeStock(r, 'water', Math.min((r.water ?? 0), 0.75));
+    if (w > 0) v.water = Math.min(3200, v.water + w * 1000);
+  }
+  return got;
+}
+
+/** Local take() over a partial stock record. */
+function takeStock(rec: Partial<Stock>, id: string, amount: number): number {
+  const have = rec[id] ?? 0;
+  const got = Math.max(0, Math.min(have, amount));
+  if (got > 0) rec[id] = have - got;
+  return got;
+}
+
 export function launchExpedition(s: GameState, world: World, o: ExpeditionOrder): string | null {
   const plan = planExpedition(s, world, o);
   if (!plan.ok || !plan.target || !plan.kind) return plan.reason ?? 'Không thể khởi hành';
@@ -225,6 +318,8 @@ export function launchExpedition(s: GameState, world: World, o: ExpeditionOrder)
   if (o.mode === 'car') take(from, 'fuel', plan.fuelL);
   const carried: StockDelta = {};
   for (const [k, v] of Object.entries(o.cargo ?? {})) if (v) carried[k as ItemId] = take(from, k as ItemId, v);
+  // Khẩu phần: tự đóng gói từ kho, đủ cho cả chuyến (đi + lục + về) và thêm dự phòng.
+  const rations = packRations(s, from, o.members.length, plan.totalSec);
   const exp: Expedition = {
     id: newId(s, 'e'),
     kind: plan.kind,
@@ -240,6 +335,7 @@ export function launchExpedition(s: GameState, world: World, o: ExpeditionOrder)
     travelSec: plan.travelSec,
     searchSec: plan.searchSec,
     carried,
+    rations,
     capacityKg: plan.capacityKg,
     report: [],
     recruits: [],
@@ -296,9 +392,10 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
     const def = ZOMBIES[z];
     const victim = pick(s.rng, alive);
     const meleeAvg = alive.reduce((a, m) => a + skill(m, 'melee'), 0) / alive.length;
-    // Equipment the party carries: best weapon + whatever armour the site owns.
-    const weapon = bestWeapon(from);
-    const armour = armorMitigation(from);
+    // Vũ khí tốt nhất trong đội (người cầm nó là người đánh) + giáp của chính nạn nhân.
+    const armed = bestArmed(from, alive);
+    const weapon = armed?.weapon ?? null;
+    const armour = survivorArmor(victim);
     const mitigation = Math.min(0.6, (weapon?.mitigation ?? 0) + armour * (1 - (weapon?.mitigation ?? 0)));
     const dmg =
       ((def.dmg * range(s.rng, 0.5, 1.5) * (1 - 0.04 * meleeAvg) * (alive.some((m) => hasTrait(m, 'brave')) ? 0.8 : 1)) /
@@ -311,9 +408,9 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
       from.heat = Math.min(100, from.heat + weapon.noise);
       if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + weapon.noise);
     }
-    if (weapon) {
+    if (weapon && armed) {
       const w = wearWeapon(s, from, weapon, 1);
-      if (w.broke) log(s, `${from.name}: ${describeWeapon(weapon)} gãy sau trận.`, 'warn');
+      if (w.broke) log(s, `${from.name}: ${describeWeapon(weapon)} của ${armed.owner.name} gãy sau trận.`, 'warn');
     }
     if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + (z === 'screamer' ? 8 : 2));
     if (chance(s.rng, (def.bite * (weapon?.biteMult ?? 1)) / Math.sqrt(alive.length))) {
@@ -481,6 +578,11 @@ export function onExpeditionEvent(s: GameState, world: World, eid: string): void
   const team = members(s, e);
   if (!team.length) return lost(s, e);
   const home = siteById(s, e.fromSite);
+  // Khẩu phần chưa ăn hết thì mang về kho, không bỏ đi.
+  if (e.rations) {
+    for (const [k, v] of Object.entries(e.rations)) if ((v ?? 0) > 0.01) addStock(s, home, { [k]: v } as StockDelta);
+    e.rations = {};
+  }
   // Survivors drop loot proportionally if teammates died on the way back.
   const keep = team.length / e.members.length;
   home.heat = Math.min(100, home.heat + NOISE_HEAT[e.mode]);

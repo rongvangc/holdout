@@ -249,7 +249,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     maxPerSite: 1,
     needsWorkshop: true,
     workSec: () => 3 * H,
-    cost: () => ({ wood: 12, scrap: 14, brick: 6 }),
+    cost: () => ({ wood: 12, scrap: 14, stone: 10 }),
     desc: 'Rèn lưỡi, đầu dụng cụ, đinh, bản lề. Cần than và Bàn thợ trước.',
     levels: [
       { cost: { scrap: 20, brick: 12, plate: 2 }, workSec: 5 * H, note: 'Cấp 2: mở lưỡi thép, tấm thép, sửa vũ khí hỏng' },
@@ -354,7 +354,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     minArea: 6,
     maxPerSite: 1,
     workSec: () => 6 * H,
-    cost: () => ({ brick: 16, lime: 6, wood: 8 }),
+    cost: () => ({ clay: 18, stone: 12, wood: 8 }),
     desc: 'Hầm đất dưới tầng trệt: mọi thức ăn hỏng chậm hơn một nửa.',
     levels: [
       { cost: { brick: 20, lime: 10 }, workSec: 8 * H, note: 'Cấp 2: hỏng chỉ còn 35% tốc độ thường' },
@@ -369,7 +369,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     minArea: 2,
     maxPerSite: 2,
     workSec: () => 1 * H,
-    cost: () => ({ clay: 8, brick: 4, salt: 1 }),
+    cost: () => ({ clay: 10, wood: 2, salt: 1 }),
     desc: 'Muối chua rau củ, ủ mắm. Không cần nhiệt, nhưng cần muối.',
     levels: [
       { cost: { brick: 8, salt: 3 }, workSec: 2 * H, note: 'Cấp 2: ủ được thịt cá, thêm chum' },

@@ -9,6 +9,7 @@ import { structureEffects } from '../data/structures';
 import { dist } from '../world/geo';
 import type { World } from '../world/types';
 import { PEOPLE_PER_LATRINE, ROLES, TEND_H_PER_M2_DAY, type Role } from './data';
+import { issueGear } from './gear';
 import { isActive, makeSurvivor, skill } from './survivors';
 import type { GameState, LogEntry, Site, StockDelta, Survivor } from './types';
 
@@ -373,5 +374,7 @@ export function autoAssign(s: GameState, only?: Site): void {
     }
     // Spare hands only gather when materials are short — gathering is noisy and draws raids.
     for (const v of free) v.role = paid ? 'builder' : site.stock.wood < 60 && site.heat < 40 ? 'gatherer' : 'idle';
+    // Trang bị là của từng người: cấp món tốt nhất trong kho cho người dùng được nó.
+    issueGear(site, people);
   }
 }

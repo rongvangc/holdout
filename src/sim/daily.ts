@@ -4,7 +4,8 @@ import { DAY, dayOf, dayOfYear, HOUR, monthOf, nextClock } from '../core/time';
 import type { World } from '../world/types';
 import { dist } from '../world/geo';
 import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY } from './data';
-import { armorMitigation, bestWeapon, describeWeapon, weaponDefense, wearWeapon } from './equipment';
+import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
+import { survivorArmor, survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
@@ -66,7 +67,8 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   // Chuồng gà và ao cá: nguồn đạm tái tạo, đổi lại tốn lương và sinh ồn.
   if (st.coop > 0) {
     const lvl = Math.max(1, st.coopLevel);
-    const feed = Math.min(site.stock.rawFood > 0 ? 0.6 * st.coop : 0, site.stock.rawFood);
+    // Gà ăn ~0,4 kg/ngày (≈1200 kcal) — nuôi gà là ăn lỗ calo, đổi lấy đạm và tinh thần.
+    const feed = Math.min(site.stock.rawFood > 500 ? 0.4 * st.coop : 0, site.stock.rawFood);
     if (feed > 0) {
       take(site, 'rawFood', feed * 2200);
       const eggs = st.coop * (lvl >= 2 ? 4.8 : 3) * (chance(s.rng, 0.35) ? 1.3 : 1);
@@ -274,16 +276,16 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   // Traps thin the wave first, but can never stop more than 70% of it.
   const strength = Math.max(raw * 0.3, raw - structureEffects(site.interior.structures).spikes);
   const guards = home.filter((v) => v.task?.kind === 'guard');
-  // Better weapons make every guard matter more; a gun also makes noise.
-  const weapon = bestWeapon(site);
-  const wDef = weaponDefense(weapon);
+  // Ai cầm gì thì đánh bằng món đó — trang bị là của từng người, không phải của kho.
   let defense = st.defenseStatic;
   for (const g of guards) {
-    defense += (8 + 2 * skill(g, 'melee') + wDef) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
-  }
-  if (weapon && guards.length) {
-    const w = wearWeapon(s, site, weapon, 1);
-    if (w.broke) log(s, `${site.name}: ${describeWeapon(weapon)} gãy trong đêm.`, 'warn');
+    const w = survivorWeapon(site, g);
+    defense += (8 + 2 * skill(g, 'melee') + weaponDefense(w)) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
+    if (w) {
+      const worn = wearWeapon(s, site, w, 1);
+      if (worn.broke) log(s, `${site.name}: ${describeWeapon(w)} của ${g.name} gãy trong đêm.`, 'warn');
+      if (w.noise) site.heat = Math.min(100, site.heat + Math.round(w.noise / 4));
+    }
   }
   defense += (home.length - guards.length) * 1.5;
   if (guards.length || st.watchtowers) defense *= 1.15;
@@ -311,9 +313,9 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   }
   const hurt = Math.max(1, Math.ceil(ratio * home.length * 0.4));
   const shuffled = [...home].sort(() => range(s.rng, -1, 1));
-  // Armour turns a mauling into bruises: less HP lost, fewer bites get through.
-  const armour = armorMitigation(site);
+  // Giáp của từng người biến trận đòn thành vết bầm: mất ít HP hơn, ít bị cắn hơn.
   for (const v of shuffled.slice(0, hurt)) {
+    const armour = survivorArmor(v);
     v.hp -= range(s.rng, 10, 40) * (1 - armour);
     if (chance(s.rng, 0.2 * (1 - armour))) {
       v.bitten = true;

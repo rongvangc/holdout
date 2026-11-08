@@ -1,3 +1,4 @@
+import { withDerivedArmor, withDerivedWeaponClass } from './item-fields';
 import { GENERATED_ITEMS } from './items.generated';
 import { FOOD_ITEMS } from './dishes';
 import { MATERIALS } from './materials';
@@ -56,6 +57,8 @@ export interface ItemDef {
   morale?: number;
   /** What eating this actually does beyond calories. */
   fx?: FoodFx;
+  /** Cooked dish: eaten before loot food, because it is a meal and it spoils. */
+  dish?: boolean;
   rotPerDay?: number;
   heal?: number;
   cures?: boolean;
@@ -89,7 +92,14 @@ const CORE: Record<string, ItemDef> = {
  * Everything the game knows about. Order matters: core ids win over generated
  * ones so a catalog item can never shadow `wood` or `water`.
  */
-export const ITEMS: Record<string, ItemDef> = { ...GENERATED_ITEMS, ...MATERIALS, ...FOOD_ITEMS, ...CORE };
+export const ITEMS: Record<string, ItemDef> = withDerivedWeaponClass(
+  withDerivedArmor({
+  ...GENERATED_ITEMS,
+  ...MATERIALS,
+  ...FOOD_ITEMS,
+  ...CORE,
+  }),
+);
 
 /** Lookup that never throws — UI falls back to the id when a def is missing. */
 export const itemDef = (id: string): ItemDef | undefined => ITEMS[id];

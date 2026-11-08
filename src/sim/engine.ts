@@ -4,7 +4,7 @@ import type { World } from '../world/types';
 import { payProjects } from './build';
 import { dayEvent, raidEvent, strangersEvent } from './daily';
 import { FATIGUE_PER_HOUR, INTENSITY, KCAL_PER_HOUR, LAW_COOLDOWN_DAYS, LAW_DEFS, WATER_ML_PER_HOUR, type LawId, type Laws, type Role, type SkillId } from './data';
-import { onExpeditionEvent, runRoutes } from './expedition';
+import { feedOnRoad, onExpeditionEvent, runRoutes } from './expedition';
 import { killSurvivor, turnSurvivor } from './lifecycle';
 import { autoAssign, baseStats, log } from './state';
 import { hasTrait } from './survivors';
@@ -27,6 +27,17 @@ function integrate(s: GameState, dt: number): void {
     if (kind === 'sleep') v.fatigue -= sleepRate(!!v.task?.inBed) * h;
     else v.fatigue += FATIGUE_PER_HOUR * I.fatigue * h * (hasTrait(v, 'light_sleeper') ? 0.8 : 1);
     v.fatigue = Math.max(0, Math.min(100, v.fatigue));
+    // Trên đường: ăn từ khẩu phần mang theo, không thì đói thật.
+    if (v.location === 'expedition' && v.kcal < 1200) {
+      const exp = s.expeditions.find((e) => e.members.includes(v.id));
+      if (exp) {
+        const fed = feedOnRoad(s, exp, v, 1200 - v.kcal);
+        if (fed <= 0 && !exp.report.some((r) => r.includes('hết khẩu phần'))) {
+          exp.report.push('Đội đã hết khẩu phần — ai cũng đói và mất tinh thần.');
+          for (const m of s.survivors.filter((x) => exp.members.includes(x.id) && x.status === 'alive')) m.morale = Math.max(0, m.morale - 8);
+        }
+      }
+    }
     if (v.kcal <= 0) v.hp -= 1.5 * h;
     if (v.water <= 0) v.hp -= 5 * h;
     v.kcal = Math.max(0, v.kcal);

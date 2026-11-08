@@ -61,7 +61,7 @@ describe('cooking layer', () => {
     // eat() lives behind the task loop; assert the data contract instead: the dish
     // exists in stock, is edible and carries morale for the eater.
     expect(ITEMS.mon_thit_kho.morale).toBe(10);
-    expect(ITEMS.mon_thit_kho.kcal).toBeGreaterThan(2000);
+    expect(ITEMS.mon_thit_kho.kcal).toBeGreaterThan(800);
     expect(site.stock.mon_thit_kho).toBe(before);
   });
 });
@@ -118,5 +118,26 @@ describe('dishes do something', () => {
     expect(foodFxLabel(DISHES.mon_chao.fx)).toContain('hồi');
     expect(foodFxLabel(DISHES.mon_chao.fx)).toContain('mau khỏi');
     expect(foodFxLabel(DISHES.mon_com.fx)).not.toContain('vitamin');
+  });
+});
+
+describe('cooking conserves calories', () => {
+  it('no dish creates energy out of nothing', () => {
+    // The legacy buckets (rawFood/food/meals) are already counted in kcal per unit.
+    const LEGACY = new Set(['rawFood', 'food', 'meals']);
+    const kcalOf = (id: string) => (LEGACY.has(id) ? 1 : (ITEMS[id]?.kcal ?? 0));
+    for (const r of RECIPES.filter((x) => x.out in DISHES)) {
+      const input = r.in.reduce((sum, [id, n]) => sum + kcalOf(id) * n, 0);
+      const output = kcalOf(r.out) * r.qty;
+      if (input <= 0) continue; // dishes built only from non-caloric parts
+      expect(output, `${r.id}: ${Math.round(output)} out vs ${Math.round(input)} in`).toBeLessThanOrEqual(input * 1.02);
+    }
+  });
+
+  it('a portion is a meal-sized amount, not a banquet', () => {
+    for (const [id, d] of Object.entries(DISHES)) {
+      expect(d.kcal ?? 0, id).toBeLessThanOrEqual(1200);
+      expect(d.kcal ?? 0, id).toBeGreaterThan(0);
+    }
   });
 });

@@ -608,3 +608,25 @@ Ngoài kcal và tinh thần, mỗi món còn **tác dụng lên người ăn**. 
 | **Dưa muối** | — | — | — | **−1 ngày** | ✓ | hỏng 4%/ngày, đủ vitamin cả mùa |
 
 Nhờ vậy món ăn trở thành **công cụ y tế rẻ**: không có thuốc thì cháo và dưa muối là cách chữa bệnh, thịt kho/trứng là cách hồi máu sau trận tập kích. Tooltip trong panel Chế tạo hiện đủ các hiệu ứng này.
+
+### 12.11 Khẩu phần viễn chinh (`sim/expedition.ts`, `sim/engine.ts`)
+
+- Khi xuất phát, đội **tự đóng gói khẩu phần** từ kho: đồ ăn mang đi (ưu tiên `travel` như bánh mì), rồi tới món nhiều kcal nhất, rồi `meals/food/rawFood`, kèm nước uống. Lượng = nhu cầu cả chuyến × 1.3 dự phòng.
+- Trên đường, mỗi người ăn từ khẩu phần khi kcal < 1200; món có hiệu ứng (`hồi HP`, `đỡ mệt`, `vitamin`) phát huy cả khi đi đường.
+- Hết khẩu phần: cả đội −8 tinh thần và ghi vào biên bản "hết khẩu phần".
+- Về tới nhà, **khẩu phần chưa ăn hết được trả lại kho** (trước đó là rò rỉ).
+
+### 12.12 Sửa lỗi kinh tế phát hiện qua bot
+
+Ba lỗi cân bằng đã sửa (có test chặn):
+
+1. **Nấu ăn tạo kcal từ hư không**: bảng dinh dưỡng cũ cho 1200 kcal gạo ra 10.400 kcal (×8,7). Nay mỗi món ≈ 0,95–1,0 lần năng lượng đầu vào; test `cooking conserves calories` chặn mọi công thức vượt 102%.
+2. **Ăn vượt khẩu phần**: `ceil()` khiến mỗi bữa lấy 2 phần cho nhu cầu 1 → đổi sang `floor`.
+3. **Trạm cấp 1 đòi gạch** (mà gạch cần lò nung) → kẹt hàng đợi vĩnh viễn. Cấp 1 nay dùng đá/đất sét/gỗ; gạch chỉ dùng cho nâng cấp.
+4. **Món không được ăn**: `takeDish` lọc `morale > 0` nên cơm trắng bị bỏ qua; nay mọi món có cờ `dish` được ưu tiên trước đồ nhặt được.
+
+### 12.13 Bot học nấu ăn (`scripts/headless.ts`)
+
+- Bot xây trạm theo khả năng chi trả (`buildStations`) — không xếp module khi chưa đủ vật tư để tránh kẹt hàng đợi.
+- Bot nấu món nếu kho còn ≥ 4 ngày lương: thử `thịt kho → cá kho → cơm+rau → canh → cơm → cháo`.
+- Viễn chinh không còn bị chuyển hết sang gom vật tư chỉ vì một project chưa trả được.
