@@ -441,25 +441,31 @@ export function autoAssign(s: GameState, only?: Site): void {
     const lowMaterials = (site.stock.wood < 40 || site.projects.some((p) => !p.paid)) && (site.heat < 40 || site.stock.wood < 15);
     const field = site.kind === 'field';
     const farmArea = st.gardenArea + st.herbArea;
-    // Thứ tự ưu tiên: gác → NÔNG DÂN → phần còn lại. Trước đây nông dân bị đẩy xuống
-    // cuối nên sau khi chia gác/bếp/nước/y tá/thợ xây thì không còn ai ra vườn, và cả
-    // nền kinh tế trồng trọt (kể cả 740 m² sân nhà) không có người làm.
+    // Thứ tự ưu tiên theo mức "chết nhanh": gác (đêm nay) → NƯỚC (chết sau ~2 ngày)
+    // → nông dân (đói sau vài tuần) → còn lại. Trước đây nước đứng sau nông dân nên nhóm
+    // 3 người chỉ có guard + dry farmer + 1 người dư: không ai lọc/đun nước.
+    const waterWork = st.filter || st.well || st.kitchen;
     const want: [Role, number][] = [
       ['guard', Math.max(1, Math.round(n * 0.15))],
-      ['farmer', farmArea ? Math.max(1, Math.ceil((farmArea * TEND_H_PER_M2_DAY) / 6)) : 0],
+      ['water', waterWork ? Math.max(1, Math.round(n / 8)) : 0],
+      // Vườn nhỏ (thuốc 8 m²) không cần một người làm cả ngày.
+      ['farmer', farmArea >= 20 ? Math.max(1, Math.ceil((farmArea * TEND_H_PER_M2_DAY) / 6)) : 0],
       ['cook', st.kitchen ? Math.max(1, Math.round(n / 8)) : 0],
-      ['water', st.filter || st.kitchen || st.well ? Math.max(1, Math.round(n / 8)) : 0],
       ['medic', n >= 4 ? 1 + Math.floor(n / 14) : 0],
       ['sanitation', n >= 6 ? Math.max(1, Math.round(n / 12)) : 0],
       ['gatherer', lowMaterials ? 1 + Math.floor(n * 0.12) : 0],
       ['builder', paid ? Math.max(1, Math.round(n * 0.3)) : 0],
     ];
-    if (field) want.unshift(want.splice(1, 1)[0]); // ruộng thì nông dân lên đầu
+    if (field) {
+      // Ruộng làm nông là việc chính, nhưng vẫn để lại người cho các vai khác.
+      const farmer = want.splice(2, 1)[0];
+      want.unshift(farmer);
+    }
     const free = new Set(people);
     for (const [role, k] of want) {
       const sk = ROLES[role].skill;
       const ranked = [...free].sort((a, b) => (sk ? skill(b, sk) - skill(a, sk) : 0));
-      for (const v of ranked.slice(0, Math.min(k, role === 'farmer' && field ? free.size : Math.max(0, free.size - 1)))) {
+      for (const v of ranked.slice(0, Math.min(k, Math.max(0, free.size - 1)))) {
         v.role = role;
         free.delete(v);
       }

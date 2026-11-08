@@ -849,7 +849,11 @@ Mọi hệ thêm trong thời gian qua đều có chỗ thao tác, không chỉ 
 
 Ba thay đổi cuối để mức năng suất thật vận hành được:
 
-1. **Ưu tiên nông dân** (`state.ts autoAssign`): thứ tự chia việc là **gác → nông dân → còn lại** (ruộng thì nông dân lên đầu). Trước đây nông dân bị xếp cuối nên sau khi chia gác/bếp/nước/y tá/thợ xây thì **không còn ai ra vườn** — vườn 740 m² sân nhà cũng bỏ hoang, đây là lỗi gốc khiến cả nền trồng trọt chết.
+1. **Thứ tự chia việc theo mức "chết nhanh"** (`state.ts autoAssign`): **gác → nước → nông dân → bếp → y tá → vệ sinh → kiếm củi → thợ xây**, luôn để 1 người dự phòng. Ở điểm ruộng, nông dân được đẩy lên đầu nhưng không bao giờ lấy hết người (vẫn còn gác/nước).
+   - Trước đây nông dân nằm **cuối** danh sách nên sau khi chia gác/bếp/nước/y tá/thợ xây thì không còn ai ra vườn: vườn 740 m² bỏ hoang suốt 120 ngày.
+   - Bản sửa đầu tiên đưa nông dân lên **trước nước** — sai thứ tự sinh tồn: nhóm 3 người thành `guard + farmer + idle`, **không ai lọc/đun nước** và chết khát. Nước phải đứng trước nông dân.
+   - Vườn dược liệu 8 m² không cần một người làm cả ngày → chỉ cấp nông dân khi diện tích vườn ≥ 20 m².
+   - Test khoá luật này: `tests/autoassign.test.ts` (5 test).
 2. **Vườn sân nhà** (`scripts/headless.ts consolidateYard`): bot gom sân thành khoảnh tới 800 m² và trồng rau ngay từ đầu (~700 m² = 2.500 kcal/ngày).
 3. **Nhóm nhỏ không bị tập kích** (`daily.ts raidEvent`): điểm có **dưới 3 người** không thành mục tiêu đáng tập kích. Với năng suất thực tế, cộng đồng thường chỉ 2–4 người; đợt tập kích dành cho 10 người sẽ quét sạch họ trong vài đêm.
 
