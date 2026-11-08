@@ -10,4 +10,9 @@ export const FEATURES = {
    * Off for now: the game is meant to be endless until the win path is balanced.
    */
   rescue: false,
+  /**
+   * Living hordes: bầy zombie trườn trên bản đồ + tập kích bầy theo giai đoạn.
+   * Bật cho theo design 2026-11-08; tắt nếu cân bằng gãy bot 60 ngày.
+   */
+  hordes: true,
 };

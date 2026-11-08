@@ -163,6 +163,13 @@ export interface Expedition {
   kills?: number;
 }
 
+export interface HordeState {
+  id: string;
+  /** Ô H3 bầy đang đứng. */
+  cell: string;
+  size: number;
+}
+
 export interface LogEntry {
   t: number;
   msg: string;
@@ -174,6 +181,8 @@ export type GameEvent =
   | { k: 'task'; sid: string }
   | { k: 'day' }
   | { k: 'raid'; site: string }
+  | { k: 'hordes' }
+  | { k: 'siege'; sid: string; size: number }
   | { k: 'strangers' }
   | { k: 'routes' }
   | { k: 'exp'; eid: string };
@@ -231,6 +240,10 @@ export interface GameState {
   routes: Route[];
   looted: Record<string, number>;
   hordeUntilDay: number;
+  /** Bầy zombie đang trườn trên bản đồ (lớp phủ living-hordes). */
+  hordes: HordeState[];
+  /** Mồi ồn người chơi phát: bầy trong bán kính 6 ô sẽ trườn về đây. */
+  decoy: { cell: string; until: number } | null;
   weather: Weather;
   laws: Laws;
   lawChangedDay: Partial<Record<LawId, number>>;

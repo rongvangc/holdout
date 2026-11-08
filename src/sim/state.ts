@@ -92,6 +92,8 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
     routes: [],
     looted: { [baseId]: base.containers },
     hordeUntilDay: 0,
+    hordes: [],
+    decoy: null,
     weather: { day: 1, label: 'Nắng', rainMm: 0, tempC: 28, storm: false, hot: false },
     laws: { rations: 'normal', bitten: 'quarantine', strangers: 'screen', curfew: false, noise: false, corpses: 'burn' },
     lawChangedDay: {},
@@ -125,6 +127,7 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
   for (let i = 0; i < START_SURVIVORS; i++) addSurvivor(s, makeSurvivor(rng, newId(s, 's'), 1), home.id);
   autoAssign(s);
   push(s.queue, nextClock(t0, 0), { k: 'day' });
+  push(s.queue, t0 + 10 * HOUR, { k: 'hordes' });
   push(s.queue, t0 + range(rng, 3, 9) * HOUR, { k: 'strangers' });
   log(s, `Nhóm ${START_SURVIVORS} người chiếm ${home.name} làm căn cứ. Ngày 1 bắt đầu.`, 'info');
   return s;
@@ -135,6 +138,8 @@ export function migrate(raw: unknown): GameState {
   const o = raw as GameState & Record<string, unknown>;
   o.cellClear ??= {};
   o.routes ??= [];
+  o.hordes ??= [];
+  o.decoy ??= null;
   if (o.version === 2) {
     // Saves made before the item registry grew are missing every new id.
     for (const site of o.sites ?? []) site.stock = normalizeStock(site.stock);

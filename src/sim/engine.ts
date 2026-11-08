@@ -2,7 +2,7 @@ import { peek, pop } from '../core/eventQueue';
 import { dayOf, HOUR } from '../core/time';
 import type { World } from '../world/types';
 import { payProjects } from './build';
-import { dayEvent, raidEvent, strangersEvent } from './daily';
+import { dayEvent, hordesTick, raidEvent, siegeEvent, strangersEvent } from './daily';
 import { FATIGUE_PER_HOUR, INTENSITY, KCAL_PER_HOUR, LAW_COOLDOWN_DAYS, LAW_DEFS, WATER_ML_PER_HOUR, type LawId, type Laws, type Role, type SkillId } from './data';
 import { feedOnRoad, onExpeditionEvent, runRoutes } from './expedition';
 import { killSurvivor, turnSurvivor } from './lifecycle';
@@ -102,6 +102,12 @@ function dispatch(s: GameState, world: World, ev: GameEvent, t: number): void {
       return;
     case 'raid':
       raidEvent(s, world, ev.site);
+      return;
+    case 'hordes':
+      hordesTick(s, world);
+      return;
+    case 'siege':
+      siegeEvent(s, world, ev.sid, ev.size);
       return;
     case 'strangers':
       strangersEvent(s);

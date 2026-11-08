@@ -1,9 +1,10 @@
 import { push } from '../core/eventQueue';
 import { chance, int, range } from '../core/rng';
 import { DAY, dayOf, dayOfYear, HOUR, monthOf, nextClock } from '../core/time';
+import { gridDistance, gridDisk } from 'h3-js';
 import type { World } from '../world/types';
 import { dist } from '../world/geo';
-import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY, ZOMBIES } from './data';
+import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY, ZOMBIES, type ZombieType } from './data';
 import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { armourAgainst, killShare } from './combat';
 import { survivorWeapon } from './gear';
@@ -13,7 +14,6 @@ import { chargeBatteries, planPower } from './power';
 
 /** Đêm phát tín hiệu liên tục cần để được cứu. */
 export const RESCUE_DAYS = 7;
-import { zombieType } from './zombies';
 import { HERDS, herdCapacity, herdFor, herdNeeds, startingHerd, tickHerd } from './livestock';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
@@ -21,7 +21,7 @@ import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
 import type { GameState, Site, Survivor, Weather } from './types';
-import { densityMult, effectiveDanger } from './zombies';
+import { densityMult, effectiveDanger, hordeSize, nextHordeCell, zombieType } from './zombies';
 import { structureEffects } from '../data/structures';
 
 // Vietnam monthly climate: [rain probability, mean mm on a rainy day, temp North, temp South, storm probability].
@@ -295,6 +295,18 @@ export function dayEvent(s: GameState, world: World): void {
     alert(s, 'Một bầy zombie lớn đang đi qua khu vực (2 ngày). Mật độ x2.', 'bad');
   }
 
+  // Living hordes: bầy zombie trườn trên bản đồ về phía điểm của người chơi (hoặc mồi ồn).
+  s.hordes ??= [];
+  if (FEATURES.hordes && day >= 10 && s.hordes.length < 2 && chance(s.rng, 1 / 20)) {
+    const candidates = Object.keys(world.cells).filter((c) => s.sites.every((x) => gridDistance(c, x.cell) >= 3));
+    if (candidates.length) {
+      const cell = candidates[int(s.rng, 0, candidates.length - 1)];
+      const size = hordeSize(s.rng, day, world.cells[cell]?.danger ?? 2);
+      s.hordes.push({ id: `h${day}-${s.hordes.length}`, cell, size });
+      log(s, `Tin đồn: một bầy đông khoảng ${size} con trườn vào khu vực.`, 'warn');
+    }
+  }
+
   for (const site of s.sites) {
     const n = present(s, site).length;
     if (!n) continue;
@@ -342,7 +354,6 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   if (s.weather.storm) return;
   const site = siteById(s, siteId);
   const day = dayOf(s.t);
-  const st = baseStats(s, site);
   const danger = effectiveDanger(s, world, site.cell);
   const horde = day <= s.hordeUntilDay;
   const home = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base');
@@ -362,14 +373,106 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
     range(s.rng, 0.7, 1.3);
   // Traps thin the wave first, but can never stop more than 70% of it.
   const strength = Math.max(raw * 0.3, raw - structureEffects(site.interior.structures).spikes);
-  const guards = home.filter((v) => v.task?.kind === 'guard');
-  // Đợt tập kích là hỗn hợp loại zombie của đêm đó — loại quyết định sát thương & khả năng cắn.
-  const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true));
-  const wave = waveTypes.map((t) => ZOMBIES[t]);
-  const waveDmg = wave.reduce((a, z) => a + z.dmg, 0) / wave.length;
-  const waveBite = wave.reduce((a, z) => a + z.bite, 0) / wave.length;
+  // Đợt tập kích là hỗn hợp loại zombie của đêm đó (tiến hoá theo vùng) — loại quyết định sát thương & cắn.
+  const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true, danger, s.cellClear[site.cell] ?? 0));
+  defendAssault(s, site, strength, waveTypes, 'một đợt tập kích đêm');
+}
+
+/** Chu vi dàn mỏng: công trình tĩnh chỉ trù được một phần tường khi chu vi dài. */
+export function periStretch(site: Site, st: { watchtowers: number }): number {
+  const it = site.interior;
+  const perimM = Math.max(30, (it.perimeter ?? 60) + 0.5 * (it.yardPerimeter ?? 0));
+  const coverM = site.fortify.level * 45 + site.fence.level * 30 + st.watchtowers * 20;
+  return 0.55 + 0.45 * Math.min(1, coverM / perimM);
+}
+
+/** Đích của bầy: mồi ồn còn hiệu lực (≤6 ô), else điểm đang giữ gần nhất. */
+export function hordeTargetCell(s: GameState, fromCell: string): string | null {
+  if (s.decoy && s.decoy.until > s.t && gridDistance(fromCell, s.decoy.cell) <= 6) return s.decoy.cell;
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const x of s.sites) {
+    const d = gridDistance(fromCell, x.cell);
+    if (d < bestD) {
+      bestD = d;
+      best = x.cell;
+    }
+  }
+  return best;
+}
+
+/** Người chơi phát ồn 6h ở một ô (tốn 2L xăng) — bầy lân cận trườn về đó thay vì các điểm. */
+export function startDecoy(s: GameState, fromSiteId: string, cell: string): string | null {
+  s.decoy ??= null;
+  const site = siteById(s, fromSiteId);
+  if (site.stock.fuel < 2) return 'Cần 2L xăng để phát ồn 6 giờ';
+  take(site, 'fuel', 2);
+  s.decoy = { cell, until: s.t + 6 * HOUR };
+  log(s, `${site.name}: phát ồn 6 giờ (tốn 2L xăng) — bầy lân cận sẽ hướng về ô đó.`, 'info');
+  return null;
+}
+
+/** Bầy trườn mỗi 10h về đích; chạm sát đích → lập lịch tập kích bầy (siege). */
+export function hordesTick(s: GameState, world: World): void {
+  s.hordes ??= [];
+  for (const h of [...s.hordes]) {
+    const target = hordeTargetCell(s, h.cell);
+    if (!target) continue;
+    if (gridDistance(h.cell, target) <= 1) {
+      s.hordes = s.hordes.filter((x) => x.id !== h.id);
+      let site = s.sites[0];
+      let bestD = Infinity;
+      for (const x of s.sites) {
+        const d = gridDistance(h.cell, x.cell);
+        if (d < bestD) {
+          bestD = d;
+          site = x;
+        }
+      }
+      const inH = Math.round(range(s.rng, 2, 5));
+      push(s.queue, s.t + inH * HOUR, { k: 'siege', sid: site.id, size: h.size });
+      alert(s, `${site.name}: bầy ~${h.size} zombie còn cách 1 ô — đánh vào sau ~${inH} giờ nữa. Chuẩn bị!`, 'warn');
+      continue;
+    }
+    const opts = gridDisk(h.cell, 1).filter((c) => c !== h.cell && world.cells[c]);
+    h.cell = nextHordeCell(h.cell, target, opts, s.rng);
+  }
+  push(s.queue, s.t + 10 * HOUR, { k: 'hordes' });
+}
+
+/**
+ * Tập kích bầy: sức theo kích thước bầy, loại zombie tiến hoá theo vùng.
+ * Phần giải quyết (phòng thủ → thắng/thua, thương tích, mất mát) dùng chung defendAssault.
+ */
+export function siegeEvent(s: GameState, world: World, sid: string, size: number): void {
+  if (s.weather.storm) return;
+  const site = siteById(s, sid);
+  const day = dayOf(s.t);
+  const home = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base');
+  if (home.length < 3) {
+    // Không đủ người gác — bầy san vào địa bàn rồi đi tiếp (chỉ bớt "sạch" ở ô).
+    s.cellClear[site.cell] = Math.max(0, (s.cellClear[site.cell] ?? 0) - 0.3);
+    return;
+  }
+  const strength = size * (8 + 1.5 * day ** 0.75) * (0.6 + 0.4 * Math.min(1, home.length / 10)) * (1 + site.heat / 100) * range(s.rng, 0.85, 1.15) * 0.75;
+  const danger = effectiveDanger(s, world, site.cell);
+  const cleared = s.cellClear[site.cell] ?? 0;
+  const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true, danger, cleared));
+  defendAssault(s, site, strength, waveTypes, 'một bầy zombie đông đảo');
+  s.cellClear[site.cell] = Math.max(0, cleared - 0.3);
+}
+
+/** Phần giải quyết chung của raid (ambient) và siege (bầy): phòng thủ → thắng/thua. */
+function defendAssault(s: GameState, site: Site, strength: number, waveTypes: ZombieType[], atkLabel: string): void {
+  const st = baseStats(s, site);
+  const zombies = waveTypes.map((t) => ZOMBIES[t]);
+  const waveDmg = zombies.reduce((a, z) => a + z.dmg, 0) / zombies.length;
+  const waveBite = zombies.reduce((a, z) => a + z.bite, 0) / zombies.length;
+  const home = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base');
   // Ai cầm gì thì đánh bằng món đó — trang bị là của từng người, không phải của kho.
-  let defense = st.defenseStatic;
+  // Chu vi dàn mỏng: công trình tĩnh chỉ trù được một phần tường khi chu vi dài.
+  let defense = st.defenseStatic * periStretch(site, st);
+  const guards = home.filter((v) => v.task?.kind === 'guard');
   for (const g of guards) {
     const w = survivorWeapon(site, g);
     defense += (8 + 2 * skill(g, 'melee') + weaponDefense(w)) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
@@ -393,14 +496,14 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   if (defense >= strength) {
     s.stats.raidsRepelled++;
     for (const g of guards) if (chance(s.rng, 0.25)) g.hp -= range(s.rng, 3, 12);
-    alert(s, `${site.name}: đẩy lùi một đợt tập kích đêm (${vs}).`, 'good');
+    alert(s, `${site.name}: đẩy lùi ${atkLabel} (${vs}).`, 'good');
     return;
   }
   s.stats.raidsLost++;
   const ratio = (strength - defense) / strength;
   site.fortify.hp = Math.max(0, site.fortify.hp - ratio * 60);
   site.fence.hp = Math.max(0, site.fence.hp - ratio * 80);
-  // A lost raid also tears down outdoor works: walls, barricades, traps, stands.
+  // Thua cũng dỡ các công trình ngoài trời: tường, chướng ngại, bẫy, chòi.
   const structKeys = Object.keys(site.interior.structures ?? {});
   const frac = structKeys.length * ratio;
   const brokenStructs = Math.floor(frac) + (chance(s.rng, frac % 1) ? 1 : 0);
@@ -432,7 +535,7 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   for (const k of ['food', 'rawFood', 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
   alert(
     s,
-    `${site.name}: zombie phá vào! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư${brokenStructs ? `, ${brokenStructs} ô công trình bị phá` : ''}.`,
+    `${site.name}: zombie phá vào trong ${atkLabel}! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư${brokenStructs ? `, ${brokenStructs} ô công trình bị phá` : ''}.`,
     'bad',
   );
   for (const v of shuffled.slice(0, hurt)) {
@@ -443,7 +546,6 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
     }
   }
 }
-
 export function strangersEvent(s: GameState): void {
   const day = dayOf(s.t);
   const k = chance(s.rng, 0.1) ? int(s.rng, 3, 4) : int(s.rng, 1, 2);

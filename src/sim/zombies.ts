@@ -1,4 +1,5 @@
 import { range, weighted, type Rng } from '../core/rng';
+import { gridDistance } from 'h3-js';
 import type { World } from '../world/types';
 import { ZOMBIES, type ZombieType } from './data';
 import type { GameState } from './types';
@@ -18,11 +19,25 @@ export function densityMult(day: number, horde: boolean, tempC = 28): number {
 /** Unsearched containers still decay (weather, other survivors) — endless-mode tuned. */
 export const lootFactor = (day: number) => Math.max(0.2, 1 - 0.012 * (day - 1));
 
-export function zombieType(rng: Rng, day: number, night: boolean): ZombieType {
+/**
+ * Loại zombie của một lần gặp — có tiến hoá theo vùng:
+ * danger cao (đ đô đông dân) -> brute/bloater xuất hiện sớm và nhiều hơn;
+ * ô từng bị người chơi dọn sạch -> thế hệ quay lại nghiêng về loại khoé.
+ * (stalker vẫn chỉ ban đêm; trọng số w0->w1 theo ngày giữ nguyên.)
+ */
+export function zombieType(rng: Rng, day: number, night: boolean, danger = 2, cleared = 0): ZombieType {
   const k = Math.min(1, (day - 1) / 60);
+  const evoDanger = 1 + 1.5 * Math.max(0, danger - 1);
+  const evoBack = 1 + 0.5 * Math.max(0, Math.max(0, cleared));
+  const boost = (z: ZombieType): number => {
+    let w = ZOMBIES[z].w0 + (ZOMBIES[z].w1 - ZOMBIES[z].w0) * k;
+    if (z === 'brute' || z === 'bloater') w *= Math.max(evoDanger, evoBack);
+    if (z === 'runner') w *= evoBack;
+    return w;
+  };
   const items = (Object.keys(ZOMBIES) as ZombieType[])
     .filter((z) => z !== 'stalker' || night)
-    .map((z) => [z, ZOMBIES[z].w0 + (ZOMBIES[z].w1 - ZOMBIES[z].w0) * k] as const);
+    .map((z) => [z, boost(z)] as const);
   return weighted(rng, items);
 }
 
@@ -66,4 +81,27 @@ export function poisson(rng: Rng, mean: number): number {
     p *= range(rng, 0, 1);
   } while (p > L);
   return k - 1;
+}
+
+/** Kích thước một bầy mới: to dần theo ngày, theo danger của ô sinh. */
+export function hordeSize(rng: Rng, day: number, danger: number): number {
+  return Math.round((10 + 0.9 * day) * (0.8 + 0.2 * Math.max(1, danger)) * range(rng, 0.9, 1.1));
+}
+
+/**
+ * Bầy trườn 1 ô về đích: chọn trong lân cận ô gần đích hơn,
+ * có jitter nhỏ cho tự nhiên (vẫn deterministic qua rng).
+ */
+export function nextHordeCell(cell: string, target: string, candidates: string[], rng: Rng): string {
+  let best = cell;
+  let bestScore = Infinity;
+  for (const c of candidates) {
+    if (c === cell) continue;
+    const score = gridDistance(c, target) + range(rng, 0, 0.6);
+    if (score < bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return best;
 }
