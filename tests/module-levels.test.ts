@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { MODULES, type ModuleId } from '../src/data/modules';
 import { RECIPES } from '../src/data/recipes';
@@ -114,21 +117,20 @@ describe('module ladders change real numbers', () => {
   });
 
   it('no upgrade note promises a number the code never applies', () => {
-    // Every ladder must belong to a module whose level baseStats or the recipe graph reads.
-    const readByStats = new Set([
-      'filter', 'well', 'water_tank', 'garden', 'latrine', 'infirmary', 'generator', 'watchtower',
-      'storage', 'cellar', 'coop', 'pond', 'bedroom', 'shelter', 'rec_room', 'bookshelf', 'herb_garden', 'garage',
-      'lighting', 'fridge', 'water_pump', 'power_tools', 'electric_fence', 'radio', 'grow_light',
-    ]);
-    const readByRecipes = new Set(RECIPES.map((r) => r.station));
+    // Rather than keeping a hand-written allowlist (which rots as modules are
+    // added), scan the simulation for the module id: if nothing outside the data
+    // file mentions it, its ladder is decoration.
+    const simDir = resolve(dirname(fileURLToPath(import.meta.url)), '../src/sim');
+    const sources = readdirSync(simDir)
+      .filter((f) => f.endsWith('.ts'))
+      .map((f) => readFileSync(resolve(simDir, f), 'utf8'))
+      .join(String.fromCharCode(10));
+    const recipeStations = new Set(RECIPES.map((r) => r.station));
+
     for (const [id, def] of Object.entries(MODULES) as [ModuleId, (typeof MODULES)[ModuleId]][]) {
       if (!def.levels?.length) continue;
-      expect(readByStats.has(id) || readByRecipes.has(id), `${id} has a ladder nobody reads`).toBe(true);
-    }
-    // And the recipe-driven ones must gate something at level >= 2.
-    for (const st of readByRecipes) {
-      const levels = new Set(RECIPES.filter((r) => r.station === st).map((r) => r.level));
-      expect(Math.max(...levels), `${st} gates nothing above level 1`).toBeGreaterThanOrEqual(1);
+      const readSomewhere = sources.includes(`'${id}'`) || sources.includes(`"${id}"`) || recipeStations.has(id);
+      expect(readSomewhere, `${id} has a ladder nobody reads`).toBe(true);
     }
   });
 

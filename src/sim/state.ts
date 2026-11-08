@@ -317,11 +317,20 @@ export interface BaseStats {
   fenceDefense: number; // flat defence added at night by the electric fence
   growYield: number; // garden multiplier from grow lights
   radioMorale: number; // morale target bonus from the radio
+  /** Cold reduction from a burning stove (0 when it had no wood). */
+  stoveWarmth: number;
+  /** Cold reduction from the electric heater while it has power. */
+  heaterWarmth: number;
+  /** True when a level-3 radio is on the air and can call rescue. */
+  rescueSignal: boolean;
   /** Number of coop rooms, and their best level. */
   coop: number;
   coopLevel: number;
   pond: number;
   pondLevel: number;
+  /** Trại chăn nuôi (dê/lợn/bò) và cấp cao nhất. */
+  barn: number;
+  barnLevel: number;
   defenseStatic: number;
 }
 
@@ -379,6 +388,8 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     coopLevel: roomsWith(it, 'coop').reduce((n, r) => Math.max(n, r.moduleLevel ?? 1), 0),
     pond: count('pond'),
     pondLevel: roomsWith(it, 'pond').reduce((n, r) => Math.max(n, r.moduleLevel ?? 1), 0),
+    barn: count('barn'),
+    barnLevel: roomsWith(it, 'barn').reduce((n, r) => Math.max(n, r.moduleLevel ?? 1), 0),
     filterRate: 12 * (1 + 0.5 * (filterLvl - 1)),
     wellDaily: 1500 * (1 + 0.35 * (wellLvl - 1)),
     gardenYield: 1 + 0.1 * (gardenLvl - 1),
@@ -405,6 +416,10 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     fenceDefense: on('electric_fence') ? [25, 35, 45][Math.min(2, lvlOf('electric_fence') - 1)] : 0,
     growYield: on('grow_light') ? [1.1, 1.25, 1.4][Math.min(2, lvlOf('grow_light') - 1)] : 1,
     radioMorale: on('radio') ? [4, 6, 8][Math.min(2, lvlOf('radio') - 1)] : 0,
+    // Sưởi: lò củi (đốt gỗ, không cần điện) và máy sưởi điện (cần điện).
+    stoveWarmth: (bestLevelRaw.stove ?? 0) > 0 ? [0.5, 0.7, 0.85][Math.min(2, lvlOf('stove') - 1)] : 0,
+    heaterWarmth: on('electric_heater') ? [0.6, 0.75, 0.9][Math.min(2, lvlOf('electric_heater') - 1)] : 0,
+    rescueSignal: on('radio') && lvlOf('radio') >= 3,
     defenseStatic:
       site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
       site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +

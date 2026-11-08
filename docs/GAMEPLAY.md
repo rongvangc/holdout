@@ -818,3 +818,28 @@ Bật hết tốn ~10 kW, nên phải chọn. Ví dụ: hàng rào + đèn + t�
 Bot xây máy phát → đèn → tủ lạnh → bơm → máy móc → hàng rào → radio, nhưng **chỉ khi đã ổn định** (dân số > 0 và lương thực > 10 ngày) và đã có máy phát. Nó cũng tự chế tấm pin và ắc quy khi có tấm thép.
 
 Đo 90 ngày × 10 seed: **0/10 ván sụp**, 7–18 người sống. Lưu ý: cùng lúc đó một session khác thêm giới hạn dân số theo lương thực, nên **không quy toàn bộ cải thiện này cho điện**.
+
+---
+
+## 16. Sưởi mùa đông
+
+Lạnh đã có cơ chế từ trước (dưới 18 °C thì tăng mệt, dưới 12 °C thì mất HP, giảm bởi quần áo). Nhưng chỉ có **một** cách chống: mặc ấm. Nay có hai nguồn sưởi tại chỗ.
+
+| Nguồn | Nhiên liệu | Giảm rét (cấp 1/2/3) |
+|---|---|---|
+| **Lò sưởi** | 6 / 8 / 10 gỗ mỗi đêm lạnh | 50% / 70% / 85% |
+| **Máy sưởi điện** | 2 kW điện | 60% / 75% / 90% |
+
+- Lò sưởi **chỉ đốt gỗ khi trời dưới 18 °C**; hết gỗ thì đêm đó lạnh và có cảnh báo.
+- Máy sưởi điện là thiết bị thứ 8 trong danh sách cắt tải điện (ưu tiên cuối — ấm là tiện nghi, hàng rào mới là sống còn).
+- Hai nguồn cộng dồn nhưng **kẹp ở 95%**: không có chuyện miễn nhiễm rét.
+
+## 17. Điều kiện thắng: gọi cứu hộ
+
+Game không còn vô tận tuyệt đối. Radio **cấp 3** khi có điện sẽ phát tín hiệu cầu cứu:
+
+- Mỗi đêm radio cấp 3 được cấp điện **và điểm có ít nhất 4 người** → `rescueDays` +1
+- Đêm mất điện → `rescueDays` −1 (tín hiệu gián đoạn thì mất uy tín)
+- Đủ **7 đêm liên tục** → `won = true`, game kết thúc với màn "ĐƯỢC CỨU"
+
+Tiến độ hiện trong drawer Kho (`Tín hiệu cầu cứu: 3/7 đêm`). Đây là mục tiêu dài hạn đầu tiên của game: muốn thắng phải có **lưới điện ổn định** (pin mặt trời + ắc quy, vì máy phát cần xăng liên tục) và **một cộng đồng đủ người để vận hành**.

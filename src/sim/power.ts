@@ -43,6 +43,7 @@ export const APPLIANCES: Appliance[] = [
   { module: 'power_tools', label: 'Máy móc điện', kw: 2, priority: 5 },
   { module: 'radio', label: 'Radio', kw: 0.3, priority: 6 },
   { module: 'grow_light', label: 'Đèn trồng cây', kw: 2, priority: 7 },
+  { module: 'electric_heater', label: 'Máy sưởi điện', kw: 2, priority: 8 },
 ];
 
 export interface PowerState {

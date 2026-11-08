@@ -211,6 +211,8 @@ export interface Site {
   batteryKwh?: number;
   /** Appliances that got power tonight (see sim/power.ts). */
   powerOn?: string[];
+  /** True when the stove actually burned wood tonight. */
+  warmthActive?: boolean;
   claimedDay: number;
 }
 
@@ -241,6 +243,10 @@ export interface GameState {
   nextId: number;
   autoRoles: boolean;
   gameOver: boolean;
+  /** Set when the radio has called rescue out: the run is won. */
+  won?: boolean;
+  /** Consecutive nights the rescue signal has been on the air. */
+  rescueDays?: number;
 }
 
 export type StockDelta = Partial<Record<ItemId, number>>;

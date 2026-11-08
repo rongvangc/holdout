@@ -125,10 +125,22 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
       {s.gameOver && (
         <>
           <div className="dither" />
-          <div className="red">
-            <b>KẾT THÚC.</b> Cộng đồng tồn tại {dayOf(s.t)} ngày. {s.stats.recruited} người đã gia nhập, {s.stats.deaths} người chết.
-          </div>
+          {s.won ? (
+            <div className="ok">
+              <b>ĐƯỢC CỨU.</b> Tín hiệu cầu cứu được trả lời sau {dayOf(s.t)} ngày. {s.survivors.filter((v) => v.status === 'alive').length} người
+              rời khỏi đây còn sống.
+            </div>
+          ) : (
+            <div className="red">
+              <b>KẾT THÚC.</b> Cộng đồng tồn tại {dayOf(s.t)} ngày. {s.stats.recruited} người đã gia nhập, {s.stats.deaths} người chết.
+            </div>
+          )}
         </>
+      )}
+      {!s.gameOver && (s.rescueDays ?? 0) > 0 && (
+        <div className="ok">
+          Tín hiệu cầu cứu: {s.rescueDays}/7 đêm
+        </div>
       )}
     </div>
   );

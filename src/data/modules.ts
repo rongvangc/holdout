@@ -32,8 +32,11 @@ export type ModuleId =
   | 'electric_fence'
   | 'radio'
   | 'grow_light'
+  | 'stove'
+  | 'electric_heater'
   | 'coop'
-  | 'pond';
+  | 'pond'
+  | 'barn';
 
 export type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
 
@@ -416,6 +419,38 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
       { cost: { wire: 20, gear: 4, plate: 3 }, workSec: 7 * H, note: 'Cấp 3: +40% năng suất' },
     ],
   },
+  // ---- sưởi: mùa đông có hai cách chống, một tốn củi một tốn điện ------------
+  stove: {
+    label: 'Lò sưởi',
+    icon: '♨',
+    color: '#c0603a',
+    placement: 'indoor',
+    minArea: 4,
+    maxPerSite: 1,
+    workSec: () => 3 * H,
+    cost: () => ({ scrap: 10, stone: 8, wood: 4 }),
+    desc: 'Đốt củi những đêm lạnh: giảm 50% ảnh hưởng của rét cho cả điểm. Tốn 6 gỗ/đêm khi trời dưới 18°C.',
+    levels: [
+      { cost: { stone: 14, scrap: 6 }, workSec: 4 * H, note: 'Cấp 2: giảm 70% rét, tốn 8 gỗ/đêm' },
+      { cost: { plate: 2, stone: 20 }, workSec: 6 * H, note: 'Cấp 3: giảm 85% rét, 10 gỗ/đêm' },
+    ],
+  },
+  electric_heater: {
+    label: 'Máy sưởi điện',
+    icon: '⚡',
+    color: '#c08a4a',
+    placement: 'indoor',
+    minArea: 3,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 3 * H,
+    cost: () => ({ scrap: 12, cloth: 4, wood: 4 }),
+    desc: 'Không tốn củi, chỉ tốn điện: giảm 60% rét. Cần 2 kW.',
+    levels: [
+      { cost: { wire: 10, plate: 2 }, workSec: 4 * H, note: 'Cấp 2: giảm 75% rét' },
+      { cost: { wire: 14, plate: 3, gear: 2 }, workSec: 6 * H, note: 'Cấp 3: giảm 90% rét' },
+    ],
+  },
   forge: {
     label: 'Lò rèn',
     icon: '⚒',
@@ -505,6 +540,21 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     levels: [
       { cost: { wood: 26, rope: 8, cloth: 4 }, workSec: 5 * H, note: 'Cấp 2: nhiều gà hơn, trứng ×1.6' },
       { cost: { plank: 12, hinge: 4, gear: 1 }, workSec: 8 * H, note: 'Cấp 3: chuồng kín, gà không bị mất ban đêm' },
+    ],
+  },
+  barn: {
+    label: 'Trại chăn nuôi',
+    icon: '⛨',
+    color: '#a8865a',
+    placement: 'outdoor',
+    minArea: 20,
+    maxPerSite: 2,
+    workSec: () => 6 * H,
+    cost: () => ({ wood: 30, rope: 6, plank: 8 }),
+    desc: 'Dê/lợn/bò: sữa hằng ngày, thịt khi mổ, phân bón cho vườn. Cần nước uống và cỏ/cám; chăn thả ở ruộng thì đỡ cám. Ồn — heat +1/ngày.',
+    levels: [
+      { cost: { plank: 14, hinge: 4, rope: 8 }, workSec: 8 * H, note: 'Cấp 2: lợn — thịt nhiều hơn, sữa ít' },
+      { cost: { plank: 20, gear: 2, lime: 8 }, workSec: 12 * H, note: 'Cấp 3: bò — sữa ×1.8 và mổ được thịt bò' },
     ],
   },
   pond: {

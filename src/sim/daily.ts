@@ -9,6 +9,9 @@ import { armourAgainst, killShare } from './combat';
 import { survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
 import { chargeBatteries, planPower } from './power';
+
+/** Đêm phát tín hiệu liên tục cần để được cứu. */
+export const RESCUE_DAYS = 7;
 import { zombieType } from './zombies';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
@@ -62,7 +65,8 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const care = need > 0 ? Math.min(1, plot.tendedToday / need) : 1;
     const cold = s.weather.tempC < 18 ? 0.6 : 1;
     const before = plot.growth;
-    plot.growth = Math.min(1, plot.growth + ((0.45 + 0.55 * care) / CROPS[plot.crop].days) * cold);
+    const fertilised = st.barn > 0 ? 1.25 : 1; // phân từ trại chăn nuôi
+    plot.growth = Math.min(1, plot.growth + ((0.45 + 0.55 * care) / CROPS[plot.crop].days) * cold * fertilised);
     if (s.weather.storm && room.outdoor) plot.growth = Math.max(0, plot.growth - 0.15);
     plot.tendedToday = 0;
     if (before < 1 && plot.growth >= 1) log(s, `${site.name}: ${CROPS[plot.crop].label} đã chín.`, 'good');
@@ -90,6 +94,39 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const bite = st.pond * (lvl >= 3 ? 1.5 : lvl === 2 ? 1.2 : 1) * (murky ? 0.4 : 1);
     if (chance(s.rng, murky ? 0.3 : 0.65)) addStock(s, site, { ca: Math.round(bite * 10) / 10 });
     if (murky) log(s, `${site.name}: ao cá bẩn, cá chết dần.`, 'warn');
+  }
+
+
+  // Trại chăn nuôi (gia súc): sữa hằng ngày, thịt khi mổ, phân bón cho vườn.
+  // Dê cấp 1 sống bằng cỏ; lợn/bò cần thêm cám (rawFood) — chăn thả ở ruộng thì đỡ hơn.
+  if (st.barn > 0) {
+    const lvl = Math.max(1, st.barnLevel);
+    const graze = site.kind === 'field' ? 1 : 0.55; // ruộng có cỏ, sân trong phố thì gần như không
+    const herd = st.barn; // mỗi trại là một bầy
+    const water = home.length * 6 + herd * 25;
+    const drank = take(site, site.stock.water >= water ? 'water' : 'dirtyWater', Math.min(water, site.stock.water + site.stock.dirtyWater));
+    if (drank < herd * 15) {
+      log(s, `${site.name}: trại chăn nuôi thiếu nước uống, bầy vật yếu đi.`, 'warn');
+      site.filth = Math.min(100, site.filth + 1.5 * herd);
+    } else {
+      // Cỏ + phụ phẩm: dê (cấp 1) gần như tự kiếm, lợn/bò cần cám.
+      const feedNeed = herd * (lvl >= 2 ? 1.6 : 0.6) * (1 - 0.45 * graze);
+      const feed = Math.min(feedNeed, site.stock.rawFood + site.stock.bot * 0);
+      if (feed > 0) take(site, 'rawFood', feed);
+      const starved = feedNeed - feed > feedNeed * 0.5;
+
+      // Sữa: dê/bò. Lợn (cấp 2) cho ít sữa, nhiều thịt.
+      const milkPerDay = herd * (lvl >= 3 ? 1.8 : lvl === 2 ? 0.5 : 1.1) * (starved ? 0.3 : 1) * (0.5 + 0.5 * graze);
+      if (milkPerDay > 0) addStock(s, site, { sua: Math.round(milkPerDay * 10) / 10 });
+
+      // Mổ thịt: thỉnh thoảng, cấp càng cao càng nhiều.
+      if (chance(s.rng, starved ? 0.005 : 0.03 * herd)) {
+        addStock(s, site, { thit: (lvl >= 3 ? 2.4 : lvl === 2 ? 2 : 1.2) * (0.8 + 0.4 * graze) });
+        log(s, `${site.name}: mổ một con trong trại chăn nuôi.`, 'good');
+      }
+      site.heat = Math.min(100, site.heat + 1 * herd);
+      if (starved) log(s, `${site.name}: trại chăn nuôi thiếu cỏ/cám, bầy vật gầy đi.`, 'warn');
+    }
   }
 
   // Spoilage. Heat speeds everything up.
@@ -179,6 +216,34 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     log(s, `${site.name}: thiếu điện (${power.demand.toFixed(1)}/${power.supply.toFixed(1)} kW) — tắt ${power.shed.length} thiết bị.`, 'warn');
   } else if (power.on.length) {
     log(s, `${site.name}: ${power.on.length} thiết bị chạy bằng ${power.source === 'solar' ? 'pin mặt trời' : 'máy phát'}.`, 'info');
+  }
+  // Lò sưởi: chỉ tốn củi khi trời thật sự lạnh, và tắt nếu hết gỗ.
+  const stoveLvl = (site.interior.rooms.find((r) => r.module === 'stove')?.moduleLevel ?? 0) as number;
+  if (stoveLvl > 0 && s.weather.tempC < 18) {
+    const woodPerNight = [6, 8, 10][Math.min(2, stoveLvl - 1)];
+    if ((site.stock.wood ?? 0) >= woodPerNight) {
+      take(site, 'wood', woodPerNight);
+      site.warmthActive = true;
+    } else {
+      site.warmthActive = false;
+      log(s, `${site.name}: hết củi sưởi — đêm nay lạnh.`, 'warn');
+    }
+  } else {
+    site.warmthActive = false;
+  }
+
+  // Radio cấp 3 phát tín hiệu cứu hộ: mỗi đêm có điện là một ngày được tính.
+  if (st.rescueSignal && (st.population ?? 0) >= 4) {
+    s.rescueDays = (s.rescueDays ?? 0) + 1;
+    if (s.rescueDays === 1) alert(s, `${site.name}: radio cấp 3 bắt đầu phát tín hiệu cầu cứu.`, 'good');
+    if (s.rescueDays >= RESCUE_DAYS && !s.won) {
+      s.won = true;
+      s.gameOver = true;
+      alert(s, `Ngày ${day}: tín hiệu được trả lời. Cộng đồng ${site.name} được cứu — bạn thắng.`, 'good');
+      log(s, 'MÁY BAY ĐÃ ĐẾN. Bạn sống sót qua tận thế.', 'good');
+    }
+  } else if (s.rescueDays) {
+    s.rescueDays = Math.max(0, s.rescueDays - 1);
   }
   site.heat = Math.max(0, site.heat - 12);
   // Slow wear: walls and fences rot without upkeep, repair work tops them back up.

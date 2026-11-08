@@ -22,10 +22,16 @@ function integrate(s: GameState, dt: number): void {
   // Infirmary level decides how fast people mend while resting.
   const infirmary = new Map<string, number>();
   const bedQuality = new Map<string, number>();
+  const warmth = new Map<string, number>();
   for (const site of s.sites) {
     const st = baseStats(s, site);
     if (st.infirmary) infirmary.set(site.id, st.healMult);
     bedQuality.set(site.id, st.bedQuality);
+    // Warmth only counts for the sources that actually ran tonight.
+    const heaterOn = (site.powerOn ?? []).includes('electric_heater');
+    const stoveWarmth = site.warmthActive ? st.stoveWarmth : 0;
+    const heaterWarmth = heaterOn ? st.heaterWarmth : 0;
+    warmth.set(site.id, Math.min(0.95, stoveWarmth + heaterWarmth));
   }
   for (const v of s.survivors) {
     if (v.status !== 'alive') continue;
@@ -38,7 +44,7 @@ function integrate(s: GameState, dt: number): void {
     // Rét: mặc gì cũng quyết định — trước đây quần áo không có tác dụng nào.
     const cold = s.weather.tempC < 18 ? (18 - s.weather.tempC) / 18 : 0;
     if (cold > 0) {
-      const exposure = cold * (1 - insulation(v));
+      const exposure = cold * (1 - insulation(v)) * (1 - (warmth.get(v.siteId) ?? 0));
       v.fatigue += 0.6 * exposure * h;
       if (s.weather.tempC < 12) v.hp -= 0.15 * exposure * h * (s.weather.rainMm > 40 ? 2 : 1);
     }
