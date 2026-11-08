@@ -20,9 +20,11 @@ function integrate(s: GameState, dt: number): void {
   const hotMult = s.weather.hot ? 1.2 : 1;
   // Infirmary level decides how fast people mend while resting.
   const infirmary = new Map<string, number>();
+  const bedQuality = new Map<string, number>();
   for (const site of s.sites) {
     const st = baseStats(s, site);
     if (st.infirmary) infirmary.set(site.id, st.healMult);
+    bedQuality.set(site.id, st.bedQuality);
   }
   for (const v of s.survivors) {
     if (v.status !== 'alive') continue;
@@ -30,7 +32,7 @@ function integrate(s: GameState, dt: number): void {
     const I = INTENSITY[v.task?.intensity ?? 'rest'];
     v.kcal -= KCAL_PER_HOUR * I.kcal * h * (hasTrait(v, 'glutton') ? 1.2 : 1) * (v.sickDays > 0 ? 1.15 : 1);
     v.water -= WATER_ML_PER_HOUR * I.water * h * hotMult;
-    if (kind === 'sleep') v.fatigue -= sleepRate(!!v.task?.inBed) * h;
+    if (kind === 'sleep') v.fatigue -= sleepRate(!!v.task?.inBed) * h * (bedQuality.get(v.siteId) ?? 1);
     else v.fatigue += FATIGUE_PER_HOUR * I.fatigue * h * (hasTrait(v, 'light_sleeper') ? 0.8 : 1);
     v.fatigue = Math.max(0, Math.min(100, v.fatigue));
     // Trên đường: ăn từ khẩu phần mang theo, không thì đói thật.

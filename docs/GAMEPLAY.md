@@ -719,6 +719,12 @@ Mỗi module có `levels` là bậc nâng tiếp (cấp 1 = lúc xây xong). Nâ
 | Chuồng gà | 3 trứng/ngày | 4,8 | 4,8 + không mất gà đêm |
 | Ao cá | ×1 sản lượng | ×1,2 | ×1,5 |
 | Bếp củi | mẻ 3000 kcal | mẻ 8000 | — |
+| Phòng ngủ | 1 giường / 5 m² | 1 / 4 m², hồi mệt +10% | hồi mệt +20% |
+| Lán trại | 1 chỗ / 6 m², bão xoá 50% | 1 / 5 m², bão xoá 32% | 1 / 4 m², bão xoá 15% |
+| Phòng sinh hoạt | +8 tinh thần | +12 | +16 |
+| Kệ sách | đọc ×1,0 | ×1,3 | ×1,6 |
+| Vườn thuốc | ×1,0 dược liệu | ×1,25 | ×1,5 |
+| Chòi xe | 0,08 L/km, +80 kg | 0,06 L/km, +100 kg | 0,04 L/km, +140 kg |
 
 Ngoài ra **trạm chế tạo nhanh hơn 25% mỗi cấp**: công thức ở cấp 2 làm nhanh hơn cấp 1 một phần tư.
 
@@ -726,8 +732,8 @@ Ngoài ra **trạm chế tạo nhanh hơn 25% mỗi cấp**: công thức ở c�
 
 Công thức khai báo `station` + `level`, nên cấp trạm còn là **công tắc mở khoá**: Lò rèn cấp 2 mở tấm thép và vũ khí dài, cấp 3 mở đồ nặng; Xưởng may cấp 3 mở giáp tấm; Bàn thợ cấp 3 mở pin mặt trời.
 
-### 14.3 Cái gì chưa có cấp
+### 14.3 Không còn module nào thiếu bậc
 
-`bedroom`, `latrine` (đã có), `shelter`, `rec_room`, `bookshelf`, `garage`, `herb_garden` — chưa có bậc nâng cấp. Cố ý: giường và lán đã scale theo diện tích, còn nhà xe/kệ sách không có chỉ số nào để nâng.
+Cả **26 module** đều có bậc nâng cấp, và mỗi bậc đều đổi một con số có chỗ đọc. Test `tests/module-levels.test.ts` chặn hai kiểu sai: thêm bậc mà không ai đọc, và để một module không có bậc.
 
 Có test khoá luật "mỗi bậc phải có chỗ đọc số" (`tests/module-levels.test.ts`), để không ai thêm bậc chỉ có chữ.

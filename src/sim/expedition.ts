@@ -171,12 +171,13 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
             : 10 * MIN;
   const oneWay = kind === 'claim' || (kind === 'convoy' && !!o.relocate);
   const legs = oneWay ? 1 : 2;
-  const garageAtFrom = baseStats(s, from).garage;
-  const fuelPerKm = o.mode === 'car' && garageAtFrom ? 0.08 : FUEL_L_PER_KM;
+  const fromStats = baseStats(s, from);
+  const garageAtFrom = fromStats.garage;
+  const fuelPerKm = o.mode === 'car' && garageAtFrom ? fromStats.garageFuel : FUEL_L_PER_KM;
   const fuelL = o.mode === 'car' ? ((pathLen * legs) / 1000) * fuelPerKm : 0;
   const capacityKg =
     members.reduce((a, m) => a + 22 + 2 * skill(m, 'fitness') + packCapacity(m), 0) +
-    (o.mode === 'car' ? (garageAtFrom ? 330 : 250) : 0);
+    (o.mode === 'car' ? (garageAtFrom ? 250 + fromStats.garageCargo : 250) : 0);
   const cargoKg = stockWeight(o.cargo ?? {});
 
   const day = dayOf(s.t);

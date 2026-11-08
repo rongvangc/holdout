@@ -66,6 +66,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: (a) => 0.5 * H + Math.floor(a / 5) * 0.4 * H,
     cost: (a) => ({ wood: 4 * Math.max(1, Math.floor(a / 5)), cloth: 2 * Math.max(1, Math.floor(a / 5)) }),
     desc: '1 giường / 5 m². Ngủ giường hồi mệt 14.3/h, ngủ sàn chỉ 9/h và giảm tinh thần.',
+    levels: [
+      { cost: { plank: 8, cloth: 6, thread: 4 }, workSec: 3 * H, note: 'Cấp 2: giường tầng — 1 giường / 4 m², ngủ hồi nhanh hơn' },
+      { cost: { plank: 12, cloth: 10, thread: 8 }, workSec: 5 * H, note: 'Cấp 3: đệm và chăn — hồi mệt +20%' },
+    ],
   },
   kitchen: {
     label: 'Bếp củi',
@@ -194,6 +198,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: (a) => 1 * H + a * 20,
     cost: (a) => ({ wood: Math.ceil(a / 10), cloth: Math.ceil(a / 20) }),
     desc: 'Trồng dược liệu, chu kỳ 40 ngày. Thu hoạch: thuốc và băng gạc (cần vải khi thu băng). Farmer chăm như vườn thường.',
+    levels: [
+      { cost: { wood: 6, rope: 4, cloth: 4 }, workSec: 3 * H, note: 'Cấp 2: +25% dược liệu' },
+      { cost: { plank: 8, lime: 4, cloth: 6 }, workSec: 5 * H, note: 'Cấp 3: +50% dược liệu và băng gạc' },
+    ],
   },
   well: {
     label: 'Giếng khoan tay',
@@ -236,6 +244,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 1.5 * H,
     cost: () => ({ wood: 8, cloth: 6 }),
     desc: 'Bữa ăn chung, kể chuyện. Tinh thần +8 cho cả nhóm.',
+    levels: [
+      { cost: { plank: 8, cloth: 6, books: 1 }, workSec: 3 * H, note: 'Cấp 2: +12 tinh thần' },
+      { cost: { plank: 12, cloth: 10, books: 2 }, workSec: 5 * H, note: 'Cấp 3: +16 tinh thần' },
+    ],
   },
   bookshelf: {
     label: 'Kệ sách',
@@ -247,6 +259,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 1 * H,
     cost: () => ({ wood: 4, cloth: 2 }),
     desc: 'Mở "Tự học" trong tab Người: người được gán kỹ năng sẽ đọc dẫn đúng cập kỹ năng đó thay vì ngẫu nhiên.',
+    levels: [
+      { cost: { plank: 6, books: 3, thread: 2 }, workSec: 2 * H, note: 'Cấp 2: đọc nhanh hơn 30%' },
+      { cost: { plank: 10, books: 6, cloth: 4 }, workSec: 4 * H, note: 'Cấp 3: đọc nhanh hơn 60%, tự học hiệu quả hơn' },
+    ],
   },
   garage: {
     label: 'Chòi xe',
@@ -258,6 +274,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 4 * H,
     cost: () => ({ wood: 10, scrap: 20, parts: 1 }),
     desc: 'Xe xuất phát từ điểm có chòi: tốn 0.08 L/km (thay vì 0.1) và thêm 80 kg sức chở.',
+    levels: [
+      { cost: { plank: 10, scrap: 10, parts: 1 }, workSec: 4 * H, note: 'Cấp 2: 0,07 L/km, +100 kg sức chở' },
+      { cost: { plate: 2, gear: 2, parts: 2 }, workSec: 7 * H, note: 'Cấp 3: 0,06 L/km, +140 kg, sửa xe tại chỗ' },
+    ],
   },
   generator: {
     label: 'Máy phát điện',
@@ -421,6 +441,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: (a) => 1 * H + Math.floor(a / 6) * 0.3 * H,
     cost: (a) => ({ wood: 5 * Math.max(1, Math.floor(a / 6)), cloth: 3 * Math.max(1, Math.floor(a / 6)) }),
     desc: 'Chỗ ngủ ngoài trời cho ruộng/tiền đồn: 1 chỗ / 6 m². Bão xoé 50% số lán mỗi trận.',
+    levels: [
+      { cost: { plank: 8, rope: 4, cloth: 6 }, workSec: 3 * H, note: 'Cấp 2: chỗ ngủ / 5 m², bão chỉ xoá 30%' },
+      { cost: { plank: 12, hinge: 4, rope: 6 }, workSec: 5 * H, note: 'Cấp 3: chỗ ngủ / 4 m², bão chỉ xoá 15%' },
+    ],
   },
 };
 

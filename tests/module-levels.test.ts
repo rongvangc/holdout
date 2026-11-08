@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MODULES, type ModuleId } from '../src/data/modules';
-import { RECIPES, RECIPE_BY_ID } from '../src/data/recipes';
-import { applyBuildWork, maxStationLevel, queueCraft, queueModule, stationLevel, upgradeModule } from '../src/sim/build';
+import { RECIPES } from '../src/data/recipes';
+import { applyBuildWork, maxStationLevel, queueCraft, stationLevel, upgradeModule } from '../src/sim/build';
 import { baseStats, newGame } from '../src/sim/state';
 import { makeTestWorld } from '../scripts/headless';
 
@@ -117,7 +117,10 @@ describe('module ladders change real numbers', () => {
 
   it('no upgrade note promises a number the code never applies', () => {
     // Every ladder must belong to a module whose level baseStats or the recipe graph reads.
-    const readByStats = new Set(['filter', 'well', 'water_tank', 'garden', 'latrine', 'infirmary', 'generator', 'watchtower', 'storage', 'cellar', 'coop', 'pond']);
+    const readByStats = new Set([
+      'filter', 'well', 'water_tank', 'garden', 'latrine', 'infirmary', 'generator', 'watchtower',
+      'storage', 'cellar', 'coop', 'pond', 'bedroom', 'shelter', 'rec_room', 'bookshelf', 'herb_garden', 'garage',
+    ]);
     const readByRecipes = new Set(RECIPES.map((r) => r.station));
     for (const [id, def] of Object.entries(MODULES) as [ModuleId, (typeof MODULES)[ModuleId]][]) {
       if (!def.levels?.length) continue;
@@ -140,5 +143,54 @@ describe('module ladders change real numbers', () => {
     p.paid = true;
     applyBuildWork(s, site, p, p.workTotal + 1);
     expect(stationLevel(site, 'filter')).toBe(2);
+  });
+});
+
+describe('the second wave of ladders', () => {
+  it('a bedroom packs more beds per m² and sleeps better', () => {
+    const { s, site } = setup();
+    install(site, 'bedroom', 1);
+    const a = baseStats(s, site);
+    // rebuild the same footprint at level 3
+    const room = site.interior.rooms.find((r) => r.module === 'bedroom')!;
+    room.moduleLevel = 3;
+    const b = baseStats(s, site);
+    expect(b.beds).toBeGreaterThanOrEqual(a.beds);
+    expect(b.bedQuality).toBeGreaterThan(a.bedQuality);
+  });
+
+  it('a shelter upgrade survives storms better', () => {
+    const { s, site } = setup();
+    install(site, 'shelter', 1);
+    const a = baseStats(s, site);
+    install(site, 'shelter', 3);
+    const b = baseStats(s, site);
+    expect(b.shelterStormLoss).toBeLessThan(a.shelterStormLoss);
+    expect(b.shelterBedsPerM2).toBeLessThan(a.shelterBedsPerM2);
+  });
+
+  it('rec room, bookshelf, herb garden and garage all scale', () => {
+    const { s, site } = setup();
+    install(site, 'rec_room', 1);
+    install(site, 'bookshelf', 1);
+    install(site, 'herb_garden', 1);
+    install(site, 'garage', 1);
+    const a = baseStats(s, site);
+    install(site, 'rec_room', 3);
+    install(site, 'bookshelf', 3);
+    install(site, 'herb_garden', 3);
+    install(site, 'garage', 3);
+    const b = baseStats(s, site);
+    expect(b.recMorale).toBeGreaterThan(a.recMorale);
+    expect(b.studyRate).toBeGreaterThan(a.studyRate);
+    expect(b.herbYield).toBeGreaterThan(a.herbYield);
+    expect(b.garageFuel).toBeLessThan(a.garageFuel);
+    expect(b.garageCargo).toBeGreaterThan(a.garageCargo);
+  });
+
+  it('every module in the game can be upgraded', () => {
+    for (const [id, def] of Object.entries(MODULES)) {
+      expect(def.levels?.length ?? 0, `${id} has no ladder`).toBeGreaterThan(0);
+    }
   });
 });

@@ -166,7 +166,7 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (noVegDays === SCURVY_DAYS + 1) alert(s, `${site.name}: cả điểm đã ${noVegDays} ngày không có rau quả — thiếu vitamin C, mọi người yếu dần.`, 'bad');
   }
 
-  updateMorale(s, site, home, st.beds, st.recRoom);
+  updateMorale(s, site, home, st.beds, st.recRoom, st.recMorale);
 
   // Máy phát điện: đốt 24 L (2 L/h × 12 h đêm) để đêm hôm đó không còn ×0.75 tăng thêm ở tasks.workMult.
   // Nguồn điện cho ban đêm: pin mặt trời + ắc quy chạy im, không tốn xăng.
@@ -204,7 +204,7 @@ function siteWeather(s: GameState, site: Site): void {
     site.fence.hp = Math.max(0, site.fence.hp - 10);
     // Open-air shelters are the first thing a storm tears apart.
     for (const r of site.interior.rooms) {
-      if (r.module === 'shelter' && chance(s.rng, 0.5)) {
+      if (r.module === 'shelter' && chance(s.rng, st.shelterStormLoss)) {
         r.module = undefined;
         log(s, `${site.name}: bão xoé một lán trại.`, 'warn');
       }
@@ -252,7 +252,7 @@ export function dayEvent(s: GameState, world: World): void {
   log(s, `— Ngày ${day} · ${s.weather.label} ${s.weather.tempC}°C · ${alive} người · ${s.sites.length} điểm —`, 'info');
 }
 
-function updateMorale(s: GameState, site: Site, home: Survivor[], beds: number, rec: boolean): void {
+function updateMorale(s: GameState, site: Site, home: Survivor[], beds: number, rec: boolean, recMorale = 8): void {
   const lawMood =
     (s.laws.rations === 'reduced' ? -8 : s.laws.rations === 'work' ? -4 : 0) +
     (s.laws.curfew ? -3 : 0) +
@@ -265,7 +265,7 @@ function updateMorale(s: GameState, site: Site, home: Survivor[], beds: number, 
       (v.kcal > 800 ? 8 : -15) +
       (v.water > 800 ? 4 : -12) +
       (bedOk ? 6 : -8) +
-      (rec ? 8 : 0) +
+      (rec ? recMorale : 0) +
       (hasTrait(v, 'optimist') ? 8 : 0) -
       (hasTrait(v, 'coward') ? 5 : 0) -
       site.filth / 8 -

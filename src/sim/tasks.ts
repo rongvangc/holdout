@@ -102,7 +102,7 @@ export function finishTask(s: GameState, v: Survivor): void {
         const area = room?.area ?? 0;
         if (plot.crop === 'thuoc') {
           // Vườn thuốc: mỗi 40 ngày cho a/12 liều thuốc và tối đa a/6 băng (băng tốn 0.25 vải/cuộn).
-          const medicine = area / 12;
+          const medicine = (area / 12) * baseStats(s, site).herbYield;
           let bandage = area / 6;
           const clothNeed = bandage * 0.25;
           if (site.stock.cloth < clothNeed) {
@@ -194,10 +194,10 @@ export function finishTask(s: GameState, v: Survivor): void {
       break;
     }
     case 'read':
-      applyReadResult(s, v, h);
+      applyReadResult(s, v, h, site);
       break;
     case 'leisure':
-      v.morale = Math.min(100, v.morale + (baseStats(s, site).recRoom ? 3 : 1.5) * h);
+      v.morale = Math.min(100, v.morale + (baseStats(s, site).recRoom ? 1.5 + baseStats(s, site).recMorale / 4 : 1.5) * h);
       break;
     default:
       if (role && task.kind !== 'sleep' && task.kind !== 'eat' && task.kind !== 'drink') xp(s, v, role, h * 0.2);
@@ -205,10 +205,11 @@ export function finishTask(s: GameState, v: Survivor): void {
 }
 
 /** Hoàn tất một lần đọc: đúng skill tự học (nếu đã gán qua Kệ sách) — không set thì random như cũ. */
-export function applyReadResult(s: GameState, v: Survivor, h: number): void {
+export function applyReadResult(s: GameState, v: Survivor, h: number, site?: Site): void {
   if (h >= 0.99) {
     const sk = v.study ?? pick(s.rng, Object.keys(SKILLS) as SkillId[]);
-    if (gainXp(v, sk, 30 * h)) log(s, `${v.name} đọc sách, lên cấp ${SKILLS[sk]}.`, 'good');
+    const rate = 30 * h * (site ? baseStats(s, site).studyRate : 1);
+    if (gainXp(v, sk, rate)) log(s, `${v.name} đọc sách, lên cấp ${SKILLS[sk]}.`, 'good');
     v.morale = Math.min(100, v.morale + 1 * h);
   } else {
     v.morale = Math.min(100, v.morale + 1 * h);

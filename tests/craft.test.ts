@@ -118,13 +118,14 @@ describe('crafting through the build queue', () => {
     expect(queueCraft(s, site, 'r_plate')).toBeNull();
   });
 
-  it('refuses to exceed the ladder and refuses modules without levels', () => {
+  it('refuses to exceed the ladder, and refuses a room with no station', () => {
     const { s, site } = setup();
     const room = install(site, 'forge', maxStationLevel('forge'));
     expect(upgradeModule(s, site, room.id)).toContain('tối đa');
-    expect(MODULES.bedroom.levels).toBeUndefined();
-    const bed = install(site, 'bedroom', 1);
-    expect(upgradeModule(s, site, bed.id)).toContain('không nâng cấp được');
+    // Every module has a ladder now; an empty room still has nothing to upgrade.
+    expect(Object.values(MODULES).every((m) => (m.levels?.length ?? 0) > 0)).toBe(true);
+    const empty = site.interior.rooms.find((r) => !r.module)!;
+    expect(upgradeModule(s, site, empty.id)).toContain('chưa có công trình');
   });
 });
 

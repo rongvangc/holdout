@@ -300,6 +300,14 @@ export interface BaseStats {
   generatorFuel: number; // litres per night
   towerDefense: number; // defence per watchtower
   storeLoss: number; // share of stores lost to an unguarded raid
+  bedQuality: number; // multiplier on sleep recovery
+  shelterBedsPerM2: number; // people per m² of shelter
+  shelterStormLoss: number; // share of shelters a storm destroys
+  recMorale: number; // morale target bonus from a rec room
+  studyRate: number; // reading speed multiplier
+  herbYield: number; // herb-garden output multiplier
+  garageFuel: number; // L per km when leaving a garage site
+  garageCargo: number; // extra kg a car can carry from a garage site
   /** Number of coop rooms, and their best level. */
   coop: number;
   coopLevel: number;
@@ -311,19 +319,22 @@ export interface BaseStats {
 export function baseStats(s: GameState, site: Site): BaseStats {
   const it = site.interior;
   const count = (m: Parameters<typeof roomsWith>[1]) => roomsWith(it, m).length;
-  const beds =
-    roomsWith(it, 'bedroom').reduce((n, r) => n + Math.max(1, Math.floor(r.area / 5)), 0) +
-    roomsWith(it, 'shelter').reduce((n, r) => n + Math.max(1, Math.floor(r.area / 6)), 0);
   const tanks = count('water_tank');
   const watchtowers = count('watchtower');
   // One pass over the rooms: this runs on every simulation tick, so no per-module scans.
-  const bestLevel: Partial<Record<string, number>> = {};
+  const bestLevelRaw: Partial<Record<string, number>> = {};
   for (const r of it.rooms) {
     if (!r.module) continue;
     const lv = r.moduleLevel ?? 1;
-    if (lv > (bestLevel[r.module] ?? 0)) bestLevel[r.module] = lv;
+    if (lv > (bestLevelRaw[r.module] ?? 0)) bestLevelRaw[r.module] = lv;
   }
-  const lvlOf = (m: string) => Math.max(1, bestLevel[m] ?? 1);
+  const lvlOf = (m: string) => Math.max(1, bestLevelRaw[m] ?? 1);
+  // Beds: a better bedroom packs more people per m², a better shelter too.
+  const bedPerM2 = lvlOf('bedroom') >= 2 ? 4 : 5;
+  const shelterPerM2 = lvlOf('shelter') >= 3 ? 4 : lvlOf('shelter') >= 2 ? 5 : 6;
+  const beds =
+    roomsWith(it, 'bedroom').reduce((n, r) => n + Math.max(1, Math.floor(r.area / bedPerM2)), 0) +
+    roomsWith(it, 'shelter').reduce((n, r) => n + Math.max(1, Math.floor(r.area / shelterPerM2)), 0);
   const tankLvl = lvlOf('water_tank');
   const filterLvl = lvlOf('filter');
   const wellLvl = lvlOf('well');
@@ -366,6 +377,14 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     towerDefense: 12 * (1 + 0.3 * (towerLvl - 1)),
     // Level 1 keeps the original 8%; each level halves the loss.
     storeLoss: Math.max(0.02, 0.08 - 0.03 * (storeLvl - 1)),
+    bedQuality: 1 + 0.1 * (lvlOf('bedroom') - 1) + 0.1 * (lvlOf('shelter') - 1),
+    shelterBedsPerM2: shelterPerM2,
+    shelterStormLoss: Math.max(0.15, 0.5 - 0.175 * (lvlOf('shelter') - 1)),
+    recMorale: 8 + 4 * (lvlOf('rec_room') - 1),
+    studyRate: 1 + 0.3 * (lvlOf('bookshelf') - 1),
+    herbYield: 1 + 0.25 * (lvlOf('herb_garden') - 1),
+    garageFuel: Math.max(0.05, 0.1 - 0.02 * lvlOf('garage')),
+    garageCargo: lvlOf('garage') >= 3 ? 140 : lvlOf('garage') >= 2 ? 100 : 80,
     defenseStatic:
       site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
       site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +
