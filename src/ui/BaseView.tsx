@@ -5,6 +5,7 @@ import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
 import { availableRecipes } from '../data/recipes';
+import { APPLIANCES } from '../sim/power';
 import { foodFxLabel } from '../sim/diet';
 import {
   cancelProject,
@@ -504,8 +505,14 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   const stationLevels: Partial<Record<string, number>> = {};
   for (const m of Object.keys(MODULES)) stationLevels[m] = stationLevel(site, m as ModuleId);
   const recipes = availableRecipes(stationLevels as never);
-  const worn = repairableWeapons(site);
   const st = baseStats(s, site);
+  // Điện: nguồn nào đang cấp, thiết bị nào được bật, thiết bị nào bị cắt.
+  const onSet = new Set(st.powerOn);
+  const appliances = APPLIANCES.map((a) => ({ ...a, built: (stationLevels[a.module] ?? 0) > 0, on: onSet.has(a.module) }));
+  const builtAppliances = appliances.filter((a) => a.built);
+  const powerDemand = builtAppliances.reduce((n, a) => n + a.kw, 0);
+  const powerServed = builtAppliances.filter((a) => a.on).reduce((n, a) => n + a.kw, 0);
+  const worn = repairableWeapons(site);
   const workshop = hasWorkshop(s);
   const field = site.kind === 'field';
   const plot = room ? site.plots[room.id] : undefined;
@@ -800,6 +807,45 @@ export function BaseView({ s, site, refresh }: ViewProps) {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        <div className="label">Điện &amp; sưởi</div>
+        <div className="kv">
+          <span title="Tổng công suất các thiết bị đã xây">Cần</span>
+          <span className={powerDemand > powerServed ? 'amber' : ''}>{powerServed.toFixed(1)}/{powerDemand.toFixed(1)} kW</span>
+          <span title="Pin mặt trời sạc ắc quy ban ngày; máy phát đốt xăng ban đêm">Nguồn</span>
+          <span>
+            {st.generator ? `máy phát ${st.generatorLevel}` : 'không máy phát'}
+            {` · ${Math.round(site.batteryKwh ?? 0)} kWh`}
+          </span>
+          <span title="Lò củi chỉ đốt gỗ vào đêm dưới 18°C">Sưởi</span>
+          <span className={site.warmthActive || st.heaterWarmth > 0 ? 'ok' : s.weather.tempC < 18 ? 'amber' : 'faint'}>
+            {site.warmthActive
+              ? `lò củi −${Math.round(st.stoveWarmth * 100)}% rét`
+              : st.heaterWarmth > 0
+                ? `máy sưởi −${Math.round(st.heaterWarmth * 100)}% rét`
+                : s.weather.tempC < 18
+                  ? 'đang lạnh, không sưởi'
+                  : 'không cần'}
+          </span>
+        </div>
+        {builtAppliances.length > 0 && (
+          <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
+            {builtAppliances.map((a) => (
+              <span
+                key={a.module}
+                className={`tag ${a.on ? '' : 'red'}`}
+                title={a.on ? `${MODULES[a.module].label} đang chạy · ${a.kw} kW` : `${MODULES[a.module].label} bị cắt vì thiếu điện`}
+              >
+                {MODULES[a.module].label} {a.kw}kW {a.on ? '●' : '○'}
+              </span>
+            ))}
+          </div>
+        )}
+        {powerDemand > powerServed && (
+          <div className="amber">
+            Thiếu {(powerDemand - powerServed).toFixed(1)} kW — cắt tải theo ưu tiên: hàng rào → đèn → tủ lạnh → bơm → máy móc → radio → đèn cây → sưởi.
           </div>
         )}
 
