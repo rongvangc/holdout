@@ -64,6 +64,10 @@ describe('auto: garden when food runs low', () => {
     site.stock.food = present(s, site).length * 2250 * 40; // dư lương
     expect(autoGarden(s, site)).toBeNull();
     site.stock.food = present(s, site).length * 2250 * 5; // 5 ngày
+    // Chưa có nông dân thì không mở thêm vườn (vườn bỏ hoang còn tệ hơn).
+    expect(autoGarden(s, site)).toBeNull();
+    s.survivors[0].role = 'farmer';
+    s.survivors[0].location = 'base';
     const room = autoGarden(s, site);
     expect(room).not.toBeNull();
     expect(site.projects.some((p) => p.module === 'garden')).toBe(true);

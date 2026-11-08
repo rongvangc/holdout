@@ -58,6 +58,23 @@ export function autoCraftCore(s: GameState, site: Site): string | null {
  */
 export function autoLoot(s: GameState, world: World, site: Site): string | null {
   if (s.expeditions.some((e) => e.fromSite === site.id && e.kind !== 'convoy')) return null;
+  // Không ai đi lấy nước là kiểu chết nhanh nhất: ưu tiên hơn lục soát.
+  const pop = Math.max(1, present(s, site).length);
+  const waterDays = site.stock.water / (pop * 3.3);
+  if (waterDays < 3 && world.waterPoints.length) {
+    const team0 = present(s, site)
+      .filter((v) => v.location === 'base' && !v.commute && v.role !== 'guard' && v.hp > 60 && v.sickDays === 0)
+      .sort((a, b) => b.hp - a.hp)
+      .slice(0, 3)
+      .map((v) => v.id);
+    if (team0.length >= 2) {
+      const wp = [...world.waterPoints].sort(
+        (a, b) => Math.hypot(a.pos[0] - site.centroid[0], a.pos[1] - site.centroid[1]) - Math.hypot(b.pos[0] - site.centroid[0], b.pos[1] - site.centroid[1]),
+      )[0];
+      const why = launchExpedition(s, world, { fromSite: site.id, members: team0, target: { type: 'water', id: wp.id }, mode: 'walk' });
+      if (!why) return wp.id;
+    }
+  }
   const idle = present(s, site)
     .filter((v) => v.location === 'base' && !v.commute && v.role !== 'guard' && v.hp > 60 && v.sickDays === 0)
     .sort((a, b) => b.hp - a.hp);
@@ -86,6 +103,10 @@ export function autoGarden(s: GameState, site: Site): string | null {
   const days = (site.stock.food + site.stock.rawFood + site.stock.meals) / (pop * 2250);
   if (days >= 20) return null;
   if (site.projects.some((p) => p.kind === 'module' && p.module === 'garden')) return null;
+  // Mở vườn mà không có ai chăm thì chỉ tạo cảnh "vườn bỏ hoang" (đúng lỗi đã gặp).
+  const farmers = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base' && !v.commute && v.role === 'farmer').length;
+  const covered = farmers * 1500;
+  if (farmers === 0 || st.gardenArea + 300 > covered) return null;
   const room = site.interior.rooms.find(
     (r) => !r.module && r.walled !== false && canPlace(site.interior, r, { placement: 'top_or_outdoor', minArea: 20 }) === null,
   );

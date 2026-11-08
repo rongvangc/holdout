@@ -868,8 +868,8 @@ Bật ở tab **Người**, cạnh "mỗi nửa đêm":
 | Công tắc | Máy làm gì | Vì sao cần |
 |---|---|---|
 | **tự chế vật tư** | Mỗi ngày tự xếp hàng đợi chế **một** vật tư lõi còn thiếu (ván, đinh, chỉ, dây, cán, lưỡi, đầu dụng cụ, bản lề, tấm thép) nếu có trạm và đủ vật liệu | Người chơi hay quên, thiếu ván/đinh là không xây/nâng cấp được gì |
-| **tự đi lục soát** | Có ≥2 người rảnh khoẻ, còn nhà chưa vét trong bán kính, nguy cơ bị cắn <25% → tự lập đội 2–4 người đi bộ | Đây là nguồn ăn chính; quên lập đội là chết đói |
-| **tự mở vườn** | Kho lương <20 ngày và còn khoảnh trống hợp lệ → tự xếp một vườn mới | Để nền trồng trọt tự mở rộng theo dân số |
+| **tự đi lục soát** | **Nước uống <3 ngày → đi lấy nước trước**; nếu không thì có ≥2 người rảnh khoẻ, còn nhà chưa vét, nguy cơ bị cắn <25% → lập đội 2–4 người đi bộ | Đây là nguồn ăn chính; quên lập đội là chết đói, quên lấy nước là chết khát trong 2 ngày |
+| **tự mở vườn** | Kho lương <20 ngày **và có nông dân đủ chăm** (1 nông dân ~1.500 m²) → xếp một vườn mới | Mở vườn không có người chăm chỉ tạo cảnh bỏ hoang (đúng lỗi đã gặp) |
 
 Cả ba dùng chung logic với bot, chạy ở nhịp ngày (`runAuto`) nên người chơi và bot không lệch nhau.
 
@@ -888,3 +888,8 @@ Mỗi module một dòng: số lượng, cấp hiện tại / cấp tối đa, *
 ### 13.4 Bảng trang bị toàn đội (tab **Người**)
 
 Mỗi người một dòng: vũ khí / giáp / mũ / ba lô / quần áo, **% giảm sát thương**, **tải thêm (kg)**, **% giữ ấm**. Người tay không được tô đỏ, kèm danh sách trang bị còn trong kho chưa cấp.
+
+**Kiểm chứng end-to-end** (ván "người chơi", không dùng bot, 3 công tắc bật, 60 ngày):
+- Trước khi sửa: dân chết hết ở **ngày 34** vì khát (vườn tự mở 30 khoảnh/1.140 m² nhưng 0 nông dân).
+- Sau khi sửa: **9 người sống, 0 chết**, 57 chuyến viễn chinh (lục soát + lấy nước), vườn 1.208 m² **31/32 khoảnh có cây**, không còn cảnh báo.
+- Tắt cả 3 công tắc: **không có chuyến nào, không chế gì, vườn không đổi** (đúng là no-op).
