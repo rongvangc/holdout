@@ -633,3 +633,20 @@ Ba lỗi cân bằng đã sửa (có test chặn):
 - Bot xây trạm theo khả năng chi trả (`buildStations`) — không xếp module khi chưa đủ vật tư để tránh kẹt hàng đợi.
 - Bot nấu món nếu kho còn ≥ 4 ngày lương: thử `thịt kho → cá kho → cơm+rau → canh → cơm → cháo`.
 - Viễn chinh không còn bị chuyển hết sang gom vật tư chỉ vì một project chưa trả được.
+
+### 12.14 Cân bằng: kết quả đo trên cây sạch
+
+Bot 90 ngày, 10 seed, so baseline `47e29d8` (trước lớp thức ăn) với hiện tại:
+
+| | Baseline | Hiện tại |
+|---|---|---|
+| Ván sụp | 2/10 | 3/10 |
+| Người sống (trung vị) | 18,5 | 18 |
+| Người sống (trung bình) | 18,6 | 16,4 |
+
+Kết luận: lớp thức ăn **không làm nền kinh tế yếu đi** (trung vị gần như nhau), khác biệt 2/10 vs 3/10 nằm trong nhiễu của sim hỗn loạn với 10 mẫu.
+
+Ba chỗ rò đã bịt trong quá trình đo:
+1. Nguyên liệu tươi thêm vào bảng loot **pha loãng kcal** của chợ/quán ăn (rau 200 kcal/kg thay vì 1500–6000 kcal/lượt) → giảm trọng số nguyên liệu, tăng trọng số `rawFood`.
+2. Bot xây trạm quá sớm (forge/tailor/lò) làm chuyển vật tư khỏi vườn/tường → chỉ xây khi gỗ ≥ 120 và sắt ≥ 60.
+3. Bot nấu ăn như nghĩa vụ → nay chỉ nấu khi có nguyên liệu sắp hỏng và tinh thần trung bình < 62 (vì nấu không tạo thêm kcal, chỉ thêm tinh thần/sức khoẻ).

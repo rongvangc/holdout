@@ -138,6 +138,8 @@ let useFields = true;
 const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'crock', 'smokehouse', 'kiln', 'carpentry'];
 function buildStations(s: GameState, base: Site): void {
   if (base.projects.length) return;
+  // Stations are a luxury: do not divert the early material economy into them.
+  if (base.stock.wood < 120 || base.stock.scrap < 60) return;
   const have = new Set(base.interior.rooms.filter((r) => r.module).map((r) => r.module!));
   for (const id of STATION_ORDER) {
     if (have.has(id)) continue;
@@ -151,6 +153,11 @@ function buildStations(s: GameState, base: Site): void {
   }
 }
 
+/**
+ * Cooking gives morale and health, not calories — so the bot only cooks when it
+ * has an ingredient that would otherwise rot, and only when people are unhappy
+ * enough for the morale to matter. Plain rice dishes are skipped: pure overhead.
+ */
 function cookForTheDay(s: GameState, base: Site): void {
   if (base.projects.length > 2) return;
   const st = baseStats(s, base);
@@ -158,14 +165,18 @@ function cookForTheDay(s: GameState, base: Site): void {
   const pop = present(s, base).length;
   if (!pop) return;
   const buffer = base.stock.rawFood + base.stock.meals + base.stock.food;
-  if (buffer < pop * 2250 * 4) return; // do not cook while the pantry is thin
-  const done = (id: string) => base.stock[id] ?? 0;
-  // A dish is worth cooking if we lack it and have the ingredient in the pantry.
-  const want = ['rd_thit_kho', 'rd_ca_kho', 'rd_com_rau', 'rd_canh', 'rd_com', 'rd_chao'];
+  if (buffer < pop * 2250 * 4) return;
+  const home = s.survivors.filter((v) => v.status === 'alive' && v.siteId === base.id);
+  const morale = home.length ? home.reduce((a, v) => a + v.morale, 0) / home.length : 100;
+  const perishable = ['rau', 'thit', 'ca', 'trung', 'dau'].filter((id) => (base.stock[id] ?? 0) > 0.5);
+  if (!perishable.length) return;
+  if (morale > 62 && (base.stock.rau ?? 0) < 4) return; // nothing to fix, nothing to save
+  const want = ['rd_thit_kho', 'rd_ca_kho', 'rd_com_rau', 'rd_canh', 'rd_dua_muoi', 'rd_trung'];
   for (const id of want) {
     const r = RECIPE_BY_ID[id];
     if (!r) continue;
-    if (done(r.out) > 8) continue;
+    if ((base.stock[r.out] ?? 0) > 8) continue;
+    if (!r.in.some(([i]) => perishable.includes(i))) continue;
     const why = queueCraft(s, base, id);
     if (!why) return;
   }
