@@ -5,7 +5,7 @@ import { DAY, HOUR, dayOf, timeOfDay } from '../src/core/time';
 import { dist } from '../src/world/geo';
 import { newGame, autoAssign, baseStats, mainSite, present } from '../src/sim/state';
 import { advanceTo } from '../src/sim/engine';
-import { queueCraft, queueModule, queueDefense } from '../src/sim/build';
+import { maxStationLevel, queueCraft, queueModule, queueDefense, upgradeModule } from '../src/sim/build';
 import { canAfford } from '../src/sim/state';
 import { MODULES } from '../src/data/modules';
 import { RECIPE_BY_ID } from '../src/data/recipes';
@@ -134,6 +134,25 @@ let useFields = true;
  * The bot cooks like a player would: keep a buffer of raw calories, prefer the
  * tastiest dish the kitchen can actually make right now.
  */
+/**
+ * Station upgrades, in the order a real manager would spend on them: water first
+ * (thirst kills fastest), then medicine, then food, then comfort.
+ */
+const UPGRADE_ORDER: ModuleId[] = ['filter', 'well', 'water_tank', 'infirmary', 'garden', 'storage', 'latrine', 'watchtower', 'bedroom', 'cellar', 'kitchen'];
+
+function upgradeStations(s: GameState, base: Site): void {
+  if (base.projects.length) return;
+  // Keep a material reserve: upgrades must not starve the next module.
+  if (base.stock.wood < 80 || base.stock.scrap < 40) return;
+  for (const id of UPGRADE_ORDER) {
+    const room = base.interior.rooms.find((r) => r.module === id && (r.moduleLevel ?? 1) < maxStationLevel(id));
+    if (!room) continue;
+    const next = MODULES[id].levels?.[(room.moduleLevel ?? 1) - 1];
+    if (!next || !canAfford(base, next.cost)) continue;
+    if (upgradeModule(s, base, room.id) === null) return;
+  }
+}
+
 /** Crafting stations are opt-in: only queue what the pantry can pay for today. */
 const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'crock', 'smokehouse', 'kiln', 'carpentry'];
 function buildStations(s: GameState, base: Site): void {
@@ -197,6 +216,7 @@ export function botDay(s: GameState, world: World): void {
     buildNext(s, f, WANT_FIELD);
     if (!f.projects.length && f.fence.level < 1) queueDefense(s, f, 'fence');
   }
+  upgradeStations(s, base);
   buildStations(s, base);
   cookForTheDay(s, base);
   autoAssign(s);

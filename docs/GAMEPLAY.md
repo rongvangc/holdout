@@ -732,8 +732,25 @@ Ngoài ra **trạm chế tạo nhanh hơn 25% mỗi cấp**: công thức ở c�
 
 Công thức khai báo `station` + `level`, nên cấp trạm còn là **công tắc mở khoá**: Lò rèn cấp 2 mở tấm thép và vũ khí dài, cấp 3 mở đồ nặng; Xưởng may cấp 3 mở giáp tấm; Bàn thợ cấp 3 mở pin mặt trời.
 
-### 14.3 Không còn module nào thiếu bậc
+### 14.3 Chi phí nâng cấp
+
+**Cấp 2 chỉ dùng vật liệu thô** (gỗ, sắt vụn, vải, đá, đất sét, dây) — nâng được ngay khi có trạm, không cần lò nung.
+**Cấp 3 mới đòi đồ chế** (tấm thép, gạch, than, bánh răng, dây điện).
+
+Lý do: bản đầu tôi cho cấp 2 đòi `gạch`/`than`/`tấm thép`, mà những thứ đó lại cần lò nung/lò rèn — nên bot chỉ nâng được 2 bậc trong 90 ngày. Sửa xong thì bot nâng **10 module lên cấp 2**.
+
+### 14.4 Không còn module nào thiếu bậc
 
 Cả **26 module** đều có bậc nâng cấp, và mỗi bậc đều đổi một con số có chỗ đọc. Test `tests/module-levels.test.ts` chặn hai kiểu sai: thêm bậc mà không ai đọc, và để một module không có bậc.
+
+### 14.5 Đo bằng bot (90 ngày, 10 seed)
+
+| | Không nâng cấp | Có nâng cấp |
+|---|---|---|
+| Ván sụp | 3/5 | **4/10** |
+| Người sống (trung vị) | 19 | **27** |
+| Module lên cấp 2 | 2 | **10** |
+
+Bot ưu tiên theo thứ tự: lọc nước → giếng → bể nước → y tế → vườn → kho → nhà vệ sinh → tháp canh → phòng ngủ → hầm lạnh → bếp, và giữ lại 80 gỗ / 40 sắt để không đói vật tư cho module kế tiếp.
 
 Có test khoá luật "mỗi bậc phải có chỗ đọc số" (`tests/module-levels.test.ts`), để không ai thêm bậc chỉ có chữ.
