@@ -536,3 +536,17 @@ Trang bị **tự cấp từ kho của điểm** (game quản lý cộng đồng
 - Mọi item có `kcal` đều ăn được, chọn món nặng/kcal cao trước.
 - Hỏng theo `rotPerDay` riêng: đồ hộp 0.5%/ngày, món tươi 6%/ngày; nắng nóng ×(nếu >1%), Kho có khoá giảm nửa.
 - Nấu (`bếp`), hun khói (`bếp hun khói`), muối chua (`chum ủ`) biến `rawFood` thành món để dành.
+
+### 12.7 Đạn và độ mòn (`sim/equipment.ts`)
+
+- Mỗi khẩu súng ăn đúng loại đạn của dòng nó; không có đạn thì **không được cấp ra trận**. Bảng ánh xạ theo tên dòng súng (TOZ/AA-12/Saiga → 12 ga, AK/SKS/SVD → 7.62x39, Mosin/M14 → 30-06, VSS/Val → 9x39, Makarov → 9x18, P90 → 5.7x28, 1911 → .45 ACP, .22 → 22 LR). Súng không khớp bảng dùng đạn 9x18 làm cỡ chung.
+- Mỗi trận bắn tiêu 1 viên/trận (kẹp theo số đạn còn).
+- Trang bị có **độ mòn 0..1** cho từng loại trong kho. Mỗi trận mòn `1/durability`; mòn làm giảm hiệu lực (còn 55% hiệu lực khi mòn hết cỡ).
+- Mòn về 0: **một món gãy** (rời kho), phần còn lại thành 1 kg sắt vụn.
+- **Sửa**: Lò rèn cấp 2+, tốn `max(1, mòn×4)` sắt + 1 than nếu mòn > 50%, 30 phút công. Sửa xong độ mòn về 1.
+
+### 12.8 Chế độ ăn (`sim/diet.ts`)
+
+- **Nhàm món**: 9 bữa liên tiếp cùng một món → mục tiêu tinh thần −3/ngày cho tới khi đổi món. Nhật ký bữa ăn giữ 12 mục gần nhất.
+- **Thiếu vitamin C**: 25 ngày không có rau/quả → scorbut, mỗi người −0.25 HP/ngày. `rawFood` (rau muống/khoai từ vườn) và `meals` nấu từ đó đều tính là có rau; chỉ ăn đồ khô nhặt được thì mới bị.
+- **Hầm lạnh**: module mới, 3 cấp. Tốc độ hỏng thức ăn: cấp 1 = 50%, cấp 2 = 35%, cấp 3 = 25%. Không có hầm thì Kho có khoá cho 50%.
