@@ -8,6 +8,7 @@ import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { armourAgainst, killShare } from './combat';
 import { survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
+import { chargeBatteries, planPower } from './power';
 import { zombieType } from './zombies';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
@@ -61,7 +62,7 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const care = need > 0 ? Math.min(1, plot.tendedToday / need) : 1;
     const cold = s.weather.tempC < 18 ? 0.6 : 1;
     const before = plot.growth;
-    plot.growth = Math.min(1, plot.growth + ((0.3 + 0.7 * care) / CROPS[plot.crop].days) * cold);
+    plot.growth = Math.min(1, plot.growth + ((0.45 + 0.55 * care) / CROPS[plot.crop].days) * cold);
     if (s.weather.storm && room.outdoor) plot.growth = Math.max(0, plot.growth - 0.15);
     plot.tendedToday = 0;
     if (before < 1 && plot.growth >= 1) log(s, `${site.name}: ${CROPS[plot.crop].label} đã chín.`, 'good');
@@ -96,7 +97,8 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;
   site.stock.rawFood *= 1 - (st.storage ? 0.005 : 0.02) * hot;
   // Catalogued food (MRE, tins, dried goods) rots per item; a locked store halves it too.
-  const cellarMul = rotFactor(st.cellar, st.storage);
+  // Tủ lạnh mạnh hơn hầm đất, nhưng chỉ khi có điện.
+  const cellarMul = rotFactor(st.cellar, st.storage) * st.fridgeRot;
   for (const [id, def] of Object.entries(ITEMS)) {
     if (!(site.stock[id] > 0) || !def.rotPerDay) continue;
     const rate = def.rotPerDay * (def.rotPerDay < 0.01 ? 1 : hot) * cellarMul;
@@ -166,22 +168,17 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (noVegDays === SCURVY_DAYS + 1) alert(s, `${site.name}: cả điểm đã ${noVegDays} ngày không có rau quả — thiếu vitamin C, mọi người yếu dần.`, 'bad');
   }
 
-  updateMorale(s, site, home, st.beds, st.recRoom, st.recMorale);
+  updateMorale(s, site, home, st.beds, st.recRoom, st.recMorale + st.radioMorale);
 
-  // Máy phát điện: đốt 24 L (2 L/h × 12 h đêm) để đêm hôm đó không còn ×0.75 tăng thêm ở tasks.workMult.
-  // Nguồn điện cho ban đêm: pin mặt trời + ắc quy chạy im, không tốn xăng.
-  // Một tấm pin sạc được một ắc quy mỗi ngày; bão thì không sạc được.
-  const solar = (site.stock.solar_panel ?? 0) >= 1 && (site.stock.battery ?? 0) >= 1 && !s.weather.storm;
-  if (solar) {
-    site.powered = true;
-    log(s, `${site.name}: pin mặt trời nạp ắc quy, đêm có điện.`, 'good');
-  } else if (st.generator && site.stock.fuel >= st.generatorFuel) {
-    take(site, 'fuel', st.generatorFuel);
-    site.powered = true;
-    site.heat = Math.min(100, site.heat + 6);
-    log(s, `${site.name}: máy phát chạy đêm, tiêu ${st.generatorFuel} L xăng.`, 'info');
-  } else {
-    site.powered = false;
+  // Điện: pin mặt trời sạc ban ngày, tối nay cấp cho các thiết bị theo thứ tự ưu tiên.
+  chargeBatteries(s, site);
+  const power = planPower(s, site, st.generator ? st.generatorLevel : 0, st.generatorFuel);
+  site.powerOn = power.on as string[];
+  site.powered = power.on.includes('lighting');
+  if (power.shed.length) {
+    log(s, `${site.name}: thiếu điện (${power.demand.toFixed(1)}/${power.supply.toFixed(1)} kW) — tắt ${power.shed.length} thiết bị.`, 'warn');
+  } else if (power.on.length) {
+    log(s, `${site.name}: ${power.on.length} thiết bị chạy bằng ${power.source === 'solar' ? 'pin mặt trời' : 'máy phát'}.`, 'info');
   }
   site.heat = Math.max(0, site.heat - 12);
   // Slow wear: walls and fences rot without upkeep, repair work tops them back up.
@@ -316,6 +313,7 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
     }
   }
   defense += (home.length - guards.length) * 1.5;
+  defense += st.fenceDefense;
   if (guards.length || st.watchtowers) defense *= 1.15;
   // Pha 1: người gác hạ được bao nhiêu trước khi bầy vào tới tường.
   const hardest = waveTypes.reduce((a, b) => (ZOMBIES[b].hp * (1 - ZOMBIES[b].armor) > ZOMBIES[a].hp * (1 - ZOMBIES[a].armor) ? b : a), waveTypes[0]);

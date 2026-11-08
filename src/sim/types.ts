@@ -207,6 +207,10 @@ export interface Site {
   wellDrawnToday: number;
   /** Đêm có máy phát chạy (đặt ở nhịp ngày, tốn 24 L xăng). */
   powered?: boolean;
+  /** Battery charge in kWh, filled by solar panels during the day. */
+  batteryKwh?: number;
+  /** Appliances that got power tonight (see sim/power.ts). */
+  powerOn?: string[];
   claimedDay: number;
 }
 

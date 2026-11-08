@@ -308,6 +308,15 @@ export interface BaseStats {
   herbYield: number; // herb-garden output multiplier
   garageFuel: number; // L per km when leaving a garage site
   garageCargo: number; // extra kg a car can carry from a garage site
+  generatorLevel: number;
+  /** Appliances that actually have power tonight (site.powerOn). */
+  powerOn: string[];
+  fridgeRot: number; // multiplier on stored-food rot while the fridge runs
+  pumpYield: number; // well/filter multiplier while the pump runs
+  toolsSpeed: number; // build/craft multiplier while power tools run
+  fenceDefense: number; // flat defence added at night by the electric fence
+  growYield: number; // garden multiplier from grow lights
+  radioMorale: number; // morale target bonus from the radio
   /** Number of coop rooms, and their best level. */
   coop: number;
   coopLevel: number;
@@ -329,6 +338,8 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     if (lv > (bestLevelRaw[r.module] ?? 0)) bestLevelRaw[r.module] = lv;
   }
   const lvlOf = (m: string) => Math.max(1, bestLevelRaw[m] ?? 1);
+  const powered = site.powerOn ?? [];
+  const on = (m: string) => powered.includes(m);
   // Beds: a better bedroom packs more people per m², a better shelter too.
   const bedPerM2 = lvlOf('bedroom') >= 2 ? 4 : 5;
   const shelterPerM2 = lvlOf('shelter') >= 3 ? 4 : lvlOf('shelter') >= 2 ? 5 : 6;
@@ -385,6 +396,15 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     herbYield: 1 + 0.25 * (lvlOf('herb_garden') - 1),
     garageFuel: Math.max(0.05, 0.1 - 0.02 * lvlOf('garage')),
     garageCargo: lvlOf('garage') >= 3 ? 140 : lvlOf('garage') >= 2 ? 100 : 80,
+    generatorLevel: lvlOf('generator'),
+    powerOn: site.powerOn ?? [],
+    // Thiết bị chỉ có tác dụng khi tối nay nó thực sự được cấp điện.
+    fridgeRot: on('fridge') ? [0.25, 0.15, 0.08][Math.min(2, lvlOf('fridge') - 1)] : 1,
+    pumpYield: on('water_pump') ? [1.5, 1.8, 2.0][Math.min(2, lvlOf('water_pump') - 1)] : 1,
+    toolsSpeed: on('power_tools') ? [1.3, 1.45, 1.6][Math.min(2, lvlOf('power_tools') - 1)] : 1,
+    fenceDefense: on('electric_fence') ? [25, 35, 45][Math.min(2, lvlOf('electric_fence') - 1)] : 0,
+    growYield: on('grow_light') ? [1.1, 1.25, 1.4][Math.min(2, lvlOf('grow_light') - 1)] : 1,
+    radioMorale: on('radio') ? [4, 6, 8][Math.min(2, lvlOf('radio') - 1)] : 0,
     defenseStatic:
       site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
       site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +

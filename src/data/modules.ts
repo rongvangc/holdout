@@ -25,6 +25,13 @@ export type ModuleId =
   | 'smokehouse'
   | 'crock'
   | 'cellar'
+  | 'lighting'
+  | 'fridge'
+  | 'water_pump'
+  | 'power_tools'
+  | 'electric_fence'
+  | 'radio'
+  | 'grow_light'
   | 'coop'
   | 'pond';
 
@@ -296,6 +303,119 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     ],
   },
   // ---- crafting stations: each one owns a rung of the material ladder ---------
+  // ---- thiết bị tiêu điện (xem sim/power.ts) ---------------------------------
+  lighting: {
+    label: 'Đèn điện',
+    icon: '☀',
+    color: '#d8c86a',
+    placement: 'indoor',
+    minArea: 4,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 2 * H,
+    cost: () => ({ scrap: 8, wood: 4 }),
+    desc: 'Đèn cho cả điểm: làm đêm không còn chậm 25%, tinh thần đỡ tụt. Cần 0,3 kW.',
+    levels: [
+      { cost: { wire: 10, plate: 2 }, workSec: 3 * H, note: 'Cấp 2: đèn ngoài sân, +2 tinh thần' },
+      { cost: { wire: 16, gear: 1 }, workSec: 4 * H, note: 'Cấp 3: đèn pha, thấy bầy từ xa' },
+    ],
+  },
+  fridge: {
+    label: 'Tủ lạnh',
+    icon: '▯',
+    color: '#6aa8c8',
+    placement: 'indoor',
+    minArea: 4,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 4 * H,
+    cost: () => ({ scrap: 16, wood: 6, cloth: 4 }),
+    desc: 'Giữ thức ăn tươi lâu: hỏng chỉ còn 25% tốc độ thường. Cần 1,5 kW.',
+    levels: [
+      { cost: { plate: 4, gear: 3 }, workSec: 5 * H, note: 'Cấp 2: thêm ngăn đá, hỏng còn 15%' },
+      { cost: { plate: 6, gear: 4, wire: 12 }, workSec: 7 * H, note: 'Cấp 3: hỏng còn 8%' },
+    ],
+  },
+  water_pump: {
+    label: 'Bơm nước',
+    icon: '⇅',
+    color: '#5a9ad0',
+    placement: 'ground',
+    minArea: 2,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 3 * H,
+    cost: () => ({ scrap: 14, wood: 6, rope: 2 }),
+    desc: 'Bơm thay người kéo: giếng +50% sản lượng, trạm lọc +30%. Cần 1 kW.',
+    levels: [
+      { cost: { gear: 3, plate: 2 }, workSec: 4 * H, note: 'Cấp 2: giếng +80%' },
+      { cost: { gear: 4, plate: 3 }, workSec: 6 * H, note: 'Cấp 3: giếng gấp đôi' },
+    ],
+  },
+  power_tools: {
+    label: 'Máy móc điện',
+    icon: '⚙',
+    color: '#a08a4a',
+    placement: 'indoor',
+    minArea: 6,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 5 * H,
+    cost: () => ({ scrap: 24, wood: 10, stone: 6 }),
+    desc: 'Cưa/máy khoan điện: xây và chế nhanh hơn 30%. Cần 2 kW. Rất ồn khi chạy (heat +3).',
+    levels: [
+      { cost: { gear: 4, plate: 3 }, workSec: 6 * H, note: 'Cấp 2: nhanh hơn 45%' },
+      { cost: { gear: 6, plate: 4 }, workSec: 8 * H, note: 'Cấp 3: nhanh hơn 60%' },
+    ],
+  },
+  electric_fence: {
+    label: 'Hàng rào điện',
+    icon: '⌇',
+    color: '#c06050',
+    placement: 'outdoor',
+    minArea: 4,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 4 * H,
+    cost: () => ({ scrap: 18, rope: 8, wood: 8 }),
+    desc: 'Dòng điện trên rào: +25 phòng thủ ban đêm. Cần 3 kW — đắt điện nhất.',
+    levels: [
+      { cost: { wire: 24, plate: 3 }, workSec: 5 * H, note: 'Cấp 2: +35 phòng thủ' },
+      { cost: { wire: 32, plate: 4, gear: 2 }, workSec: 7 * H, note: 'Cấp 3: +45 phòng thủ' },
+    ],
+  },
+  radio: {
+    label: 'Radio',
+    icon: '♪',
+    color: '#8a8ac0',
+    placement: 'indoor',
+    minArea: 2,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 2 * H,
+    cost: () => ({ scrap: 6, cloth: 2 }),
+    desc: 'Nghe tin và nhạc: biết trước bầy 1 ngày, +4 tinh thần. Cần 0,3 kW.',
+    levels: [
+      { cost: { wire: 8, gear: 2 }, workSec: 3 * H, note: 'Cấp 2: biết trước 2 ngày, +6 tinh thần' },
+      { cost: { wire: 12, gear: 3, plate: 2 }, workSec: 5 * H, note: 'Cấp 3: bắt được tin cứu hộ (điều kiện thắng tương lai)' },
+    ],
+  },
+  grow_light: {
+    label: 'Đèn trồng cây',
+    icon: '✿',
+    color: '#6ac06a',
+    placement: 'indoor',
+    minArea: 6,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 4 * H,
+    cost: () => ({ scrap: 12, cloth: 4, wood: 6 }),
+    desc: 'Đèn cho vườn trong nhà: +10% năng suất ngay từ cấp 1. Cần 2 kW.',
+    levels: [
+      { cost: { wire: 16, gear: 3 }, workSec: 5 * H, note: 'Cấp 2: +25% năng suất' },
+      { cost: { wire: 20, gear: 4, plate: 3 }, workSec: 7 * H, note: 'Cấp 3: +40% năng suất' },
+    ],
+  },
   forge: {
     label: 'Lò rèn',
     icon: '⚒',

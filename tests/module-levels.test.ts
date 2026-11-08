@@ -118,6 +118,7 @@ describe('module ladders change real numbers', () => {
     const readByStats = new Set([
       'filter', 'well', 'water_tank', 'garden', 'latrine', 'infirmary', 'generator', 'watchtower',
       'storage', 'cellar', 'coop', 'pond', 'bedroom', 'shelter', 'rec_room', 'bookshelf', 'herb_garden', 'garage',
+      'lighting', 'fridge', 'water_pump', 'power_tools', 'electric_fence', 'radio', 'grow_light',
     ]);
     const readByRecipes = new Set(RECIPES.map((r) => r.station));
     for (const [id, def] of Object.entries(MODULES) as [ModuleId, (typeof MODULES)[ModuleId]][]) {

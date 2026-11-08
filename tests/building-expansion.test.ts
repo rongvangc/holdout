@@ -97,16 +97,19 @@ describe('generator night power', () => {
     expect(workMult(s, v, 'construction', base)).toBe(workMult(s, v, 'construction'));
   });
 
-  it('burns 24L at the daily tick and clears the night penalty', () => {
+  it('burns fuel at the daily tick and clears the night penalty once the lights are on', () => {
     const { world, s } = setup();
     const base = mainSite(s);
     addModule(base, 'g1', 'generator', 2, false);
+    addModule(base, 'l1', 'lighting', 2, false);
     addStock(s, base, { fuel: 120 });
     const night = (Math.floor(s.t / DAY) + 1) * DAY + 21 * 3600;
     advanceTo(s, world, night);
     const v = ALIVE(s).find((x) => x.role !== 'guard')!;
     expect(base.powered).toBe(true);
-    expect(base.stock.fuel).toBe(96);
+    // Fuel is billed per kWh delivered, not a flat 24 L: one light for 12 h is ~1 L.
+    expect(base.stock.fuel).toBeLessThan(120);
+    expect(base.stock.fuel).toBeGreaterThan(118);
     // With power the night penalty is gone: with-site multiplier must overtake the site-less call.
     expect(workMult(s, v, 'construction', base)).toBeGreaterThan(workMult(s, v, 'construction'));
   });

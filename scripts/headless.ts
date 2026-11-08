@@ -81,12 +81,16 @@ function sendLoot(s: GameState, world: World, from: Site, team: string[]): void 
 
 /** Claim the nearest decent green as a field once the base can spare a crew. */
 function maybeClaimField(s: GameState, world: World, base: Site, idle: string[]): boolean {
-  if (!useFields || s.sites.some((x) => x.kind === 'field') || dayOf(s.t) < 8 || idle.length < 6) return false;
+  const fields = s.sites.filter((x) => x.kind === 'field').length;
+  const wantFields = s.survivors.filter((v) => v.status === 'alive').length >= 14 ? 3 : 1;
+  if (!useFields || fields >= wantFields || dayOf(s.t) < 8 || idle.length < 6) return false;
+  // Đừng mở ruộng mới khi ruộng hiện tại còn chưa ai chăm.
+  for (const f of s.sites.filter((x) => x.kind === 'field')) if (present(s, f).length < 2) return false;
   if (!baseStats(s, base).workshop || s.expeditions.some((e) => e.kind === 'claim')) return false;
   const g = [...world.greens].filter((x) => x.area >= 1500).sort((a, b) => dist(a.centroid, base.centroid) - dist(b.centroid, base.centroid))[0];
   if (!g) return false;
   const cargo: StockDelta = {
-    seeds: Math.min(3, Math.floor(base.stock.seeds)),
+    seeds: Math.min(20, Math.floor(base.stock.seeds)),
     wood: Math.min(18, Math.floor(base.stock.wood)),
     cloth: Math.min(6, Math.floor(base.stock.cloth)),
     scrap: Math.min(20, Math.floor(base.stock.scrap)),
@@ -105,7 +109,7 @@ function convoys(s: GameState, world: World, base: Site): void {
     if (s.expeditions.some((e) => e.fromSite === f.id || (e.kind === 'convoy' && e.target.id === f.id))) continue;
     const crew = present(s, f).filter((v) => v.location === 'base' && v.hp > 50);
     const keepKcal = present(s, f).length * 2250 * 20;
-    if (f.stock.rawFood > keepKcal + 30000 && crew.length >= 3) {
+    if (f.stock.rawFood > keepKcal + 10000 && crew.length >= 3) {
       const team = crew.slice(0, 2).map((v) => v.id);
       const cargo: StockDelta = { rawFood: Math.min(f.stock.rawFood - keepKcal, 2 * 22 * 3000) };
       launchExpedition(s, world, { fromSite: f.id, members: team, target: { type: 'site', id: base.id }, mode: 'walk', cargo });
@@ -155,19 +159,42 @@ function upgradeStations(s: GameState, base: Site): void {
 }
 
 /** Crafting stations are opt-in: only queue what the pantry can pay for today. */
-const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'crock', 'smokehouse', 'kiln', 'carpentry'];
+const STATION_ORDER: ModuleId[] = ['forge', 'tailor', 'cellar', 'crock', 'smokehouse', 'kiln', 'carpentry', 'generator', 'lighting', 'fridge', 'water_pump', 'power_tools', 'electric_fence', 'radio'];
+/** Queue a craft for the first input the site is short of, if a recipe exists. */
+function craftMissing(s: GameState, base: Site, cost: Partial<Record<string, number>>): boolean {
+  if (base.stock.wood < 160 || base.stock.scrap < 80) return false;
+  for (const [item, need] of Object.entries(cost)) {
+    if ((base.stock[item] ?? 0) >= (need ?? 0)) continue;
+    const r = RECIPES.find((x) => x.out === item && canAfford(base, Object.fromEntries(x.in) as never));
+    if (!r) continue;
+    if (queueCraft(s, base, r.id) === null) return true;
+  }
+  return false;
+}
+
+const APPLIANCE_IDS = new Set<string>(['lighting', 'fridge', 'water_pump', 'power_tools', 'electric_fence', 'radio', 'grow_light']);
+
 function buildStations(s: GameState, base: Site): void {
-  if (base.projects.length) return;
+  if (base.projects.length > 1) return;
   // Stations are a luxury: do not divert the early material economy into them.
   if (base.stock.wood < 120 || base.stock.scrap < 60) return;
+  const pop = present(s, base).length;
+  const food = base.stock.rawFood + base.stock.meals + base.stock.food;
+  const stable = pop > 0 && food > pop * 2250 * 10;
   const have = new Set(base.interior.rooms.filter((r) => r.module).map((r) => r.module!));
   for (const id of STATION_ORDER) {
     if (have.has(id)) continue;
+    // Appliances are comforts: they wait until the colony is fed and the grid exists.
+    if (APPLIANCE_IDS.has(id) && (!stable || !have.has('generator'))) continue;
     const def = MODULES[id];
     const room = base.interior.rooms.find((r) => !r.module && !r.walled === false);
     if (room) {
       const cost = def.cost(room.area);
-      if (!canAfford(base, cost)) continue; // do not wedge the queue on a module we cannot pay
+      if (!canAfford(base, cost)) {
+        // Make the parts rather than waiting for them to appear.
+        if (craftMissing(s, base, cost as Record<string, number>)) return;
+        continue; // do not wedge the queue on a module we cannot pay
+      }
     }
     if (!queueModule(s, base, base.interior.rooms.find((r) => !r.module)?.id ?? '', id)) return;
   }
@@ -253,6 +280,17 @@ function craftGear(s: GameState, base: Site): void {
   }
 }
 
+/** The bot invests in solar once it has something worth running. */
+function solarKit(s: GameState, base: Site): void {
+  const st = baseStats(s, base);
+  if (!st.generator) return; // power only matters if we are building the grid anyway
+  if ((base.stock.solar_panel ?? 0) >= 2 && (base.stock.battery ?? 0) >= 2) return;
+  if ((base.stock.plate ?? 0) < 4 || (base.stock.scrap ?? 0) < 40) return;
+  if (base.projects.length > 1) return;
+  if ((base.stock.solar_panel ?? 0) < 2) queueCraft(s, base, 'r_solar_panel');
+  else if ((base.stock.battery ?? 0) < 2) queueCraft(s, base, 'r_battery');
+}
+
 export function botDay(s: GameState, world: World): void {
   const base = mainSite(s);
   const st = baseStats(s, base);
@@ -263,15 +301,16 @@ export function botDay(s: GameState, world: World): void {
       queueDefense(s, base, 'fortify');
     }
   }
+  buildStations(s, base);
   buildNext(s, base, WANT_BASE);
   for (const f of s.sites.filter((x) => x.kind === 'field')) {
     buildNext(s, f, WANT_FIELD);
     if (!f.projects.length && f.fence.level < 1) queueDefense(s, f, 'fence');
   }
   upgradeStations(s, base);
-  buildStations(s, base);
   cookForTheDay(s, base);
   craftGear(s, base);
+  solarKit(s, base);
   autoAssign(s);
   convoys(s, world, base);
 
@@ -282,8 +321,8 @@ export function botDay(s: GameState, world: World): void {
   if (maybeClaimField(s, world, base, idle)) return;
 
   // Once a field can water its workers, send day labourers from the base instead of living there.
-  for (const f of s.sites.filter((x) => x.kind === 'field' && baseStats(s, x).filter)) {
-    const want = Math.ceil(baseStats(s, f).gardenArea / 1200);
+  for (const f of s.sites.filter((x) => x.kind === 'field' && baseStats(s, x).gardenArea > 0)) {
+    const want = Math.max(2, Math.ceil(baseStats(s, f).gardenArea / 700));
     const have = s.survivors.filter((v) => v.status === 'alive' && v.commute?.work === f.id).length;
     for (const id of idle.slice(0, Math.max(0, Math.min(want - have, idle.length - 6)))) {
       setCommute(s, world, id, f.id);

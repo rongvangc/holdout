@@ -49,6 +49,13 @@ export const MODULE_ICONS: Record<ModuleId, string> = {
   smokehouse: "/icons/pixel/kitchen.png",
   crock: "/icons/pixel/storage.png",
   cellar: "/icons/pixel/storage.png",
+  lighting: "/icons/pixel/rec_room.png",
+  fridge: "/icons/pixel/storage.png",
+  water_pump: "/icons/pixel/well.png",
+  power_tools: "/icons/pixel/workshop.png",
+  electric_fence: "/icons/pixel/struct_wall.png",
+  radio: "/icons/pixel/rec_room.png",
+  grow_light: "/icons/pixel/garden.png",
   coop: "/icons/pixel/garden.png",
   pond: "/icons/pixel/water_tank.png",
 };
