@@ -61,7 +61,10 @@ describe('wounds', () => {
     expect(bleedOf(v)).toBe(3);
     expect(isBleeding(v)).toBe(true);
     // The engine applies BLEED_HP_PER_HOUR * bleed per hour; assert the constant is meaningful.
-    expect(BLEED_HP_PER_HOUR * 3).toBeGreaterThan(5);
+    // 3 bậc phải đủ để chết trong khoảng một ngày, không phải một giờ.
+    const hoursToDie = 100 / (BLEED_HP_PER_HOUR * 3);
+    expect(hoursToDie).toBeGreaterThan(12);
+    expect(hoursToDie).toBeLessThan(48);
     v.bleed = 0;
     expect(isBleeding(v)).toBe(false);
   });
