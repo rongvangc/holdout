@@ -95,12 +95,15 @@ export const PEOPLE_PER_LATRINE = 20;
 
 export type CropId = 'rau' | 'khoai' | 'thuoc';
 export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: number }> = {
-  rau: { label: 'Rau muống', days: 30, kcalPerM2: 475 },
-  khoai: { label: 'Khoai lang', days: 110, kcalPerM2: 1720 },
+  // Chu kỳ ngắn lại để vườn kịp quay vòng trong một ván 120 ngày (trước: 30/110).
+  rau: { label: 'Rau muống', days: 18, kcalPerM2: 1400 },
+  khoai: { label: 'Khoai lang', days: 45, kcalPerM2: 3600 },
   thuoc: { label: 'Dược liệu', days: 40, kcalPerM2: 0 },
 };
-// ~6 h of hand labour keeps ~1200 m² of vegetables going (smallholder scale).
-export const TEND_H_PER_M2_DAY = 0.005;
+// ~6 h of hand labour keeps ~2000 m² of vegetables going (smallholder scale).
+// 0.005 made a 3 400 m² field need 17 h/day; the untended floor then stalled crops
+// at 1%/day and the farm ran at 5% capacity.
+export const TEND_H_PER_M2_DAY = 0.003;
 
 export type ZombieType = 'walker' | 'runner' | 'screamer' | 'bloater' | 'brute' | 'stalker';
 export interface ZombieDef {

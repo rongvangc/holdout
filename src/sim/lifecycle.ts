@@ -2,7 +2,7 @@ import { push } from '../core/eventQueue';
 import { chance, int } from '../core/rng';
 import { DAY, dayOf } from '../core/time';
 import { forfeitGear, returnGear } from './gear';
-import { addSurvivor, alert, log, mainSite, siteOf, take } from './state';
+import { addSurvivor, alert, log, mainSite, siteById, siteOf, take } from './state';
 import type { GameState, Survivor } from './types';
 
 export function killSurvivor(s: GameState, v: Survivor, cause: string): void {
@@ -107,24 +107,41 @@ export function releaseFromQuarantine(s: GameState, v: Survivor): void {
 /** New people at the gate or met outside; the Strangers law decides. */
 export function handleStrangers(s: GameState, group: Survivor[], where: string, siteId = mainSite(s).id): void {
   const names = group.map((g) => g.name).join(', ');
-  switch (s.laws.strangers) {
-    case 'reject':
-      for (const o of s.survivors) if (o.status === 'alive') o.morale = Math.max(0, o.morale - 2);
-      log(s, `Từ chối ${group.length} người lạ ${where} (${names}).`, 'warn');
-      return;
-    case 'accept':
-      for (const g of group) addSurvivor(s, g, siteId);
-      s.stats.recruited += group.length;
-      alert(s, `${group.length} người mới gia nhập ${where}: ${names}.`, 'good');
-      return;
-    case 'screen':
-      for (const g of group) {
-        g.location = 'quarantine';
-        g.quarantineUntil = s.t + 2 * DAY;
-        addSurvivor(s, g, siteId);
-      }
-      s.stats.recruited += group.length;
-      alert(s, `${group.length} người lạ ${where} được cách ly kiểm tra 2 ngày: ${names}.`, 'info');
+  // Nhận người là nhận thêm miệng ăn: mọi luật đều phải qua cổng "còn ≥ 18 ngày lương".
+  const home = siteById(s, siteId);
+  const pop = Math.max(1, s.survivors.filter((v) => v.status === 'alive' && v.siteId === siteId).length);
+  const days = (home.stock.food + home.stock.rawFood + home.stock.meals) / (pop * 2250);
+  const room = Math.max(0, Math.floor((days - 18) / 2));
+  const admitted = group.slice(0, room);
+
+  if (s.laws.strangers === 'reject') {
+    for (const o of s.survivors) if (o.status === 'alive') o.morale = Math.max(0, o.morale - 2);
+    log(s, `Từ chối ${group.length} người lạ ${where} (${names}).`, 'warn');
+    return;
+  }
+  if (!admitted.length) {
+    log(
+      s,
+      `Không nhận người lạ ${where}: kho còn ${days.toFixed(1)} ngày lương cho ${pop} người (${names}).`,
+      'warn',
+    );
+    return;
+  }
+  if (s.laws.strangers === 'screen') {
+    for (const g of admitted) {
+      g.location = 'quarantine';
+      g.quarantineUntil = s.t + 2 * DAY;
+      addSurvivor(s, g, siteId);
+    }
+  } else {
+    for (const g of admitted) addSurvivor(s, g, siteId);
+  }
+  s.stats.recruited += admitted.length;
+  if (admitted.length < group.length) {
+    log(s, `Chỉ nhận ${admitted.length}/${group.length} người lạ ${where} — kho còn ${days.toFixed(1)} ngày lương.`, 'warn');
+    for (const o of s.survivors) if (o.status === 'alive') o.morale = Math.max(0, o.morale - 1);
+  } else {
+    alert(s, `${admitted.length} người mới gia nhập ${where}: ${names}.`, 'good');
   }
 }
 

@@ -72,6 +72,8 @@ export const DESIGN_LIMITS = {
   spikesCap: 25, // max raid strength removed by traps
   maxRoomIndoor: 150, // m²
   maxRoomOutdoor: 800, // m²
+  /** Đất trống (ruộng) thì làm được vườn lớn hơn sân trong thành phố. */
+  maxRoomField: 2500,
   partitionSecPerCell: 120,
   partitionWoodPerCell: 0.5,
 };

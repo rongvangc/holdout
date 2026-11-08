@@ -43,7 +43,9 @@ export function components(cells: number[], w: number, h: number): number[][] {
 
 const inLayer = (r: Room, l: Layer) => r.outdoor === l.outdoor && (l.outdoor || r.floor === l.floor);
 const cellKind = (l: Layer) => (l.outdoor ? CELL_YARD : CELL_FLOOR);
-const maxArea = (l: Layer) => (l.outdoor ? DESIGN_LIMITS.maxRoomOutdoor : DESIGN_LIMITS.maxRoomIndoor);
+/** Ruộng là đất trống nên khoảnh được lớn hơn sân trong thành phố. */
+const maxArea = (l: Layer, site?: Site) =>
+  l.outdoor ? (site?.kind === 'field' ? DESIGN_LIMITS.maxRoomField : DESIGN_LIMITS.maxRoomOutdoor) : DESIGN_LIMITS.maxRoomIndoor;
 
 function busy(site: Site, r: Room): string | null {
   if (r.module) return `Phòng "${roomName(r)}" đang có công trình — tháo dỡ trước`;
@@ -128,7 +130,7 @@ export function paintRoom(s: GameState, site: Site, l: Layer, cells: number[], n
   if (!valid.length) return l.outdoor ? 'Chỉ vẽ được trên đất trống ngoài sân' : 'Chỉ vẽ được bên trong toà nhà';
   if (components(valid, it.w, it.h).length > 1) return 'Phòng phải liền một khối';
   const area = valid.length * it.cellSize * it.cellSize;
-  if (area > maxArea(l)) return `Tối đa ${maxArea(l)} m² mỗi ${l.outdoor ? 'khoảnh' : 'phòng'}`;
+  if (area > maxArea(l, site)) return `Tối đa ${maxArea(l, site)} m² mỗi ${l.outdoor ? 'khoảnh' : 'phòng'}`;
   const set = new Set(valid);
   const why = affected(site, l, set);
   if (why) return why;
@@ -161,7 +163,7 @@ export function mergeRooms(s: GameState, site: Site, aId: string, bId: string): 
   const bs = new Set(b.cells);
   if (!a.cells.some((c) => neighbours(c, it.w, it.h).some((n) => bs.has(n)))) return 'Hai phòng phải sát nhau';
   const l: Layer = { floor: a.floor, outdoor: a.outdoor };
-  if ((a.cells.length + b.cells.length) * it.cellSize * it.cellSize > maxArea(l)) return `Tối đa ${maxArea(l)} m²`;
+  if ((a.cells.length + b.cells.length) * it.cellSize * it.cellSize > maxArea(l, site)) return `Tối đa ${maxArea(l, site)} m²`;
   setCells(it, a, [...a.cells, ...b.cells]);
   a.walled = (a.walled ?? true) && (b.walled ?? true);
   it.rooms = it.rooms.filter((r) => r !== b);
