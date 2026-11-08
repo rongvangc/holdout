@@ -5,6 +5,7 @@ import { setRole, setStudy } from '../sim/engine';
 import { setCommute } from '../sim/commute';
 import { autoAssign, baseStats } from '../sim/state';
 import { planTreatment, treatNow } from '../sim/medical';
+import { Hint, useHints } from './hints';
 import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
 import { ITEMS } from '../data/items';
@@ -38,9 +39,13 @@ const TASK_LABEL: Record<TaskKind, string> = {
 
 function Bar({ v, max = 100, color = '#e6e6e3', title }: { v: number; max?: number; color?: string; title: string }) {
   const p = Math.max(0, Math.min(1, v / max));
+  const hints = useHints();
   return (
-    <span className="bar" title={`${title}: ${Math.round(v)}`}>
-      <i style={{ width: `${p * 100}%`, background: p < 0.25 ? '#ff2a2a' : color }} />
+    <span className="bar-cell">
+      <span className="bar" title={`${title}: ${Math.round(v)}`}>
+        <i style={{ width: `${p * 100}%`, background: p < 0.25 ? '#ff2a2a' : color }} />
+      </span>
+      {hints && <b className={p < 0.25 ? 'red' : 'faint'}>{Math.round(v)}</b>}
     </span>
   );
 }
@@ -102,6 +107,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             }}
           />
           tự chế vật tư
+          <Hint text="Tự chế vật tư lõi (ván, đinh, chỉ, than…) khi thiếu" />
         </label>
         <label className="row" style={{ gap: 4 }} title="Tự lập đội đi lục soát khi có người rảnh và còn nhà chưa vét">
           <input
@@ -113,6 +119,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             }}
           />
           tự đi lục soát
+          <Hint text="Tự lập đội đi lục soát khi có người rảnh và còn nhà chưa vét" />
         </label>
         <label className="row" style={{ gap: 4 }} title="Tự mở thêm vườn khi kho lương thực dưới 20 ngày">
           <input
@@ -148,6 +155,10 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
               Trang bị toàn đội · {staff.length - bare.length}/{staff.length} người có vũ khí
               {spare.length > 0 && <span className="faint"> · trong kho: {spare.slice(0, 6).join(', ')}</span>}
             </summary>
+            <Hint
+              className="table-glossary"
+              text="Cột: Giảm dmg = giáp thân + mũ cộng dồn, kẹp 45% · Tải = kg chở thêm khi viễn chinh · Giữ ấm = giảm rét khi trời dưới 18°C"
+            />
             <table className="grid">
               <thead>
                 <tr>
@@ -189,6 +200,10 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
         );
       })()}
 
+      <Hint
+        className="table-glossary"
+        text="Cột: Đi làm ở = ngủ ở nhà, ngày đi bộ sang điểm khác làm · Tự học = đọc đúng kỹ năng đã gán (cần Kệ sách) · Đói = kcal · Khát = ml · Mệt = tỉnh táo · Cần = việc điều trị nên làm ngay"
+      />
       <table className="grid">
         <thead>
           <tr>
@@ -332,6 +347,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             {v.traits.map((t) => (
               <span key={t} className="tag" title={TRAITS[t].desc}>
                 {TRAITS[t].label}
+                <Hint text={TRAITS[t].desc} />
               </span>
             ))}
           </div>
@@ -415,6 +431,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
               Vũ khí: {v.gear?.weapon ? (survivorWeapon(site, v) ? ITEMS[v.gear.weapon]?.label : `${ITEMS[v.gear.weapon]?.label} (thiếu đạn)`) : 'tay không'}
             </span>
             <span title="Giáp thân + mũ cộng dồn, tối đa 45%">Giáp: −{Math.round(survivorArmor(v) * 100)}% sát thương</span>
+            <Hint text="Giáp thân + mũ cộng dồn, tối đa 45% — mặc cả hai thì mạnh hơn một món tốt." />
             <span title="Ba lô tăng sức chở khi đi viễn chinh">Sức chở thêm: +{packCapacity(v)} kg</span>
           </div>
         </div>
