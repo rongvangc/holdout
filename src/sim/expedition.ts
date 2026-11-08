@@ -7,6 +7,7 @@ import { ITEMS, stockWeight, type ItemId } from '../data/items';
 import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
+import { armorMitigation, bestWeapon, describeWeapon, wearWeapon } from './equipment';
 import { applyBiteLaw, handleStrangers, killSurvivor, noteBite } from './lifecycle';
 import { addStock, alert, baseStats, log, makeSite, newId, siteById, siteOfSource, take } from './state';
 import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
@@ -295,11 +296,26 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
     const def = ZOMBIES[z];
     const victim = pick(s.rng, alive);
     const meleeAvg = alive.reduce((a, m) => a + skill(m, 'melee'), 0) / alive.length;
-    const dmg = (def.dmg * range(s.rng, 0.5, 1.5) * (1 - 0.04 * meleeAvg) * (alive.some((m) => hasTrait(m, 'brave')) ? 0.8 : 1)) / Math.sqrt(alive.length);
+    // Equipment the party carries: best weapon + whatever armour the site owns.
+    const weapon = bestWeapon(from);
+    const armour = armorMitigation(from);
+    const mitigation = Math.min(0.6, (weapon?.mitigation ?? 0) + armour * (1 - (weapon?.mitigation ?? 0)));
+    const dmg =
+      ((def.dmg * range(s.rng, 0.5, 1.5) * (1 - 0.04 * meleeAvg) * (alive.some((m) => hasTrait(m, 'brave')) ? 0.8 : 1)) /
+        Math.sqrt(alive.length)) *
+      (1 - mitigation);
     victim.hp -= dmg;
     for (const m of alive) gainXp(m, 'melee', 6);
+    if (weapon?.isFirearm && weapon.noise) {
+      // A gunshot at night pulls the whole cell toward you.
+      from.heat = Math.min(100, from.heat + weapon.noise);
+      if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + weapon.noise);
+    }
+    if (weapon && wearWeapon(s, from, weapon, 1)) {
+      log(s, `${from.name}: ${describeWeapon(weapon)} gãy sau trận.`, 'warn');
+    }
     if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + (z === 'screamer' ? 8 : 2));
-    if (chance(s.rng, def.bite / Math.sqrt(alive.length))) {
+    if (chance(s.rng, (def.bite * (weapon?.biteMult ?? 1)) / Math.sqrt(alive.length))) {
       const seen = chance(s.rng, 0.7);
       noteBite(s, victim, seen);
       e.report.push(`${victim.name} bị ${def.label} cắn${seen ? '' : ' (không ai thấy)'}.`);

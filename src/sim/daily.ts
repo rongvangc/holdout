@@ -4,6 +4,7 @@ import { DAY, dayOf, dayOfYear, HOUR, monthOf, nextClock } from '../core/time';
 import type { World } from '../world/types';
 import { dist } from '../world/geo';
 import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY } from './data';
+import { armorMitigation, bestWeapon, describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
@@ -226,9 +227,15 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   // Traps thin the wave first, but can never stop more than 70% of it.
   const strength = Math.max(raw * 0.3, raw - structureEffects(site.interior.structures).spikes);
   const guards = home.filter((v) => v.task?.kind === 'guard');
+  // Better weapons make every guard matter more; a gun also makes noise.
+  const weapon = bestWeapon(site);
+  const wDef = weaponDefense(weapon);
   let defense = st.defenseStatic;
   for (const g of guards) {
-    defense += (8 + 2 * skill(g, 'melee')) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
+    defense += (8 + 2 * skill(g, 'melee') + wDef) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
+  }
+  if (weapon && guards.length && wearWeapon(s, site, weapon, 1)) {
+    log(s, `${site.name}: ${describeWeapon(weapon)} gãy trong đêm.`, 'warn');
   }
   defense += (home.length - guards.length) * 1.5;
   if (guards.length || st.watchtowers) defense *= 1.15;
@@ -256,9 +263,11 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   }
   const hurt = Math.max(1, Math.ceil(ratio * home.length * 0.4));
   const shuffled = [...home].sort(() => range(s.rng, -1, 1));
+  // Armour turns a mauling into bruises: less HP lost, fewer bites get through.
+  const armour = armorMitigation(site);
   for (const v of shuffled.slice(0, hurt)) {
-    v.hp -= range(s.rng, 10, 40);
-    if (chance(s.rng, 0.2)) {
+    v.hp -= range(s.rng, 10, 40) * (1 - armour);
+    if (chance(s.rng, 0.2 * (1 - armour))) {
       v.bitten = true;
       v.biteKnown = true;
       if (chance(s.rng, 0.65)) v.infected = true;
