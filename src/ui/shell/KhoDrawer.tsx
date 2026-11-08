@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FEATURES } from '../../sim/config';
 import { dayOf } from '../../core/time';
 import { ITEMS, stockWeight, type ItemId } from '../../data/items';
+import { stapleKcal } from '../../data/staples';
 import { ammoFor } from '../../sim/equipment';
 import { queueRepair, repairableWeapons, stationLevel } from '../../sim/build';
 import { baseStats, present } from '../../sim/state';
@@ -149,8 +150,8 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
       </div>
       <div className="kv">
         <span title="Đồ hộp + bữa nấu chín + gạo/khoai sống, tính theo kcal">Đồ ăn</span>
-        <span className={(stock.food + stock.meals + stock.rawFood) / (pop * 2250) < 3 ? 'red' : ''}>
-          {((stock.food + stock.meals + stock.rawFood) / (pop * 2250)).toFixed(1)} ngày
+        <span className={(stock.food + stock.meals + stapleKcal(stock)) / (pop * 2250) < 3 ? 'red' : ''}>
+          {((stock.food + stock.meals + stapleKcal(stock)) / (pop * 2250)).toFixed(1)} ngày
         </span>
         <span title="Nước sạch trong kho, 3.3 L/người/ngày">Nước uống</span>
         <span className={stock.water / (pop * 3.3) < 2 ? 'red' : ''}>{(stock.water / (pop * 3.3)).toFixed(1)} ngày</span>
