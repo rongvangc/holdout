@@ -957,10 +957,13 @@ table.grid tr.sel td {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  /* Topstrip và stage xếp dọc: strip không được đè lên nội dung. */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 .topstrip {
-  position: absolute;
-  inset: 0 0 auto;
+  position: relative;
   z-index: 20;
   border-top: 2px solid var(--red);
   border-bottom: 1px solid var(--line-strong);
@@ -972,6 +975,16 @@ table.grid tr.sel td {
   align-items: stretch;
   min-width: 0;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.topstrip-main::-webkit-scrollbar,
+.topstrip-nav::-webkit-scrollbar {
+  height: 4px;
+}
+.topstrip-main::-webkit-scrollbar-thumb,
+.topstrip-nav::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
 }
 .topstrip-main > * {
   flex: none;
@@ -1034,8 +1047,7 @@ table.grid tr.sel td {
   background: var(--btn-hover);
 }
 .overlay-stage {
-  position: absolute;
-  inset: 0;
+  position: relative;
   min-height: 0;
   min-width: 0;
   overflow: auto;
@@ -1087,12 +1099,6 @@ table.grid tr.sel td {
 }
 
 @media (min-width: 901px) {
-  .topstrip-main {
-    overflow: visible;
-  }
-  .topstrip-nav {
-    overflow: visible;
-  }
   .tabbar {
     flex: 1;
   }
