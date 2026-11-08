@@ -1,4 +1,4 @@
-# LAST 30 DAYS — Cơ chế game
+# HOLDOUT — Cơ chế game
 
 Tài liệu này mô tả đúng những gì code đang chạy (không phải ý tưởng). Khi đổi số trong code, sửa lại ở đây. Đường dẫn file ghi ở đầu mỗi mục.
 

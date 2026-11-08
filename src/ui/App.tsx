@@ -44,9 +44,9 @@ export function App() {
       <div className="hero">
         <div className="label">[ Sinh tồn · Xây căn cứ · Điều hành cộng đồng ]</div>
         <h1>
-          Last
+          Hold
           <br />
-          30 <span>days</span>
+          <span>out</span>
         </h1>
         <p className="dim" style={{ maxWidth: 560 }}>
           Chọn bất kỳ đâu trên bản đồ thật. Chiếm một toà nhà thật. Dẫn dắt hai mươi con người sống sót lâu nhất có thể — mỗi giây ở ngoài trời là một lần nữa có người bị cắn.

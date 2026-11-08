@@ -1,4 +1,4 @@
-# LAST 30 DAYS
+# HOLDOUT
 
 Game quản lý sinh tồn zombie dạng text/bản đồ, chạy trên trình duyệt. Thế giới dựng từ dữ liệu OpenStreetMap thật quanh vị trí người chơi chọn. Người chơi là người quản lý một cộng đồng (5 → 20+ người): phân việc, xây căn cứ, lục soát, chiếm thêm đất, đặt luật. Chơi vô tận — sống càng lâu càng tốt.
 
@@ -67,7 +67,7 @@ tests/        world, sim, sites, territory, design
 
 - **Discrete-event**: hàng đợi sự kiện (`task`, `day`, `raid`, `strangers`, `routes`, `exp`). Giữa hai sự kiện, kcal/nước/mệt/HP/nhiễm trùng được tích phân liên tục, nên tua 240× vẫn cho kết quả giống 1×.
 - **Tất định**: RNG có seed nằm trong state. Toàn bộ `GameState` serialize được JSON.
-- **Save**: IndexedDB key `last30days:save`, tự lưu mỗi khi sang ngày mới, khi bấm Lưu/Thoát, khi mở rộng bản đồ. Save cũ (v1, một căn cứ) được `migrate()` lên v2 (nhiều điểm).
+- **Save**: IndexedDB key `last30days:save` (giữ tên cũ để không mất save), tự lưu mỗi khi sang ngày mới, khi bấm Lưu/Thoát, khi mở rộng bản đồ. Save cũ (v1, một căn cứ) được `migrate()` lên v2 (nhiều điểm).
 - **Thế giới không nằm trong save**: chỉ lưu `worldKey`, khi load sẽ lấy lại từ cache/Overpass. Site tham chiếu toà nhà/đất bằng id OSM ổn định, nên khi mở rộng bản đồ `rebindWorld()` gắn lại được.
 
 ## Dữ liệu & bản quyền
