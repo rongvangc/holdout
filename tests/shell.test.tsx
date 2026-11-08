@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS, STOCK_ORDER } from '../src/data/items';
 import { KhoDrawer } from '../src/ui/shell/KhoDrawer';
 import { OverlayShell } from '../src/ui/shell/OverlayShell';
+import { overlayReducer } from '../src/ui/shell/useOverlay';
 import { newGame } from '../src/sim/state';
 import { makeTestWorld } from '../scripts/headless';
 
@@ -33,6 +34,13 @@ describe('overlay shell', () => {
 
     expect(STOCK_ORDER).toHaveLength(16);
     for (const item of STOCK_ORDER) expect(html).toContain(ITEMS[item].label);
+  });
+
+  it('opens kho as the active sheet after another sheet', () => {
+    const toolsOpen = overlayReducer({ khoOpen: false, sheet: null }, { type: 'open', id: 'tools' });
+    const khoOpen = overlayReducer(toolsOpen, { type: 'open', id: 'kho' });
+
+    expect(khoOpen).toEqual({ khoOpen: true, sheet: 'kho' });
   });
 
   it('renders all five primary tabs', () => {
