@@ -6,7 +6,7 @@ import { ammoFor } from '../../sim/equipment';
 import { queueRepair, repairableWeapons, stationLevel } from '../../sim/build';
 import { baseStats, present } from '../../sim/state';
 import { GEAR_SLOTS } from '../../sim/gear';
-import { HERDS, herdCapacity } from '../../sim/livestock';
+import { HERDS, herdCapacity, herdBudget } from '../../sim/livestock';
 import type { GameState, Site } from '../../sim/types';
 import { fmtNum } from '../Game';
 import { Icon, ITEM_ICONS } from '../icons';
@@ -178,6 +178,12 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
             if (h?.young) bits.push(`${h.young} non`);
             if (h?.pregnant) bits.push(`chửa ${h.pregnant} (${h.dueIn} ngày)`);
             if (h?.lactating) bits.push(`sữa ${h.lactating} (${h.lactationIn} ngày)`);
+            if (h) {
+              // Chăn nuôi gần như luôn lỗ calo — hiện rõ để người chơi biết mình đang
+              // đổi calo lấy đạm/tinh thần, chứ không phải nguồn lương.
+              const b = herdBudget(h, site.kind === 'field' ? 1 : 0.4);
+              bits.push(`${b.net >= 0 ? '+' : ''}${Math.round(b.net)} kcal/ngày`);
+            }
             return (
               <span key={r.id} title={bio.desc}>
                 {bio.label} · {bits.join(' · ')} / {cap}

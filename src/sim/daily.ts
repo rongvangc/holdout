@@ -83,17 +83,19 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (!room.herdState) room.herdState = startingHerd(room.herd, cap);
     const h = room.herdState;
 
-    // Chăm = đủ ăn + đủ uống (nước bẩn trước, nước sạch chỉ khi người còn dư ≥3 ngày).
-    const need = herdNeeds(h);
+    // Chăm = đủ ăn + đủ uống. Cỏ ở ruộng là miễn phí; trong sân phố chỉ có 40%.
+    const graze = site.kind === 'field' ? 1 : 0.4;
+    const need = herdNeeds(h, graze);
     const pop = Math.max(1, home.length);
     const fromDirty = take(site, 'dirtyWater', Math.min(need.water, site.stock.dirtyWater));
     const cleanReserve = site.stock.water - pop * 3.3 * 3;
     const fromClean = take(site, 'water', Math.max(0, Math.min(need.water - fromDirty, cleanReserve)));
     const drank = fromDirty + fromClean;
-    const fed = Math.min(need.feed, site.stock.rawFood);
+    // Không bao giờ lấy từ khẩu phần ăn của người: chỉ cho ăn phần dư trên 10 ngày lương.
+    const humanReserve = pop * 2250 * 10;
+    const surplus = Math.max(0, site.stock.rawFood - humanReserve);
+    const fed = Math.min(need.feed, surplus);
     if (fed > 0) take(site, 'rawFood', fed);
-    // Chăn thả ở ruộng đỡ 45% cỏ/cám.
-    const graze = site.kind === 'field' ? 0.45 : 0.2;
     // Người chăm có skill Chăn nuôi thì bầy khoẻ hơn.
     const husbandry = home.reduce((a, m) => a + skill(m, 'husbandry'), 0) / pop;
     const care = Math.max(

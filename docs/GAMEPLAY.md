@@ -924,3 +924,23 @@ Kết quả 120 ngày × 4 seed: **4/4 sống hết**, dân 4–6, chết 12–2
 3. Diện tích vườn tính theo "người dự kiến" (10–12) thay vì số nông dân thật (1) → ruộng phình to nhưng bỏ hoang.
 
 Kết quả 120 ngày × 5 seed: **4/5 sống hết**, thu hoạch **114k–229k kcal/ván**.
+
+### 12.19 Chăn nuôi trong ngân sách lương thực (sửa đơn vị 2026-11)
+
+**Lỗi đơn vị**: kho `rawFood` tính bằng **kcal**, nhưng nhu cầu ăn của bầy trả về **kg** → 8 con dê "ăn 7,2" = **7 kcal/ngày**, tức gia súc gần như miễn phí. Đã sửa: cám tính bằng kcal (`FEED_KCAL_PER_KG = 3.000`).
+
+**Chăn nuôi không phải nguồn calo — nó là máy đổi calo lấy đạm.** Ngân sách một bầy 5 con (2 con đang cho sữa), mỗi ngày:
+
+| Loài | Thu | Cám (sân phố) | Net (sân) | Net (ruộng, có cỏ) | Nước | Diện tích |
+|---|---|---|---|---|---|---|
+| Gà | 211 kcal | 1.161 kcal | **−950** | −667 | 2 L | 1 m² |
+| Vịt | 241 | 1.512 | −1.271 | −839 | 5 L | 2 m² |
+| Dê | 2.666 | 8.910 | −6.244 | **+641** | 20 L | 8 m² |
+| Lợn | 1.098 | 29.520 | −28.422 | −18.702 | 40 L | 6 m² |
+| Bò | 10.917 | 81.600 | −70.683 | −13.083 | 175 L | 20 m² |
+| Trâu | 3.449 | 91.800 | −88.351 | −23.551 | 200 L | 23 m² |
+
+- **Chỉ dê/bò/trâu chăn thả trên ruộng mới dương** (cỏ không tranh với người). Nuôi lợn/bò bằng cám trong phố là lỗ nặng — đúng thực tế.
+- Vì vậy chăn nuôi phải được tính vào ngân sách như **nguồn đạm + tinh thần + bảo hiểm**, không phải nguồn kcal. `herdBudget()` trả về `gain / feed / net / proteinServings`, và kho hiện `±X kcal/ngày` cho từng bầy để người chơi thấy mình đang lỗ hay lãi.
+- **Quy tắc ăn**: bầy chỉ ăn phần `rawFood` **dư trên 10 ngày lương của người** — không bao giờ lấy từ khẩu phần.
+- Trần dân số theo lãnh thổ (mục 6 của kế hoạch) **không cộng kcal gia súc**; chỉ cộng phần đạm: mỗi 5 con dê trên ruộng ≈ 1 người ăn.

@@ -335,11 +335,37 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
   return out;
 }
 
-/** Tổng nhu cầu ăn/uống của bầy trong ngày. */
-export const herdNeeds = (h: HerdState): { feed: number; water: number } => {
+/** Cám/cỏ quy ra kcal: 1 kg thức ăn khô ≈ 3.000 kcal (gạo, ngô, cỏ khô). */
+export const FEED_KCAL_PER_KG = 3000;
+
+/**
+ * Tổng nhu cầu ăn/uống của bầy trong ngày.
+ *
+ * `feed` trả về **kcal** (khớp đơn vị của kho `rawFood`); trước đây trả kg nên bầy
+ * chỉ "ăn" vài kcal mỗi ngày — gia súc gần như miễn phí.
+ *
+ * `graze` = 0..1: phần ăn tự kiếm được (cỏ ở ruộng). Động vật nhai lại (dê/bò/trâu)
+ * sống gần như hoàn toàn bằng cỏ; lợn/gia cầm vẫn cần cám.
+ */
+const GRAZE_EFFICIENCY: Record<HerdKind, number> = {
+  ga: 0.35,
+  vit: 0.4,
+  de: 0.85,
+  lon: 0.45,
+  bo: 0.8,
+  trau: 0.8,
+};
+
+export const herdNeeds = (h: HerdState, graze = 0): { feed: number; feedKg: number; water: number } => {
   const bio = HERDS[h.kind];
   const heads = h.adults + h.young * 0.4;
-  return { feed: heads * bio.feedPerDay, water: heads * bio.waterPerDay };
+  const feedKg = heads * bio.feedPerDay;
+  const covered = Math.min(1, Math.max(0, graze)) * GRAZE_EFFICIENCY[h.kind];
+  return {
+    feed: feedKg * FEED_KCAL_PER_KG * (1 - covered),
+    feedKg: feedKg * (1 - covered),
+    water: heads * bio.waterPerDay,
+  };
 };
 
 /** Số con tối đa một chuồng/trại chứa được theo diện tích. */
@@ -386,4 +412,47 @@ export function localHerds(world: World, site: Site): { coop: HerdKind; barn: He
 export function herdFor(world: World, site: Site, module: HerdModule, stored?: HerdKind): HerdKind {
   if (stored) return stored;
   return localHerds(world, site)[module];
+}
+
+/**
+ * Ngân sách của một bầy trong một ngày: thu (trứng/sữa/thịt khấu hao) − chi (cám/cỏ).
+ *
+ * Chăn nuôi **không phải nguồn calo**: gà lỗ ~950 kcal/ngày, lợn lỗ ~19.000, bò lỗ
+ * ~13.000 ngay cả khi có cỏ. Nó là nguồn **đạm + tinh thần** và là "bảo hiểm" khi đói.
+ * Chỉ dê/bò/trâu chăn thả trên ruộng mới dương, vì cỏ không tranh với người.
+ */
+export interface HerdBudget {
+  /** kcal thu được mỗi ngày (trứng, sữa, thịt khấu hao theo thời gian lớn). */
+  gain: number;
+  /** kcal cám/cỏ phải bỏ ra mỗi ngày. */
+  feed: number;
+  /** gain − feed. Âm là bình thường. */
+  net: number;
+  water: number;
+  m2: number;
+  /** Số phần ăn có đạm mỗi ngày (trứng/sữa/thịt) — thứ chăn nuôi thực sự mang lại. */
+  proteinServings: number;
+}
+
+const KCAL = { trung: 78, sua: 640, thit: 1900 };
+
+export function herdBudget(h: HerdState, graze = 0): HerdBudget {
+  const bio = HERDS[h.kind];
+  const hens = Math.max(0, h.adults - h.males);
+  const eggs = bio.eggEvery > 0 ? (hens / bio.eggEvery) * KCAL.trung : 0;
+  const milk = h.lactating * bio.milkPerDay * KCAL.sua;
+  const meat = (h.adults * bio.adultKg * bio.dressing * KCAL.thit) / Math.max(1, bio.maturityDays);
+  const gain = eggs + milk + meat;
+  const need = herdNeeds(h, graze);
+  const heads = h.adults + h.young * 0.4;
+  const proteinServings =
+    (bio.eggEvery > 0 ? hens / bio.eggEvery : 0) + h.lactating * (bio.milkPerDay / 0.25) * 0.2 + (h.adults * 0.2) / Math.max(1, bio.maturityDays / 30);
+  return {
+    gain,
+    feed: need.feed,
+    net: gain - need.feed,
+    water: need.water,
+    m2: heads * bio.m2PerHead,
+    proteinServings: Math.round(proteinServings * 10) / 10,
+  };
 }
