@@ -31,7 +31,7 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
   const here = present(s, site).length;
   const pop = Math.max(1, st.population);
   const stock = site.stock;
-  const [group, setGroup] = useState<string>('material');
+  const [group, setGroup] = useState<string>('all');
 
   // Mọi thứ đang thực sự có trong kho, kể cả 647 món catalog (trước đây bị ẩn).
   const held = Object.entries(stock)
@@ -41,7 +41,7 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
 
   const counts: Record<string, number> = {};
   for (const h of held) counts[groupOf(h.id)] = (counts[groupOf(h.id)] ?? 0) + 1;
-  const rows = held.filter((h) => groupOf(h.id) === group);
+  const rows = group === 'all' ? held : held.filter((h) => groupOf(h.id) === group);
   const issued = s.survivors.reduce(
     (n, v) => n + (v.status === 'alive' ? GEAR_SLOTS.filter((sl) => v.gear?.[sl]).length : 0),
     0,
@@ -51,6 +51,9 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
     <div className="khodrawer">
       <div className="label">Kho · {site.name}</div>
       <div className="khotabs">
+        <button className={group === 'all' ? 'on' : ''} onClick={() => setGroup('all')}>
+          Tất cả <span className="faint">{held.length}</span>
+        </button>
         {GROUPS.filter((g) => counts[g.id]).map((g) => (
           <button key={g.id} className={group === g.id ? 'on' : ''} onClick={() => setGroup(g.id)}>
             {g.label} <span className="faint">{counts[g.id]}</span>
@@ -79,7 +82,7 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
           })}
           {!rows.length && (
             <tr>
-              <td className="faint">Không có gì trong nhóm này.</td>
+              <td className="faint">{group === 'all' ? 'Kho trống.' : 'Không có gì trong nhóm này.'}</td>
             </tr>
           )}
         </tbody>
