@@ -7,13 +7,11 @@ import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
-import { Icon, ITEM_ICONS, StatusIcon } from './icons';
+import { Icon, ITEM_ICONS } from './icons';
 import { LawsView } from './LawsView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
-import { ReadoutBar } from './ReadoutBar';
-import { facilityChips } from './readout';
 import { saveGame } from './save';
 
 // Game seconds per real second.
@@ -40,17 +38,6 @@ export function fmtNum(v: number): string {
   if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
   if (v >= 100) return Math.round(v).toString();
   return v.toFixed(v >= 10 ? 0 : 1);
-}
-
-export function LogLine({ e }: { e: LogEntry }) {
-  return (
-    <div className={`logline ${e.level}`}>
-      <span className="t">
-        N{dayOf(e.t)} {fmtClock(e.t)}
-      </span>
-      {e.msg}
-    </div>
-  );
 }
 
 export function Game({ initial, world: initialWorld, onExit }: { initial: GameState; world: World; onExit: () => void }) {
@@ -120,6 +107,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
 
   const site = siteById(s, siteId);
   const st = baseStats(s, site);
+  const here = present(s, site).length;
   const alive = s.survivors.filter((v) => v.status === 'alive');
   const refresh = () => bump();
   const expandWorld = async (onProgress: (msg: string) => void): Promise<string | null> => {
@@ -145,6 +133,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
     setTimeout(() => setSaved(''), 1500);
   };
   const props: ViewProps = { s, world, site, setSite: setSiteId, refresh, expandWorld };
+  const pop = Math.max(1, st.population);
   const stock = site.stock;
 
   return (
@@ -164,20 +153,37 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             </button>
           ))}
         </div>
-        <div
-          className="badge"
-          title={`${s.weather.label} · ${s.weather.tempC}°C${s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}`}
-        >
-          <StatusIcon name={s.weather.storm ? 'storm' : s.weather.rainMm > 0 ? 'rain' : 'sun'} size={18} />
-          <span>{s.weather.tempC}°C</span>
+        <div className="stat">
+          <span className="label">Thời tiết</span>
+          <span className="v">
+            {s.weather.label} · {s.weather.tempC}°C{s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}
+          </span>
+          <span style={{ fontSize: 11 }}>{dayOf(s.t) <= s.hordeUntilDay ? <span className="red">■ Bầy zombie đi qua</span> : <span className="faint">□ Không có bầy</span>}</span>
         </div>
-        {dayOf(s.t) <= s.hordeUntilDay && (
-          <div className="badge horde" title="Bầy zombie đi qua">
-            <StatusIcon name="horde" size={18} />
-            <span>Bầy</span>
-          </div>
-        )}
-        <ReadoutBar s={s} site={site} />
+        <div className="stat">
+          <span className="label">Nhân lực</span>
+          <span className="v">
+            <b>{alive.length}</b> người
+            <span className="faint">/</span>
+            <b>{here}</b> ở đây
+            <span className="faint">/</span>
+            <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
+          </span>
+        </div>
+        <div className="stat">
+          <span className="label">Điểm này</span>
+          <span className="v">
+            <span className={site.heat > 45 ? 'red' : ''}> Nhiệt {Math.round(site.heat)}</span>
+            <span className="faint">/</span>
+            <span className={site.filth > 40 ? 'red' : ''}>Bẩn {Math.round(site.filth)}</span>
+            <span className="faint">/</span>
+            <span>Xác {Math.round(site.corpses)}</span>
+          </span>
+        </div>
+        <div className="stat">
+          <span className="label">Phòng thủ</span>
+          <span className="v">{Math.round(st.defenseStatic)}</span>
+        </div>
         <div className="grow" style={{ justifyContent: 'flex-end' }}>
           <span className="ok">{saved}</span>
           <button onClick={doSave}>Lưu</button>
@@ -193,27 +199,53 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
 
       <div className="stockpanel">
         <div className="label">Kho · {site.name}</div>
-        <div className="stockgrid">
-          {STOCK_ORDER.map((k) => (
-            <div
-              key={k}
-              className={`stockcell${stock[k] < 0.5 ? ' faint' : ''}`}
-              title={k === 'dirtyWater' ? `Nước bẩn/mưa: ${Math.round(stock[k])}/${st.waterCapacity} L` : `${ITEMS[k].label}: ${fmtNum(stock[k])} ${ITEMS[k].unit}`}
-            >
-              <Icon src={ITEM_ICONS[k]} size={24} />
-              <span className="qty">{fmtNum(stock[k])}</span>
-              <span className="unit">{ITEMS[k].unit}</span>
-            </div>
-          ))}
+        <table>
+          <tbody>
+            {STOCK_ORDER.map((k) => (
+              <tr key={k}>
+                <td className={stock[k] < 0.5 ? 'faint' : ''}>
+                  <Icon src={ITEM_ICONS[k]} size={20} /> {ITEMS[k].label}
+                </td>
+                <td>
+                  {fmtNum(stock[k])} <span className="faint">{ITEMS[k].unit}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="dither" />
+        <div className="label">Đủ dùng ({here} người)</div>
+        <div className="kv">
+          <span>Ăn</span>
+          <span className={(stock.food + stock.meals + stock.rawFood) / (pop * 2250) < 3 ? 'red' : ''}>
+            {((stock.food + stock.meals + stock.rawFood) / (pop * 2250)).toFixed(1)} ngày
+          </span>
+          <span>Uống</span>
+          <span className={stock.water / (pop * 3.3) < 2 ? 'red' : ''}>{(stock.water / (pop * 3.3)).toFixed(1)} ngày</span>
+          <span>Nước bẩn</span>
+          <span>
+            {Math.round(stock.dirtyWater)}/{st.waterCapacity} L
+          </span>
+          <span>Củi gom</span>
+          <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết (đi xa hơn)'}</span>
         </div>
         <div className="dither" />
-        <div className="facility">
-          {facilityChips(s, site).map((c) => (
-            <div key={c.id} className={`chip tone-${c.tone}`} title={c.hint}>
-              <StatusIcon name={c.icon} size={14} />
-              <span>{c.text}</span>
-            </div>
-          ))}
+        <div className="label">Điểm này</div>
+        <div className="kv">
+          <span>Nhà vệ sinh</span>
+          <span className={st.latrines * 20 < st.population ? 'amber' : ''}>
+            {st.latrines} ({st.latrines * 20} người)
+          </span>
+          <span>Gia cố</span>
+          <span>
+            cấp {site.fortify.level} · {Math.round(site.fortify.hp)}%
+          </span>
+          <span>Rào</span>
+          <span>
+            cấp {site.fence.level} · {Math.round(site.fence.hp)}%
+          </span>
+          <span>Viễn chinh</span>
+          <span>{s.expeditions.length} đội</span>
         </div>
         {s.gameOver && (
           <>
@@ -261,15 +293,6 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           {tab === 'laws' && <LawsView {...props} />}
           {tab === 'log' && <LogView {...props} />}
         </div>
-      </div>
-
-      <div className="feed">
-        {s.log.slice(-6).map((e, i) => (
-          <LogLine key={i} e={e} />
-        ))}
-        <button className="feedmore" onClick={() => setTab('log')}>
-          Nhật ký →
-        </button>
       </div>
 
       {toast && (
