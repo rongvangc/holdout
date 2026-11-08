@@ -212,7 +212,7 @@ export function scoreWorld(
   const tot: Partial<Record<ItemId, number>> = {};
   for (const b of buildings) {
     for (const [k, v] of Object.entries(expectedPerContainer(b.cat))) {
-      tot[k as ItemId] = (tot[k as ItemId] ?? 0) + v * b.containers;
+      tot[k as ItemId] = (tot[k as ItemId] ?? 0) + (v ?? 0) * b.containers;
     }
   }
   const people = 20;

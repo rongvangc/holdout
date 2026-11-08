@@ -41,6 +41,13 @@ export const MODULE_ICONS: Record<ModuleId, string> = {
   garage: "/icons/pixel/garage.png",
   generator: "/icons/pixel/generator.png",
   shelter: "/icons/pixel/shelter.png",
+  // Crafting stations reuse the closest pixel sprite until they get their own art.
+  forge: "/icons/pixel/workshop.png",
+  carpentry: "/icons/pixel/workshop.png",
+  kiln: "/icons/pixel/filter.png",
+  tailor: "/icons/pixel/storage.png",
+  smokehouse: "/icons/pixel/kitchen.png",
+  crock: "/icons/pixel/storage.png",
 };
 
 

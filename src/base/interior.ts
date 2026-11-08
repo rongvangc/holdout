@@ -15,6 +15,8 @@ export interface Room {
   cells: number[]; // indices into the w*h grid
   area: number;
   module?: ModuleId;
+  /** Station level, 1-based. Absent or 1 = the level queueModule builds. */
+  moduleLevel?: number;
   name?: string;
   walled?: boolean; // false while a player-drawn room is waiting for its partitions
 }

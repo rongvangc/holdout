@@ -17,9 +17,23 @@ export type ModuleId =
   | 'bookshelf'
   | 'garage'
   | 'generator'
-  | 'shelter';
+  | 'shelter'
+  | 'forge'
+  | 'carpentry'
+  | 'kiln'
+  | 'tailor'
+  | 'smokehouse'
+  | 'crock';
 
 export type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
+
+/** One upgrade step. levels[0] takes the station from 1 to 2, levels[1] from 2 to 3. */
+export interface ModuleLevel {
+  cost: Partial<Stock>;
+  workSec: number;
+  /** What the new level unlocks — recipes pin `level` to this. */
+  note: string;
+}
 
 export interface ModuleDef {
   label: string;
@@ -33,6 +47,8 @@ export interface ModuleDef {
   workSec: (area: number) => number;
   cost: (area: number) => Partial<Stock>;
   desc: string;
+  /** Upgrade ladder. Absent = the module is built once and never improves. */
+  levels?: ModuleLevel[];
 }
 
 const H = 3600;
@@ -58,6 +74,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 1.5 * H,
     cost: () => ({ wood: 10, scrap: 6 }),
     desc: 'Nấu gạo/khoai thành bữa ăn, đun sôi nước bẩn (tốn củi). Không có bếp, đồ sống chỉ ăn được một nửa năng lượng.',
+    levels: [
+      { cost: { scrap: 10, brick: 8, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: nấu mẻ lớn bằng than' },
+      { cost: { brick: 20, plate: 2, wood: 8 }, workSec: 7 * H, note: 'Cấp 3: bếp cho cả điểm, đỡ tốn củi' },
+    ],
   },
   storage: {
     label: 'Kho có khoá',
@@ -80,6 +100,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 3 * H,
     cost: () => ({ wood: 20, scrap: 15, tools: 1 }),
     desc: 'Cổng công nghệ: cần để làm bộ lọc nước, giếng, tháp canh, gia cố cấp 2+.',
+    levels: [
+      { cost: { scrap: 25, tools: 2, gear: 1 }, workSec: 6 * H, note: 'Cấp 2: mở ắc quy, đèn dầu, sửa đồ cơ khí' },
+      { cost: { plate: 4, gear: 4, wire: 10 }, workSec: 10 * H, note: 'Cấp 3: mở pin mặt trời, tời, bơm' },
+    ],
   },
   infirmary: {
     label: 'Phòng y tế',
@@ -211,6 +235,98 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 3 * H,
     cost: () => ({ scrap: 15, parts: 2, wood: 4 }),
     desc: 'Cần Bàn thợ. Nếu đủ xăng: đốt 24 L/đêm để đêm đó làm việc không còn chậm 25%. Ồn: heat +6 mỗi đêm chạy.',
+  },
+  // ---- crafting stations: each one owns a rung of the material ladder ---------
+  forge: {
+    label: 'Lò rèn',
+    icon: '⚒',
+    color: '#8a5a3a',
+    placement: 'outdoor',
+    minArea: 4,
+    maxPerSite: 1,
+    needsWorkshop: true,
+    workSec: () => 3 * H,
+    cost: () => ({ wood: 12, scrap: 14, brick: 6 }),
+    desc: 'Rèn lưỡi, đầu dụng cụ, đinh, bản lề. Cần than và Bàn thợ trước.',
+    levels: [
+      { cost: { scrap: 20, brick: 12, plate: 2 }, workSec: 5 * H, note: 'Cấp 2: mở lưỡi thép, tấm thép, sửa vũ khí hỏng' },
+      { cost: { plate: 6, gear: 2, brick: 20 }, workSec: 9 * H, note: 'Cấp 3: mở thép tôi, nhanh gấp đôi' },
+    ],
+  },
+  carpentry: {
+    label: 'Xưởng mộc',
+    icon: '⌗',
+    color: '#a0763c',
+    placement: 'indoor',
+    minArea: 6,
+    maxPerSite: 1,
+    workSec: () => 2.5 * H,
+    cost: () => ({ wood: 18, scrap: 6, tools: 1 }),
+    desc: 'Xẻ ván, vót cán, đóng khiên và đồ gỗ. Nhẹ và nhanh hơn lò rèn nhưng không làm được sắt.',
+    levels: [
+      { cost: { wood: 40, scrap: 10, nail: 20 }, workSec: 5 * H, note: 'Cấp 2: mở cán dài, khiên ghép, tủ khoá' },
+      { cost: { plank: 20, hinge: 8, gear: 1 }, workSec: 8 * H, note: 'Cấp 3: mở khung ba lô, xe kéo tay' },
+    ],
+  },
+  kiln: {
+    label: 'Lò nung',
+    icon: '△',
+    color: '#b0603c',
+    placement: 'outdoor',
+    minArea: 6,
+    maxPerSite: 1,
+    workSec: () => 3 * H,
+    cost: () => ({ stone: 20, clay: 14, wood: 8 }),
+    desc: 'Nung than, vôi, gạch. Sinh khói — heat tăng khi chạy.',
+    levels: [
+      { cost: { brick: 20, lime: 8, stone: 20 }, workSec: 6 * H, note: 'Cấp 2: thêm gạch chịu lửa, nung gốm' },
+      { cost: { brick: 40, plate: 2 }, workSec: 10 * H, note: 'Cấp 3: nung cả đêm, sản lượng ×2' },
+    ],
+  },
+  tailor: {
+    label: 'Xưởng may',
+    icon: '✂',
+    color: '#7a6a9a',
+    placement: 'indoor',
+    minArea: 4,
+    maxPerSite: 1,
+    workSec: () => 1.5 * H,
+    cost: () => ({ wood: 4, cloth: 8, scrap: 2 }),
+    desc: 'Kéo chỉ, may giáp vải, ba lô, khiên vải. Băng gạc cũng tốt hơn.',
+    levels: [
+      { cost: { cloth: 20, thread: 12 }, workSec: 4 * H, note: 'Cấp 2: mở giáp nhồi, túi đeo, ba lô khung' },
+      { cost: { cloth: 40, thread: 30, plate: 1 }, workSec: 7 * H, note: 'Cấp 3: mở giáp tấm, dù may, quần áo chống rét' },
+    ],
+  },
+  smokehouse: {
+    label: 'Bếp hun khói',
+    icon: '≈',
+    color: '#9a6a4a',
+    placement: 'outdoor',
+    minArea: 4,
+    maxPerSite: 1,
+    workSec: () => 2 * H,
+    cost: () => ({ wood: 10, stone: 6, rope: 2 }),
+    desc: 'Hun cá/thịt bằng khói củi. Đồ hun để được hàng chục ngày.',
+    levels: [
+      { cost: { brick: 12, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: hun nhanh hơn, đỡ tốn củi' },
+      { cost: { brick: 24, plate: 1 }, workSec: 6 * H, note: 'Cấp 3: hun cả mẻ lớn mỗi ngày' },
+    ],
+  },
+  crock: {
+    label: 'Chum ủ',
+    icon: '◍',
+    color: '#6a8a6a',
+    placement: 'indoor',
+    minArea: 2,
+    maxPerSite: 2,
+    workSec: () => 1 * H,
+    cost: () => ({ clay: 8, brick: 4, salt: 1 }),
+    desc: 'Muối chua rau củ, ủ mắm. Không cần nhiệt, nhưng cần muối.',
+    levels: [
+      { cost: { brick: 8, salt: 3 }, workSec: 2 * H, note: 'Cấp 2: ủ được thịt cá, thêm chum' },
+      { cost: { brick: 16, salt: 6 }, workSec: 3 * H, note: 'Cấp 3: ủ mắm lâu năm, tinh thần cao' },
+    ],
   },
   shelter: {
     label: 'Lán trại',

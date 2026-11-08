@@ -3,7 +3,7 @@ import { makeRng, range } from '../core/rng';
 import { DAY, HOUR, dayOf, nextClock } from '../core/time';
 import { generateInterior, roomsWith } from '../base/interior';
 import { CATS } from '../data/categories';
-import { emptyStock, type ItemId } from '../data/items';
+import { emptyStock, normalizeStock, type ItemId } from '../data/items';
 import { FENCE_DEFENSE_PER_LEVEL, FORTIFY_DEFENSE_PER_LEVEL } from '../data/modules';
 import { structureEffects } from '../data/structures';
 import { dist } from '../world/geo';
@@ -132,7 +132,11 @@ export function migrate(raw: unknown): GameState {
   const o = raw as GameState & Record<string, unknown>;
   o.cellClear ??= {};
   o.routes ??= [];
-  if (o.version === 2) return o;
+  if (o.version === 2) {
+    // Saves made before the item registry grew are missing every new id.
+    for (const site of o.sites ?? []) site.stock = normalizeStock(site.stock);
+    return o;
+  }
   const site: Site = {
     id: 'site0',
     kind: 'base',
@@ -142,7 +146,7 @@ export function migrate(raw: unknown): GameState {
     node: 0,
     centroid: [0, 0],
     interior: o.interior as Site['interior'],
-    stock: o.stock as Site['stock'],
+    stock: normalizeStock(o.stock as Site['stock']),
     fuelBatches: (o.fuelBatches as Site['fuelBatches']) ?? [],
     projects: (o.projects as Site['projects']) ?? [],
     fortify: o.fortify as Site['fortify'],
@@ -232,20 +236,23 @@ export function alert(s: GameState, msg: string, level: LogEntry['level'] = 'war
 export function addStock(s: GameState, site: Site, d: StockDelta, mult = 1): void {
   for (const [k, v] of Object.entries(d)) {
     const id = k as ItemId;
-    if (id === 'fuel' && v && v * mult > 0) {
-      site.fuelBatches.push({ liters: v * mult, day: Math.floor(s.t / DAY) + 1 });
+    const delta = (v ?? 0) * mult;
+    if (!delta) continue;
+    if (id === 'fuel' && delta > 0) {
+      site.fuelBatches.push({ liters: delta, day: Math.floor(s.t / DAY) + 1 });
     }
-    site.stock[id] = Math.max(0, site.stock[id] + (v ?? 0) * mult);
+    site.stock[id] = Math.max(0, (site.stock[id] ?? 0) + delta);
   }
 }
 
+/** Whether the site has every id in `d`, in the asked amount or more. */
 export function canAfford(site: Site, d: StockDelta): boolean {
-  return Object.entries(d).every(([k, v]) => site.stock[k as ItemId] + 1e-9 >= (v ?? 0));
+  return Object.entries(d).every(([k, v]) => (site.stock[k as ItemId] ?? 0) + 1e-9 >= (v ?? 0));
 }
 
 export function take(site: Site, id: ItemId, amount: number): number {
-  const got = Math.max(0, Math.min(site.stock[id], amount));
-  site.stock[id] -= got;
+  const got = Math.max(0, Math.min(site.stock[id] ?? 0, amount));
+  site.stock[id] = (site.stock[id] ?? 0) - got;
   if (id === 'fuel') consumeFuel(site, got);
   return got;
 }

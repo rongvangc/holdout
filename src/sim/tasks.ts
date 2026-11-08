@@ -2,7 +2,7 @@ import { push } from '../core/eventQueue';
 import { chance, pick } from '../core/rng';
 import { HOUR, isNight } from '../core/time';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
-import { activeProject, applyBuildWork } from './build';
+import { activeProject, applyBuildWork, projectSkill } from './build';
 import { releaseFromQuarantine } from './lifecycle';
 import { arrive, commuteIntent } from './commute';
 import { addStock, baseStats, log, siteOf, take, type BaseStats } from './state';
@@ -47,7 +47,7 @@ export function finishTask(s: GameState, v: Survivor): void {
   switch (task.kind) {
     case 'build': {
       const p = site.projects.find((x) => x.id === task.target);
-      if (p) applyBuildWork(s, site, p, sec * workMult(s, v, 'construction', site));
+      if (p) applyBuildWork(s, site, p, sec * workMult(s, v, projectSkill(p), site));
       xp(s, v, 'construction', h);
       addHeat(s, site, 0.3, h);
       break;

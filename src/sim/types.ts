@@ -71,7 +71,7 @@ export interface Survivor {
   joinedDay: number;
 }
 
-export type ProjectKind = 'module' | 'fortify' | 'fence' | 'partition' | 'structure';
+export type ProjectKind = 'module' | 'fortify' | 'fence' | 'partition' | 'structure' | 'craft';
 
 /** Daily walk between where someone sleeps (home) and where they work. */
 export interface Commute {
@@ -97,6 +97,8 @@ export interface Project {
   roomId?: string;
   module?: ModuleId;
   level?: number;
+  /** For kind === 'craft': the recipe being worked. */
+  recipe?: string;
   cells?: number[];
   struct?: StructId;
   label: string;
