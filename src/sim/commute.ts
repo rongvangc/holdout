@@ -1,0 +1,88 @@
+import { chance, range } from '../core/rng';
+import { dayOf, HOUR, isNight, MIN, timeOfDay } from '../core/time';
+import { shortestPath } from '../world/graph';
+import type { World } from '../world/types';
+import { ZOMBIES } from './data';
+import { killSurvivor, noteBite } from './lifecycle';
+import { log, siteById } from './state';
+import { gainXp, hasTrait, skill } from './survivors';
+import type { GameState, Survivor } from './types';
+import { densityMult, effectiveDanger, encounterRate, poisson, zombieType } from './zombies';
+
+const WALK = 1.35 / 1.3; // m/s including friction
+const LEAVE_FROM = 6.5 * HOUR;
+const LEAVE_UNTIL = 14 * HOUR;
+const HEAD_HOME = 17 * HOUR;
+
+/** Assign someone to sleep at home and work at another site by day (or stop: work = null). */
+export function setCommute(s: GameState, world: World, sid: string, work: string | null): string | null {
+  const v = s.survivors.find((x) => x.id === sid);
+  if (!v || v.status !== 'alive') return 'Không có người này';
+  const home = v.commute?.home ?? v.siteId;
+  if (!work || work === home) {
+    if (v.commute) v.commute.work = null; // walks home on the next decision if away
+    if (!v.commute || v.siteId === home) v.commute = undefined;
+    return null;
+  }
+  const a = siteById(s, home);
+  const b = siteById(s, work);
+  const { length } = shortestPath(world.graph, a.node, b.node);
+  if (!isFinite(length)) return 'Không có đường đi';
+  v.commute = {
+    home,
+    work,
+    sec: (length + 30) / WALK,
+    danger: (effectiveDanger(s, world, a.cell) + effectiveDanger(s, world, b.cell)) / 2,
+  };
+  if (b.kind === 'field') v.role = 'farmer';
+  log(s, `${v.name} sẽ đi làm ở ${b.name} ban ngày, tối về ${a.name} (${Math.round(v.commute.sec / MIN)} phút mỗi lượt).`);
+  return null;
+}
+
+/** Destination if the person should set off now, else null. */
+export function commuteIntent(s: GameState, v: Survivor): string | null {
+  const c = v.commute;
+  if (!c || v.location !== 'base') return null;
+  const tod = timeOfDay(s.t);
+  if (v.siteId === c.home) {
+    if (!c.work) {
+      v.commute = undefined;
+      return null;
+    }
+    const goodTime = tod >= LEAVE_FROM && tod < LEAVE_UNTIL && !s.weather.storm && v.fatigue < 50 && v.sickDays === 0;
+    return goodTime ? c.work : null;
+  }
+  return !c.work || tod >= HEAD_HOME || isNight(s.t) ? c.home : null;
+}
+
+/** One person walking alone: same encounter model as expeditions, no group help. */
+export function arrive(s: GameState, v: Survivor, dest: string, sec: number): void {
+  const c = v.commute;
+  if (!c) return;
+  const day = dayOf(s.t);
+  const night = isNight(s.t);
+  const rate = encounterRate({
+    danger: c.danger,
+    density: densityMult(day, day <= s.hordeUntilDay, s.weather.tempC),
+    heat: 0,
+    night,
+    members: 1,
+    mode: 'walk',
+    travelling: true,
+  });
+  const avoid = Math.min(0.9, 0.55 + 0.03 * skill(v, 'stealth') + (hasTrait(v, 'coward') ? 0.05 : 0));
+  for (let i = poisson(s.rng, rate * (sec / MIN)); i > 0 && v.status === 'alive'; i--) {
+    if (chance(s.rng, avoid)) {
+      gainXp(v, 'stealth', 4);
+      continue;
+    }
+    const z = ZOMBIES[zombieType(s.rng, day, night)];
+    v.hp -= z.dmg * range(s.rng, 0.5, 1.5) * (1 - 0.04 * skill(v, 'melee'));
+    gainXp(v, 'melee', 6);
+    if (chance(s.rng, z.bite)) noteBite(s, v, chance(s.rng, 0.5));
+    if (v.hp <= 0) killSurvivor(s, v, `bị ${z.label} giết trên đường đi làm`);
+  }
+  if (v.status !== 'alive') return;
+  v.siteId = dest;
+  if (dest === c.home && !c.work) v.commute = undefined;
+}

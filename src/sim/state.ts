@@ -1,0 +1,348 @@
+import { push, makeQueue } from '../core/eventQueue';
+import { makeRng, range } from '../core/rng';
+import { DAY, HOUR, dayOf, nextClock } from '../core/time';
+import { generateInterior, roomsWith } from '../base/interior';
+import { CATS } from '../data/categories';
+import { emptyStock, type ItemId } from '../data/items';
+import { FENCE_DEFENSE_PER_LEVEL, FORTIFY_DEFENSE_PER_LEVEL } from '../data/modules';
+import { structureEffects } from '../data/structures';
+import { dist } from '../world/geo';
+import type { World } from '../world/types';
+import { PEOPLE_PER_LATRINE, ROLES, TEND_H_PER_M2_DAY, type Role } from './data';
+import { isActive, makeSurvivor, skill } from './survivors';
+import type { GameState, LogEntry, Site, StockDelta, Survivor } from './types';
+
+export const START_SURVIVORS = 5;
+const LOG_MAX = 500;
+
+/** Build a held location from a World building (base/outpost) or green polygon (field). */
+export function makeSite(s: GameState, world: World, kind: Site['kind'], sourceId: string): Site {
+  const seed = (s.seed ^ (s.nextId * 2654435761)) >>> 0;
+  if (kind === 'field') {
+    const g = world.greens.find((x) => x.id === sourceId);
+    if (!g) throw new Error('Không tìm thấy khu đất');
+    return blankSite(s, kind, g.name ?? 'Ruộng', sourceId, g.cell, g.node, g.centroid, generateInterior({ id: g.id, poly: g.poly, levels: 1 }, [], seed, true));
+  }
+  const b = world.buildings.find((x) => x.id === sourceId);
+  if (!b) throw new Error('Không tìm thấy toà nhà');
+  const near = world.buildings.filter((o) => dist(o.centroid, b.centroid) < Math.sqrt(b.area) + 80);
+  const interior = generateInterior(b, near, seed);
+  const site = blankSite(s, kind, b.name ?? CATS[b.cat].label, sourceId, b.cell, b.node, b.centroid, interior);
+  site.salvageLeft = {
+    wood: Math.round(interior.footprintArea * interior.floors * 0.05),
+    scrap: Math.round(interior.footprintArea * interior.floors * 0.02),
+  };
+  return site;
+}
+
+function blankSite(
+  s: GameState,
+  kind: Site['kind'],
+  name: string,
+  sourceId: string,
+  cell: string,
+  node: number,
+  centroid: Site['centroid'],
+  interior: Site['interior'],
+): Site {
+  return {
+    id: newId(s, 'site'),
+    kind,
+    name,
+    sourceId,
+    cell,
+    node,
+    centroid,
+    interior,
+    stock: emptyStock(),
+    fuelBatches: [],
+    projects: [],
+    fortify: { level: 0, hp: 100 },
+    fence: { level: 0, hp: 100 },
+    plots: {},
+    salvageLeft: { wood: 0, scrap: 0 },
+    heat: 0,
+    filth: 0,
+    corpses: 0,
+    wellDrawnToday: 0,
+    claimedDay: dayOf(s.t),
+  };
+}
+
+export function newGame(world: World, baseId: string, seed: number, startDate = new Date()): GameState {
+  const base = world.buildings.find((b) => b.id === baseId);
+  if (!base) throw new Error('Không tìm thấy toà nhà làm base');
+  const rng = makeRng(seed);
+  const t0 = 6 * HOUR;
+  const startDoy = Math.floor((startDate.getTime() - new Date(startDate.getFullYear(), 0, 0).getTime()) / 864e5);
+  const s: GameState = {
+    version: 2,
+    seed,
+    rng,
+    t: t0,
+    startDoy: Math.max(1, Math.min(365, startDoy)),
+    latitude: world.center[1],
+    worldKey: world.key,
+    sites: [],
+    survivors: [],
+    cellHeat: {},
+    cellClear: {},
+    routes: [],
+    looted: { [baseId]: base.containers },
+    hordeUntilDay: 0,
+    weather: { day: 1, label: 'Nắng', rainMm: 0, tempC: 28, storm: false, hot: false },
+    laws: { rations: 'normal', bitten: 'quarantine', strangers: 'screen', curfew: false, noise: false, corpses: 'burn' },
+    lawChangedDay: {},
+    expeditions: [],
+    log: [],
+    alerts: [],
+    recentDeaths: 0,
+    stats: { deaths: 0, recruited: 0, raidsRepelled: 0, raidsLost: 0, expeditions: 0, harvestedKcal: 0 },
+    queue: makeQueue(),
+    nextId: 1,
+    autoRoles: true,
+    gameOver: false,
+  };
+  const home = makeSite(s, world, 'base', baseId);
+  s.sites.push(home);
+  Object.assign(home.stock, {
+    food: 30000,
+    rawFood: 20000,
+    water: 80,
+    dirtyWater: 40,
+    wood: 40,
+    scrap: 20,
+    cloth: 14,
+    medicine: 6,
+    bandage: 10,
+    seeds: 4,
+    tools: 2,
+    books: 2,
+  } satisfies StockDelta);
+  for (let i = 0; i < START_SURVIVORS; i++) addSurvivor(s, makeSurvivor(rng, newId(s, 's'), 1), home.id);
+  autoAssign(s);
+  push(s.queue, nextClock(t0, 0), { k: 'day' });
+  push(s.queue, t0 + range(rng, 3, 9) * HOUR, { k: 'strangers' });
+  log(s, `Nhóm ${START_SURVIVORS} người chiếm ${home.name} làm căn cứ. Ngày 1 bắt đầu.`, 'info');
+  return s;
+}
+
+/** Saves from before multi-site (v1) kept base fields at the top level. */
+export function migrate(raw: unknown): GameState {
+  const o = raw as GameState & Record<string, unknown>;
+  o.cellClear ??= {};
+  o.routes ??= [];
+  if (o.version === 2) return o;
+  const site: Site = {
+    id: 'site0',
+    kind: 'base',
+    name: 'Căn cứ',
+    sourceId: o.baseId as string,
+    cell: '',
+    node: 0,
+    centroid: [0, 0],
+    interior: o.interior as Site['interior'],
+    stock: o.stock as Site['stock'],
+    fuelBatches: (o.fuelBatches as Site['fuelBatches']) ?? [],
+    projects: (o.projects as Site['projects']) ?? [],
+    fortify: o.fortify as Site['fortify'],
+    fence: o.fence as Site['fence'],
+    plots: (o.plots as Site['plots']) ?? {},
+    salvageLeft: o.salvageLeft as Site['salvageLeft'],
+    heat: (o.heat as number) ?? 0,
+    filth: (o.filth as number) ?? 0,
+    corpses: (o.corpses as number) ?? 0,
+    wellDrawnToday: (o.wellDrawnToday as number) ?? 0,
+    claimedDay: 1,
+  };
+  for (const k of ['baseId', 'interior', 'stock', 'fuelBatches', 'projects', 'fortify', 'fence', 'plots', 'salvageLeft', 'heat', 'filth', 'corpses', 'wellDrawnToday']) {
+    delete o[k];
+  }
+  o.sites = [site];
+  o.version = 2;
+  o.autoRoles ??= true;
+  for (const v of o.survivors) v.siteId ??= site.id;
+  for (const e of o.expeditions) {
+    e.kind ??= e.target.type === 'water' ? 'water' : 'loot';
+    e.fromSite ??= site.id;
+    e.relocate ??= false;
+  }
+  for (const q of o.queue.heap) if (q.ev.k === 'raid') q.ev.site ??= site.id;
+  return o;
+}
+
+/** Fill world-derived fields a migrated v1 site is missing. */
+export function hydrateSites(s: GameState, world: World): void {
+  for (const site of s.sites) {
+    if (site.cell) continue;
+    const b = world.buildings.find((x) => x.id === site.sourceId);
+    if (!b) continue;
+    site.cell = b.cell;
+    site.node = b.node;
+    site.centroid = b.centroid;
+    site.name = b.name ?? CATS[b.cat].label;
+  }
+}
+
+export const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
+
+/** After the map grows, graph indices change: re-resolve every site by its stable OSM id. */
+export function rebindWorld(s: GameState, world: World): string[] {
+  const lost: string[] = [];
+  for (const site of s.sites) {
+    const src = site.kind === 'field' ? world.greens.find((g) => g.id === site.sourceId) : world.buildings.find((b) => b.id === site.sourceId);
+    if (!src) {
+      lost.push(site.name);
+      continue;
+    }
+    site.node = src.node;
+    site.cell = src.cell;
+    site.centroid = src.centroid;
+  }
+  s.worldKey = world.key;
+  return lost;
+}
+
+export const siteById = (s: GameState, id: string): Site => s.sites.find((x) => x.id === id) ?? s.sites[0];
+export const mainSite = (s: GameState): Site => s.sites[0];
+export const siteOf = (s: GameState, v: Survivor): Site => siteById(s, v.siteId);
+export const siteOfSource = (s: GameState, sourceId: string) => s.sites.find((x) => x.sourceId === sourceId);
+
+/** People physically at a site (including quarantine), not out on an expedition. */
+export const present = (s: GameState, site: Site) =>
+  s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location !== 'expedition');
+
+export function addSurvivor(s: GameState, v: Survivor, siteId = mainSite(s).id): void {
+  v.siteId = siteId;
+  s.survivors.push(v);
+  push(s.queue, s.t, { k: 'task', sid: v.id });
+}
+
+export function log(s: GameState, msg: string, level: LogEntry['level'] = 'info'): void {
+  s.log.push({ t: s.t, msg, level });
+  if (s.log.length > LOG_MAX) s.log.splice(0, s.log.length - LOG_MAX);
+}
+
+/** Important events: logged and surfaced so the UI can auto-pause. */
+export function alert(s: GameState, msg: string, level: LogEntry['level'] = 'warn'): void {
+  log(s, msg, level);
+  s.alerts.push({ t: s.t, msg, level });
+}
+
+export function addStock(s: GameState, site: Site, d: StockDelta, mult = 1): void {
+  for (const [k, v] of Object.entries(d)) {
+    const id = k as ItemId;
+    if (id === 'fuel' && v && v * mult > 0) {
+      site.fuelBatches.push({ liters: v * mult, day: Math.floor(s.t / DAY) + 1 });
+    }
+    site.stock[id] = Math.max(0, site.stock[id] + (v ?? 0) * mult);
+  }
+}
+
+export function canAfford(site: Site, d: StockDelta): boolean {
+  return Object.entries(d).every(([k, v]) => site.stock[k as ItemId] + 1e-9 >= (v ?? 0));
+}
+
+export function take(site: Site, id: ItemId, amount: number): number {
+  const got = Math.max(0, Math.min(site.stock[id], amount));
+  site.stock[id] -= got;
+  if (id === 'fuel') consumeFuel(site, got);
+  return got;
+}
+
+function consumeFuel(site: Site, liters: number): void {
+  // Oldest fuel first — it is closest to going stale.
+  for (const b of site.fuelBatches) {
+    const use = Math.min(b.liters, liters);
+    b.liters -= use;
+    liters -= use;
+    if (liters <= 0) break;
+  }
+  site.fuelBatches = site.fuelBatches.filter((b) => b.liters > 0.01);
+}
+
+export interface BaseStats {
+  population: number;
+  beds: number;
+  latrines: number;
+  tanks: number;
+  waterCapacity: number;
+  kitchen: boolean;
+  filter: boolean;
+  workshop: boolean;
+  infirmary: boolean;
+  storage: boolean;
+  well: boolean;
+  watchtowers: number;
+  recRoom: boolean;
+  gardenArea: number;
+  defenseStatic: number;
+}
+
+export function baseStats(s: GameState, site: Site): BaseStats {
+  const it = site.interior;
+  const count = (m: Parameters<typeof roomsWith>[1]) => roomsWith(it, m).length;
+  const beds =
+    roomsWith(it, 'bedroom').reduce((n, r) => n + Math.max(1, Math.floor(r.area / 5)), 0) +
+    roomsWith(it, 'shelter').reduce((n, r) => n + Math.max(1, Math.floor(r.area / 6)), 0);
+  const tanks = count('water_tank');
+  const watchtowers = count('watchtower');
+  return {
+    population: present(s, site).length,
+    beds,
+    latrines: count('latrine'),
+    tanks,
+    waterCapacity: 300 + tanks * 1000,
+    kitchen: count('kitchen') > 0,
+    filter: count('filter') > 0,
+    workshop: count('workshop') > 0,
+    infirmary: count('infirmary') > 0,
+    storage: count('storage') > 0,
+    well: count('well') > 0,
+    watchtowers,
+    recRoom: count('rec_room') > 0,
+    gardenArea: roomsWith(it, 'garden').reduce((a, r) => a + r.area, 0),
+    defenseStatic:
+      site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
+      site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +
+      watchtowers * 12 +
+      structureEffects(it.structures).defense,
+  };
+}
+
+export const latrineShortfall = (st: BaseStats) => Math.max(0, st.population - st.latrines * PEOPLE_PER_LATRINE);
+
+/** Greedy role assignment per site by need and best matching skill — the "manager" default. */
+export function autoAssign(s: GameState, only?: Site): void {
+  for (const site of only ? [only] : s.sites) {
+    const people = s.survivors.filter((v) => isActive(v) && v.siteId === site.id && v.location === 'base' && !v.commute);
+    const n = people.length;
+    if (!n) continue;
+    const st = baseStats(s, site);
+    const paid = site.projects.some((p) => p.paid);
+    const lowMaterials = (site.stock.wood < 40 || site.projects.some((p) => !p.paid)) && (site.heat < 40 || site.stock.wood < 15);
+    const field = site.kind === 'field';
+    const want: [Role, number][] = [
+      ['farmer', st.gardenArea ? Math.ceil((st.gardenArea * TEND_H_PER_M2_DAY) / 6) : 0],
+      ['guard', Math.max(1, Math.round(n * 0.15))],
+      ['cook', st.kitchen ? Math.max(1, Math.round(n / 8)) : 0],
+      ['water', st.filter || st.kitchen || st.well ? Math.max(1, Math.round(n / 8)) : 0],
+      ['medic', n >= 4 ? 1 + Math.floor(n / 14) : 0],
+      ['sanitation', n >= 6 ? Math.max(1, Math.round(n / 12)) : 0],
+      ['gatherer', lowMaterials ? 1 + Math.floor(n * 0.12) : 0],
+      ['builder', paid ? Math.max(1, Math.round(n * 0.3)) : 0],
+    ];
+    if (!field) want.push(want.shift()!); // farming comes first only on fields
+    const free = new Set(people);
+    for (const [role, k] of want) {
+      const sk = ROLES[role].skill;
+      const ranked = [...free].sort((a, b) => (sk ? skill(b, sk) - skill(a, sk) : 0));
+      for (const v of ranked.slice(0, Math.min(k, role === 'farmer' && field ? free.size : Math.max(0, free.size - 1)))) {
+        v.role = role;
+        free.delete(v);
+      }
+    }
+    // Spare hands only gather when materials are short — gathering is noisy and draws raids.
+    for (const v of free) v.role = paid ? 'builder' : site.stock.wood < 60 && site.heat < 40 ? 'gatherer' : 'idle';
+  }
+}
