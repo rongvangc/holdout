@@ -1,6 +1,7 @@
 import { push } from '../core/eventQueue';
 import { chance, pick } from '../core/rng';
 import { HOUR, isNight } from '../core/time';
+import { ITEMS, type ItemDef } from '../data/items';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
 import { activeProject, applyBuildWork, projectSkill } from './build';
 import { releaseFromQuarantine } from './lifecycle';
@@ -195,12 +196,32 @@ export function interrupt(s: GameState, v: Survivor): void {
   if (v.task && v.task.kind !== 'expedition') finishTask(s, v);
 }
 
+/**
+ * Every catalogued food item is edible, not just the four legacy ids. Best kcal/kg
+ * first, so a party eats the heavy tins before they rot rather than hoarding them.
+ */
+function takeAnyEdible(site: Site, want: number): number {
+  let got = 0;
+  const edibles: [string, ItemDef][] = (Object.entries(ITEMS) as [string, ItemDef][])
+    .filter(([id, d]) => (d.kcal ?? 0) > 0 && (d.mechanic === 'food' || d.mechanic === 'comfort') && (site.stock[id] ?? 0) > 0)
+    .sort((a, b) => (b[1].kcal ?? 0) / Math.max(0.01, b[1].kgPerUnit) - (a[1].kcal ?? 0) / Math.max(0.01, a[1].kgPerUnit));
+  for (const [id, def] of edibles) {
+    if (got >= want) break;
+    const per = def.kcal ?? 0;
+    const units = Math.min(site.stock[id] ?? 0, Math.ceil((want - got) / per));
+    const used = take(site, id, units);
+    got += used * per;
+  }
+  return got;
+}
+
 function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
   let portion = 1000;
   if (s.laws.rations === 'reduced') portion = 750;
   if (s.laws.rations === 'work' && (v.role === 'idle' || v.task?.kind === 'leisure')) portion = 700;
   let got = take(site, 'meals', portion);
   got += take(site, 'food', portion - got);
+  if (got < portion) got += takeAnyEdible(site, portion - got);
   if (got < portion * 0.5 && site.stock.rawFood > 0) {
     // Raw rice/potato without a kitchen: half the energy, upset stomach risk.
     const raw = take(site, 'rawFood', (portion - got) * 2);

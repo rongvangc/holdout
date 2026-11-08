@@ -11,15 +11,15 @@ function setup() {
   return { s, site: s.sites[0] };
 }
 
-const firstOf = (pred: (id: string, def: (typeof ITEMS)[string]) => boolean) =>
+const firstOf = (pred: (_id: string, def: (typeof ITEMS)[string]) => boolean) =>
   Object.entries(ITEMS).find(([id, def]) => pred(id, def))?.[0] as string;
 
 describe('equipment', () => {
   it('picks the strongest weapon in stock and ignores empty ones', () => {
     const { site } = setup();
     expect(bestWeapon(site)).toBeNull();
-    const club = firstOf((id, d) => d.mechanic === 'weapon_blunt' && (d.mitigation ?? 0) > 0);
-    const crowbar = firstOf((id, d) => d.cls === 'crowbar' && (d.mechanic ?? '').startsWith('weapon_'));
+    const club = firstOf((_id, d) => d.mechanic === 'weapon_blunt' && (d.mitigation ?? 0) > 0);
+    const crowbar = firstOf((_id, d) => d.cls === 'crowbar' && (d.mechanic ?? '').startsWith('weapon_'));
     site.stock[club] = 1;
     expect(bestWeapon(site)!.id).toBe(club);
     site.stock[crowbar] = 1;
@@ -33,9 +33,9 @@ describe('equipment', () => {
   it('stacks armour across slots but caps the total', () => {
     const { site } = setup();
     expect(armorMitigation(site)).toBe(0);
-    for (const [id, def] of Object.entries(ITEMS)) {
+    for (const [aid, def] of Object.entries(ITEMS)) {
       if (def.mechanic && ['armor_soft', 'armor_plate'].includes(def.mechanic) && (def.mitigation ?? 0) > 0) {
-        site.stock[id] = 1;
+        site.stock[aid] = 1;
         break;
       }
     }
@@ -47,7 +47,7 @@ describe('equipment', () => {
   it('issue the weapon defence bonus guards get', () => {
     const { site } = setup();
     // Any melee weapon with real mitigation: the catalog has no crowbar in Melee.
-    const weapon = firstOf((id, d) => (d.mechanic ?? '').startsWith('weapon_') && (d.mitigation ?? 0) > 0.15);
+    const weapon = firstOf((_id, d) => (d.mechanic ?? '').startsWith('weapon_') && (d.mitigation ?? 0) > 0.15);
     site.stock[weapon] = 1;
     expect(weaponDefense(bestWeapon(site))).toBeGreaterThan(0);
     expect(weaponDefense(null)).toBe(0);
@@ -55,7 +55,7 @@ describe('equipment', () => {
 
   it('breaks weapons over time and removes them from stock', () => {
     const { s, site } = setup();
-    const club = firstOf((id, d) => d.mechanic === 'weapon_blunt' && (d.mitigation ?? 0) > 0);
+    const club = firstOf((_id, d) => d.mechanic === 'weapon_blunt' && (d.mitigation ?? 0) > 0);
     site.stock[club] = 1;
     const w = bestWeapon(site)!;
     let broke = 0;

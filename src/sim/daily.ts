@@ -5,6 +5,7 @@ import type { World } from '../world/types';
 import { dist } from '../world/geo';
 import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY } from './data';
 import { armorMitigation, bestWeapon, describeWeapon, weaponDefense, wearWeapon } from './equipment';
+import { ITEMS } from '../data/items';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
@@ -65,6 +66,13 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;
   site.stock.rawFood *= 1 - (st.storage ? 0.005 : 0.02) * hot;
+  // Catalogued food (MRE, tins, dried goods) rots per item; a locked store halves it.
+  const cellar = st.storage ? 0.5 : 1;
+  for (const [id, def] of Object.entries(ITEMS)) {
+    if (!(site.stock[id] > 0) || !def.rotPerDay) continue;
+    const rate = def.rotPerDay * (def.rotPerDay < 0.01 ? 1 : hot) * cellar;
+    site.stock[id] = Math.max(0, site.stock[id] * (1 - rate));
+  }
   const staleBefore = site.fuelBatches.reduce((a, b) => a + b.liters, 0);
   site.fuelBatches = site.fuelBatches.filter((b) => day - b.day <= 180);
   site.stock.fuel = site.fuelBatches.reduce((a, b) => a + b.liters, 0);
@@ -105,7 +113,13 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   updateMorale(s, site, home, st.beds, st.recRoom);
 
   // Máy phát điện: đốt 24 L (2 L/h × 12 h đêm) để đêm hôm đó không còn ×0.75 tăng thêm ở tasks.workMult.
-  if (st.generator && site.stock.fuel >= 24) {
+  // Nguồn điện cho ban đêm: pin mặt trời + ắc quy chạy im, không tốn xăng.
+  // Một tấm pin sạc được một ắc quy mỗi ngày; bão thì không sạc được.
+  const solar = (site.stock.solar_panel ?? 0) >= 1 && (site.stock.battery ?? 0) >= 1 && !s.weather.storm;
+  if (solar) {
+    site.powered = true;
+    log(s, `${site.name}: pin mặt trời nạp ắc quy, đêm có điện.`, 'good');
+  } else if (st.generator && site.stock.fuel >= 24) {
     take(site, 'fuel', 24);
     site.powered = true;
     site.heat = Math.min(100, site.heat + 6);
