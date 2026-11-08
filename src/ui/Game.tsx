@@ -7,7 +7,7 @@ import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
-import { Icon, ITEM_ICONS, SITE_IMG, UI_ICONS } from './icons';
+import { Icon, ITEM_ICONS } from './icons';
 import { LawsView } from './LawsView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
@@ -16,8 +16,7 @@ import { saveGame } from './save';
 
 // Game seconds per real second.
 const SPEEDS = [0, 60, 600, 3600, 4 * 3600];
-const SPEED_LABEL = ['Pause', '1×', '10×', '60×', '240×'];
-const SPEED_ICON = ['speed_pause', 'speed_1', 'speed_10', 'speed_60', 'speed_240'];
+const SPEED_LABEL = ['❚❚', '1×', '10×', '60×', '240×'];
 type Tab = 'base' | 'people' | 'map' | 'laws' | 'log';
 
 export interface ViewProps {
@@ -32,7 +31,7 @@ export interface ViewProps {
 const EXPAND_STEP = 800;
 export const MAX_RADIUS = 3200;
 
-
+const SITE_ICON: Record<Site['kind'], string> = { base: '■', outpost: '▪', field: '❦' };
 
 export function fmtNum(v: number): string {
   if (v >= 10000) return `${(v / 1000).toFixed(0)}k`;
@@ -149,8 +148,8 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         </div>
         <div className="speed">
           {SPEED_LABEL.map((l, i) => (
-            <button key={l} className={speed === i ? 'on' : ''} onClick={() => setSpeed(i)} title={`${l} · Space / 1-4`} aria-label={l}>
-              <Icon src={UI_ICONS[SPEED_ICON[i]]} size={14} />
+            <button key={l} className={speed === i ? 'on' : ''} onClick={() => setSpeed(i)} title="Space / 1-4">
+              {l}
             </button>
           ))}
         </div>
@@ -266,7 +265,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             const days = Math.min((xs.food + xs.meals + xs.rawFood) / (Math.max(1, n) * 2250), xs.water / (Math.max(1, n) * 3.3));
             return (
               <button key={x.id} className={x.id === site.id ? 'on' : ''} onClick={() => setSiteId(x.id)}>
-                <Icon src={SITE_IMG[x.kind]} size={11} /> {x.name} · {n}
+                {SITE_ICON[x.kind]} {x.name} · {n}
                 {n > 0 && days < 2 && <span className="red"> !</span>}
               </button>
             );
@@ -275,15 +274,14 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         <div className="tabs">
           {(
             [
-              ['base', 'Căn cứ', 'tab_base'],
-              ['people', `Người (${alive.length})`, 'tab_people'],
-              ['map', 'Bản đồ & viễn chinh', 'tab_map'],
-              ['laws', 'Luật', 'tab_laws'],
-              ['log', 'Nhật ký', 'tab_log'],
-            ] as [Tab, string, string][]
-          ).map(([k, l, icon]) => (
+              ['base', 'Căn cứ'],
+              ['people', `Người (${alive.length})`],
+              ['map', 'Bản đồ & viễn chinh'],
+              ['laws', 'Luật'],
+              ['log', 'Nhật ký'],
+            ] as [Tab, string][]
+          ).map(([k, l]) => (
             <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
-              <Icon src={UI_ICONS[icon]} size={13} />
               {l}
             </button>
           ))}
