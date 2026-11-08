@@ -55,6 +55,8 @@ export const INGREDIENTS: Record<string, ItemDef> = {
   trung: ing('Trứng', 'quả', 0.06, 78, 0.01, P + 'items/nutrition/rice__285.png', 'Trứng gà từ chuồng. Để được lâu hơn thịt.'),
   dau: ing('Đậu hạt', 'kg', 1, 1450, 0.01, P + 'items/nutrition/buckwheat__723.png', 'Đậu nành/đậu phộng. Khô nên để được lâu.'),
   bot: ing('Bột mì/gạo', 'kg', 1, 3500, 0.02, P + 'items/nutrition/rice__285.png', 'Xay từ gạo. Làm bánh, nấu cháo nhanh.'),
+  sua: ing('Sữa tươi', 'L', 1, 640, 0.12, P + 'items/nutrition/water-bottle__293.png', 'Sữa dê/bò từ trại chăn nuôi. Hỏng trong 3 ngày nếu không làm phô mai.'),
+  pho_mai: ing('Phô mai', 'kg', 1, 3200, 0.004, P + 'items/nutrition/rice__285.png', 'Sữa đặc lại: giữ được hàng tháng, đạm cao.'),
 };
 
 /** Dishes: `meals` stays the plain staple; these are what people actually want. */

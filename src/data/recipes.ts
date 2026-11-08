@@ -61,6 +61,7 @@ const DISH_RECIPES: Recipe[] = [
   { id: 'rd_ca_kho', out: 'mon_ca_kho', qty: 3, station: 'kitchen', level: 2, in: [['ca', 1.5], ['rawFood', 600], ['salt', 0.3]], workSec: 90 * MIN, skill: 'cooking', note: 'Kho lâu, cần bếp cấp 2' },
   { id: 'rd_thit_kho', out: 'mon_thit_kho', qty: 3, station: 'kitchen', level: 2, in: [['thit', 1.5], ['rawFood', 600], ['salt', 0.4]], workSec: 2 * HOUR, skill: 'cooking', note: 'Món đám cưới. Cần bếp cấp 2' },
   { id: 'rd_banh_mi', out: 'mon_banh_mi', qty: 6, station: 'kiln', level: 2, in: [['bot', 1], ['water', 2]], workSec: 2 * HOUR, skill: 'cooking', note: 'Cần lò nung cấp 2' },
+  { id: 'r_pho_mai', out: 'pho_mai', qty: 2, station: 'crock', level: 1, in: [['sua', 4], ['salt', 0.2]], workSec: 90 * MIN, skill: 'cooking', note: 'Sữa để được lâu: phô mai giữ hàng tháng' },
   { id: 'rd_dua_muoi', out: 'mon_dua_muoi', qty: 6, station: 'crock', level: 1, in: [['rau', 2], ['salt', 0.4], ['dirtyWater', 2]], workSec: 4 * HOUR, skill: 'cooking', note: 'Ủ chua: để được hàng tháng, có vitamin' },
 ];
 

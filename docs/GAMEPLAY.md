@@ -843,3 +843,22 @@ Game không còn vô tận tuyệt đối. Radio **cấp 3** khi có điện s�
 - Đủ **7 đêm liên tục** → `won = true`, game kết thúc với màn "ĐƯỢC CỨU"
 
 Tiến độ hiện trong drawer Kho (`Tín hiệu cầu cứu: 3/7 đêm`). Đây là mục tiêu dài hạn đầu tiên của game: muốn thắng phải có **lưới điện ổn định** (pin mặt trời + ắc quy, vì máy phát cần xăng liên tục) và **một cộng đồng đủ người để vận hành**.
+
+### 12.14 Gia súc (`modules.barn`, `sim/daily.ts`)
+
+Chuồng gà và ao cá chỉ là đạm quy mô nhỏ. **Trại chăn nuôi** mới là nguồn cung thật:
+
+| Cấp | Vật nuôi | Sữa/ngày (mỗi trại) | Cám/ngày | Ghi chú |
+|---|---|---|---|---|
+| 1 | Dê | **3 L** | 0,15 kg/con | gần như sống bằng cỏ |
+| 2 | Lợn | 1,2 L | 1,6 kg/con | mổ được nhiều thịt (2 kg/lần) |
+| 3 | Bò | **4,5 L** | 2,2 kg/con | sữa nhiều nhất, thịt 2,4 kg/lần |
+
+- **Yêu cầu**: sân ≥ 12 m², tối đa 2 trại/điểm, cấp 1 cần 26 gỗ + 6 dây. Nước: **uống nước bẩn trước**, chỉ lấy nước sạch khi người còn dư ≥ 3 ngày.
+- **Chăn thả**: ở điểm `field` hệ số cỏ = 1 (đỡ 45% cám), trong sân phố = 0,55. Sữa cũng nhân theo cỏ.
+- **Sản phẩm**: `sua` (640 kcal/L, hỏng 12%/ngày), `thit` khi mổ, và **phân bón**: điểm có trại thì cây lớn nhanh **+25%**.
+- **Phô mai**: công thức `r_pho_mai` (chum ủ cấp 1): 4 L sữa + 0,2 muối → 2 phô mai (3.200 kcal/kg, hỏng 0,4%/ngày).
+- **Ồn**: heat +1/ngày mỗi trại — nuôi nhiều thì dễ bị tập kích hơn.
+- **Thiếu nước/cám** → sữa còn 30%, log cảnh báo, độ bẩn tăng.
+
+**Cân bằng**: nhờ gia súc + tăng năng suất cây, bot 120 ngày × 4 seed đều sống hết, thu hoạch 1,4–2,4 triệu kcal/ván (trước 0,1–0,6 triệu).

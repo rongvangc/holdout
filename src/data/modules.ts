@@ -547,10 +547,11 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     icon: '⛨',
     color: '#a8865a',
     placement: 'outdoor',
-    minArea: 20,
+    minArea: 12,
     maxPerSite: 2,
     workSec: () => 6 * H,
-    cost: () => ({ wood: 30, rope: 6, plank: 8 }),
+    // Cấp 1 chỉ cần gỗ + dây: tấm ván (xưởng mộc) để dành cho nâng cấp.
+    cost: () => ({ wood: 26, rope: 6 }),
     desc: 'Dê/lợn/bò: sữa hằng ngày, thịt khi mổ, phân bón cho vườn. Cần nước uống và cỏ/cám; chăn thả ở ruộng thì đỡ cám. Ồn — heat +1/ngày.',
     levels: [
       { cost: { plank: 14, hinge: 4, rope: 8 }, workSec: 8 * H, note: 'Cấp 2: lợn — thịt nhiều hơn, sữa ít' },

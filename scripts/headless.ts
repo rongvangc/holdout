@@ -7,6 +7,7 @@ import { newGame, autoAssign, baseStats, mainSite, present } from '../src/sim/st
 import { advanceTo } from '../src/sim/engine';
 import { maxStationLevel, queueCraft, queueModule, queueDefense, upgradeModule } from '../src/sim/build';
 import { canAfford } from '../src/sim/state';
+import { canPlace } from '../src/base/interior';
 import { MODULES } from '../src/data/modules';
 import { RECIPE_BY_ID, RECIPES } from '../src/data/recipes';
 import { ITEMS } from '../src/data/items';
@@ -176,16 +177,25 @@ const APPLIANCE_IDS = new Set<string>(['lighting', 'fridge', 'water_pump', 'powe
 
 function buildStations(s: GameState, base: Site): void {
   if (base.projects.length > 1) return;
-  // Stations are a luxury: do not divert the early material economy into them.
-  if (base.stock.wood < 120 || base.stock.scrap < 60) return;
   const pop = present(s, base).length;
   const food = base.stock.rawFood + base.stock.meals + base.stock.food;
+  // Chăn nuôi chỉ đáng làm khi đã có nước sạch và đủ người: trước đây ưu tiên trại sớm
+  // khiến cả nhóm chết khát vì chưa có trạm lọc/giếng.
+  const waterReady = baseStats(s, base).filter || baseStats(s, base).well;
+  // Chưa có vườn ruộng thì chăn nuôi chỉ là ăn lỗ: ưu tiên trồng trước.
+  const hasFarm = baseStats(s, base).gardenArea >= 100 || s.sites.some((x) => x.kind === 'field');
+  const supplyFirst = waterReady && pop >= 6 && food < pop * 2250 * 25;
+  const woodGate = supplyFirst ? 55 : 120;
+  if (base.stock.wood < woodGate || base.stock.scrap < (supplyFirst ? 25 : 60)) return;
   const stable = pop > 0 && food > pop * 2250 * 10;
   const have = new Set(base.interior.rooms.filter((r) => r.module).map((r) => r.module!));
-  for (const id of STATION_ORDER) {
+  const SUPPLY: ModuleId[] = ['barn', 'coop', 'pond', 'smokehouse', 'cellar', 'crock'];
+  const order = supplyFirst ? [...SUPPLY, ...STATION_ORDER.filter((x) => !SUPPLY.includes(x))] : STATION_ORDER;
+  for (const id of order) {
     if (have.has(id)) continue;
     // Appliances are comforts: they wait until the colony is fed and the grid exists.
     if (APPLIANCE_IDS.has(id) && (!stable || !have.has('generator'))) continue;
+    if ((id === 'barn' || id === 'coop' || id === 'pond') && !hasFarm) continue;
     const def = MODULES[id];
     const room = base.interior.rooms.find((r) => !r.module && !r.walled === false);
     if (room) {
@@ -196,7 +206,10 @@ function buildStations(s: GameState, base: Site): void {
         continue; // do not wedge the queue on a module we cannot pay
       }
     }
-    if (!queueModule(s, base, base.interior.rooms.find((r) => !r.module)?.id ?? '', id)) return;
+    // Phải chọn phòng khớp vị trí (chuồng/ao/trại cần sân): chọn bừa là queueModule từ chối.
+    const fit = base.interior.rooms.find((r) => !r.module && canPlace(base.interior, r, def) === null);
+    if (!fit) continue; // hết chỗ phù hợp — thử trạm khác
+    if (!queueModule(s, base, fit.id, id)) return;
   }
 }
 

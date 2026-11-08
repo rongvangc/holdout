@@ -102,21 +102,30 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   if (st.barn > 0) {
     const lvl = Math.max(1, st.barnLevel);
     const graze = site.kind === 'field' ? 1 : 0.55; // ruộng có cỏ, sân trong phố thì gần như không
-    const herd = st.barn; // mỗi trại là một bầy
-    const water = home.length * 6 + herd * 25;
-    const drank = take(site, site.stock.water >= water ? 'water' : 'dirtyWater', Math.min(water, site.stock.water + site.stock.dirtyWater));
-    if (drank < herd * 15) {
+    const herd = st.barn;
+    // Bầy vật uống nước bẩn trước — nước sạch để dành cho người.
+    const need = herd * 25;
+    const fromDirty = take(site, 'dirtyWater', Math.min(need, site.stock.dirtyWater));
+    // Chỉ lấy nước sạch khi người còn dư ≥ 3 ngày.
+    const pop = Math.max(1, home.length);
+    const cleanReserve = site.stock.water - pop * 3.3 * 3;
+    const fromClean = take(site, 'water', Math.max(0, Math.min(need - fromDirty, cleanReserve)));
+    const drank = fromDirty + fromClean;
+    if (drank < need * 0.6) {
       log(s, `${site.name}: trại chăn nuôi thiếu nước uống, bầy vật yếu đi.`, 'warn');
       site.filth = Math.min(100, site.filth + 1.5 * herd);
     } else {
       // Cỏ + phụ phẩm: dê (cấp 1) gần như tự kiếm, lợn/bò cần cám.
-      const feedNeed = herd * (lvl >= 2 ? 1.6 : 0.6) * (1 - 0.45 * graze);
-      const feed = Math.min(feedNeed, site.stock.rawFood + site.stock.bot * 0);
+      // Dê (cấp 1) ăn cỏ là chính; lợn/bò mới cần cám thật.
+      const feedPerHead = lvl >= 3 ? 2.2 : lvl === 2 ? 1.6 : 0.15;
+      const feedNeed = herd * feedPerHead * (1 - 0.45 * graze);
+      const feed = Math.min(feedNeed, site.stock.rawFood);
       if (feed > 0) take(site, 'rawFood', feed);
       const starved = feedNeed - feed > feedNeed * 0.5;
 
-      // Sữa: dê/bò. Lợn (cấp 2) cho ít sữa, nhiều thịt.
-      const milkPerDay = herd * (lvl >= 3 ? 1.8 : lvl === 2 ? 0.5 : 1.1) * (starved ? 0.3 : 1) * (0.5 + 0.5 * graze);
+      // Sữa: dê/bò; lợn (cấp 2) cho ít sữa, nhiều thịt.
+      // Một bầy (trại) cho vài lít sữa mỗi ngày; bò cấp 3 nhiều nhất, lợn cấp 2 ít sữa.
+      const milkPerDay = herd * (lvl >= 3 ? 4.5 : lvl === 2 ? 1.2 : 3) * (starved ? 0.3 : 1) * (0.5 + 0.5 * graze);
       if (milkPerDay > 0) addStock(s, site, { sua: Math.round(milkPerDay * 10) / 10 });
 
       // Mổ thịt: thỉnh thoảng, cấp càng cao càng nhiều.
@@ -128,7 +137,6 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
       if (starved) log(s, `${site.name}: trại chăn nuôi thiếu cỏ/cám, bầy vật gầy đi.`, 'warn');
     }
   }
-
   // Spoilage. Heat speeds everything up.
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;
