@@ -544,9 +544,9 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           </div>
         )}
 
-        <div className="label">Phòng thủ</div>
+        <div className="label" title="Sức chắn của điểm này khi bị tập kích đêm — tăng bằng gia cố, rào, tháp canh, công trình">Phòng thủ</div>
         <div className="row">
-          <button disabled={!it.perimeter} onClick={() => act(() => queueDefense(s, site, 'fortify'))}>
+          <button disabled={!it.perimeter} title="Gia cố chu vi toà nhà: từng cấp cộng điểm phòng thủ, cấp 2+ cần Bàn thợ" onClick={() => act(() => queueDefense(s, site, 'fortify'))}>
             {site.fortify.level && site.fortify.hp < 100 ? 'Sửa gia cố' : `Gia cố cấp ${site.fortify.level + 1}`}
           </button>
           <button disabled={!it.yardPerimeter} onClick={() => act(() => queueDefense(s, site, 'fence'))}>
@@ -554,15 +554,15 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           </button>
         </div>
         <div className="kv">
-          <span>Ô công trình</span>
+          <span title="Số ô đất được phép đặt công trình ngoài sân tại điểm này">Ô công trình</span>
           <span className={cap.used >= cap.max ? 'amber' : ''}>
             {cap.used}/{cap.max}
           </span>
-          <span>Phòng thủ từ công trình</span>
+          <span title="Điểm cộng thêm vào phòng thủ từ tường, chướng ngại, bẫy, chòi">Phòng thủ từ công trình</span>
           <span>
             +{fx.defense.toFixed(1)} (tối đa {DESIGN_LIMITS.structDefenseCap})
           </span>
-          <span>Bẫy làm yếu tập kích</span>
+          <span title="Bẫy chông trừ thẳng vào sức của đám zombie khi tập kích">Bẫy làm yếu tập kích</span>
           <span>
             −{fx.spikes.toFixed(1)} (tối đa {DESIGN_LIMITS.spikesCap})
           </span>
@@ -587,11 +587,11 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           </div>
         ))}
 
-        <div className="label">Chỉ số</div>
+        <div className="label" title="Tổng quan thiết bị khả dụng của điểm này">Chỉ số</div>
         <div className="kv">
-          <span>Giường</span>
+          <span title="Số giường ngủ — thiếu giường, người ngủ sàn, hồi mệt chậm hơn">Giường</span>
           <span>{st.beds}</span>
-          <span>Bể nước</span>
+          <span title="Số bể chứa nước mưa hứng từ mái — mái càng rộng hứng càng nhiều">Bể nước</span>
           <span>
             {st.tanks} · mái hứng {it.footprintArea} m²
           </span>

@@ -1,175 +1,175 @@
 [
   {
     "name": "bedroom",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 0,
     "col": 0,
     "file": "public/icons/pixel/bedroom.png"
   },
   {
     "name": "kitchen",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 0,
     "col": 1,
     "file": "public/icons/pixel/kitchen.png"
   },
   {
     "name": "storage",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 0,
     "col": 2,
     "file": "public/icons/pixel/storage.png"
   },
   {
     "name": "workshop",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 0,
     "col": 3,
     "file": "public/icons/pixel/workshop.png"
   },
   {
     "name": "infirmary",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 0,
     "col": 4,
     "file": "public/icons/pixel/infirmary.png"
   },
   {
     "name": "latrine",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 1,
     "col": 0,
     "file": "public/icons/pixel/latrine.png"
   },
   {
     "name": "water_tank",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 1,
     "col": 1,
     "file": "public/icons/pixel/water_tank.png"
   },
   {
     "name": "filter",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 1,
     "col": 2,
     "file": "public/icons/pixel/filter.png"
   },
   {
     "name": "garden",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 1,
     "col": 3,
     "file": "public/icons/pixel/garden.png"
   },
   {
     "name": "herb_garden",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 1,
     "col": 4,
     "file": "public/icons/pixel/herb_garden.png"
   },
   {
     "name": "well",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 2,
     "col": 0,
     "file": "public/icons/pixel/well.png"
   },
   {
     "name": "watchtower",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 2,
     "col": 1,
     "file": "public/icons/pixel/watchtower.png"
   },
   {
     "name": "rec_room",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 2,
     "col": 2,
     "file": "public/icons/pixel/rec_room.png"
   },
   {
     "name": "bookshelf",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 2,
     "col": 3,
     "file": "public/icons/pixel/bookshelf.png"
   },
   {
     "name": "garage",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 2,
     "col": 4,
     "file": "public/icons/pixel/garage.png"
   },
   {
     "name": "generator",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 3,
     "col": 0,
     "file": "public/icons/pixel/generator.png"
   },
   {
     "name": "shelter",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 3,
     "col": 1,
     "file": "public/icons/pixel/shelter.png"
   },
   {
     "name": "site_base",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 3,
     "col": 2,
     "file": "public/icons/pixel/site_base.png"
   },
   {
     "name": "site_outpost",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 3,
     "col": 3,
     "file": "public/icons/pixel/site_outpost.png"
   },
   {
     "name": "site_field",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 3,
     "col": 4,
     "file": "public/icons/pixel/site_field.png"
   },
   {
     "name": "struct_wall",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 4,
     "col": 0,
     "file": "public/icons/pixel/struct_wall.png"
   },
   {
     "name": "struct_barricade",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 4,
     "col": 1,
     "file": "public/icons/pixel/struct_barricade.png"
   },
   {
     "name": "struct_spikes",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 4,
     "col": 2,
     "file": "public/icons/pixel/struct_spikes.png"
   },
   {
     "name": "struct_gate",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 4,
     "col": 3,
     "file": "public/icons/pixel/struct_gate.png"
   },
   {
     "name": "struct_tower",
-    "sheet": "sheet-01.png",
+    "sheet": "sheet-02.png",
     "row": 4,
     "col": 4,
     "file": "public/icons/pixel/struct_tower.png"

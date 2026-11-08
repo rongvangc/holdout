@@ -170,18 +170,18 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
           </span>
         </div>
-        <div className="stat">
-          <span className="label">Điểm này</span>
+        <div className="stat" title="Tình trạng điểm này: độ ồn, độ bẩn, xác chưa dọn">
+          <span className="label">Tình trạng điểm</span>
           <span className="v">
-            <span className={site.heat > 45 ? 'red' : ''}> Nhiệt {Math.round(site.heat)}</span>
+            <span className={site.heat > 45 ? 'red' : ''} title="Độ ồn — tăng khi làm việc ồn; càng cao, xác đưa càng dễ tìm thấy điểm này">Ồn {Math.round(site.heat)}</span>
             <span className="faint">/</span>
-            <span className={site.filth > 40 ? 'red' : ''}>Bẩn {Math.round(site.filth)}</span>
+            <span className={site.filth > 40 ? 'red' : ''} title="Độ bẩn — tăng nguy cơ bệnh cho người ở đây">Độ bẩn {Math.round(site.filth)}</span>
             <span className="faint">/</span>
-            <span>Xác {Math.round(site.corpses)}</span>
+            <span title="Số xác chết chưa dọn — người dọn mỗi ngày">Xác {Math.round(site.corpses)}</span>
           </span>
         </div>
-        <div className="stat">
-          <span className="label">Phòng thủ</span>
+        <div className="stat" title="Điểm phòng thủ của điểm này khi tập kích đêm: gia cố + rào + tháp canh + công trình">
+          <span className="label">Điểm phòng thủ</span>
           <span className="v">{Math.round(st.defenseStatic)}</span>
         </div>
         <div className="grow" style={{ justifyContent: 'flex-end' }}>
@@ -198,7 +198,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
       </div>
 
       <div className="stockpanel">
-        <div className="label">Kho · {site.name}</div>
+        <div className="label">Tồn kho · {site.name}</div>
         <table>
           <tbody>
             {STOCK_ORDER.map((k) => (
@@ -214,20 +214,20 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           </tbody>
         </table>
         <div className="dither" />
-        <div className="label">Đủ dùng ({here} người)</div>
+        <div className="label" title={"Số ngày trụ được với mức tiêu thụ của " + here + " người ở đây"}>Trụ được bao lâu ({here} người)</div>
         <div className="kv">
-          <span>Ăn</span>
+          <span title="Đồ hộp + bữa nấu chín + gạo/khoai sống, tính theo kcal">Đồ ăn</span>
           <span className={(stock.food + stock.meals + stock.rawFood) / (pop * 2250) < 3 ? 'red' : ''}>
             {((stock.food + stock.meals + stock.rawFood) / (pop * 2250)).toFixed(1)} ngày
           </span>
-          <span>Uống</span>
+          <span title="Nước sạch trong kho, 3.3 L/người/ngày">Nước uống</span>
           <span className={stock.water / (pop * 3.3) < 2 ? 'red' : ''}>{(stock.water / (pop * 3.3)).toFixed(1)} ngày</span>
-          <span>Nước bẩn</span>
+          <span title="Nước bẩn/mưa thu được — cần đun sôi hoặc lọc mới uống được">Nước bẩn</span>
           <span>
             {Math.round(stock.dirtyWater)}/{st.waterCapacity} L
           </span>
-          <span>Củi gom</span>
-          <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết (đi xa hơn)'}</span>
+          <span title="Gỗ sẵn trong toà nhà này — người kiếm củi lấy nhanh hơn; hết thì đi xa, chậm gấp đôi và ồn hơn">Củi sẵn trong nhà</span>
+          <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết — phải đi xa'}</span>
         </div>
         <div className="dither" />
         <div className="label">Điểm này</div>
