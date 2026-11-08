@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { CATS } from '../src/data/categories';
 import { ITEMS } from '../src/data/items';
+import { RECIPES } from '../src/data/recipes';
 import { ammoFor, bestWeapon, conditionOf, needsRepair, wearWeapon } from '../src/sim/equipment';
 import { isMonotone, isVegetable, MONOTONY_MEALS, rotFactor, SCURVY_DAYS } from '../src/sim/diet';
 import { applyBuildWork, queueRepair, stationLevel } from '../src/sim/build';
@@ -53,6 +55,34 @@ describe('ammunition', () => {
       checked++;
     }
     expect(checked).toBeGreaterThan(5);
+  });
+});
+
+describe('ammunition is found, never made', () => {
+  it('no recipe produces ammo', () => {
+    const ammoCr = RECIPES.filter((r) => ITEMS[r.out]?.mechanic === 'ammo');
+    expect(ammoCr.map((r) => r.id)).toEqual([]);
+  });
+
+  it('every recipe input chain stays free of ammo too', () => {
+    for (const r of RECIPES) {
+      for (const [id] of r.in) {
+        expect(ITEMS[id]?.mechanic, `${r.id} takes ${id}`).not.toBe('ammo');
+      }
+    }
+  });
+
+  it('every cartridge the guns use appears in at least one loot table', () => {
+    const lootIds = new Set<string>();
+    for (const cat of Object.values(CATS)) for (const [id] of cat.loot) lootIds.add(id);
+    const wanted = new Set<string>();
+    for (const [id, d] of Object.entries(ITEMS)) {
+      if (d.mechanic !== 'firearm') continue;
+      const a = ammoFor(id);
+      if (a) wanted.add(a);
+    }
+    expect(wanted.size).toBeGreaterThan(0);
+    for (const a of wanted) expect(lootIds.has(a), `${a} is not in any loot table`).toBe(true);
   });
 });
 

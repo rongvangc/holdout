@@ -81,6 +81,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
       ['oil', 12, 1, 4],
       ['rope', 8, 1, 4],
       ['food_rice', 8, 1, 2],
+      ['ammo_12-ga-ammo', 2, 1, 2],
     ],
   },
   pharmacy: {
@@ -152,6 +153,9 @@ export const CATS: Record<BuildingCat, CatDef> = {
       ['arm_armor-plate', 3, 1, 1],
       ['helm_m1', 6, 1, 1],
       ['ammo_12-ga-ammo', 4, 1, 3],
+      ['ammo_9x18-ammo', 4, 2, 6],
+      ['ammo_7-62x39-ammo', 2, 5, 15],
+      ['ammo_30-06-ammo', 1, 2, 5],
       ['fire_flare', 4, 1, 2],
     ],
   },
@@ -183,6 +187,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
       ['tool_pliers', 6, 1, 1],
       ['tool_axe', 4, 1, 1],
       ['elec_cable-set', 4, 1, 1],
+      ['ammo_22-lr-ammo', 2, 10, 30],
     ],
   },
   car_repair: {

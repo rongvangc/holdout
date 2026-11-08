@@ -39,7 +39,6 @@ const MATERIAL_RECIPES: Recipe[] = [
   { id: 'r_filter_core', out: 'filter_core', qty: 1, station: 'workshop', level: 1, in: [['charcoal', 1], ['sand', 1], ['cloth', 1]], workSec: HOUR, skill: 'crafting' },
   { id: 'r_battery', out: 'battery', qty: 1, station: 'workshop', level: 2, in: [['scrap', 6], ['parts', 2], ['wire', 2]], workSec: 4 * HOUR, skill: 'mechanics', note: 'Cần bàn thợ cấp 2' },
   { id: 'r_solar_panel', out: 'solar_panel', qty: 1, station: 'workshop', level: 3, in: [['plate', 1], ['wire', 3], ['scrap', 4]], workSec: 6 * HOUR, skill: 'mechanics', note: 'Cần bàn thợ cấp 3' },
-  { id: 'r_ammo', out: 'ammo_12-ga-ammo', qty: 5, station: 'forge', level: 2, in: [['scrap', 1], ['charcoal', 0.5]], workSec: HOUR, skill: 'crafting', note: 'Đạn tự nạp, chỉ dùng cho súng săn' },
 ];
 
 /** Cooking and preserving. Outputs feed the existing eat logic (meals / food). */
