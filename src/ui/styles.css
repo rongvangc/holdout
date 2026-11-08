@@ -430,10 +430,9 @@ hr.thick {
   gap: 0;
 }
 .stat .v {
-  font-family: var(--sans);
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 12px;
   display: flex;
   gap: 6px;
   align-items: baseline;
@@ -441,7 +440,7 @@ hr.thick {
 .clock {
   font-family: var(--pixel);
   font-weight: 700;
-  font-size: 22px;
+  font-size: 14px;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
   line-height: 1;
