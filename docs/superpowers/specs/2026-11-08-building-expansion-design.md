@@ -49,3 +49,12 @@ chạy tự động theo đêm; `garage` chỉ là thành điểm xuất phát.
 
 Bộ icon tactical (bài toán đang treo) sẽ phủ 4 module này ở giai đoạn icon; giai đoạn này icon
 chỉ cần tồn tại để không lỗi build.
+
+---
+
+## Kết quả (2026-11-08)
+
+- Tests: 32/32 pass (15 cũ + 7 test mới trong `tests/building-expansion.test.ts`), `npm run typecheck` clean, `vite build` OK.
+- Balance bot 120 ngày (seed 1/2/3): **84→86 ngày / 85→120 (9 người sống) / 92→120 (18 người sống)**. Không seed nào xấu hơn baseline.
+- Bot đã xây 2 vườn thuốc; kho thuốc seed 2 cuối game = 56 liều (từ 6 khởi đầu), băng gạc sản xuất chạy khi còn vải.
+- Ghi chú: nguyên nhân chết đói 3 seed baseline nằm ngoài phạm vi cụm này (kinh tế thức ăn), chưa xử lý.

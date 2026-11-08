@@ -19,7 +19,7 @@ export function makeTestWorld(): World {
   return w;
 }
 
-const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'infirmary', 'garden', 'well', 'watchtower', 'rec_room', 'bedroom', 'latrine'];
+const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine'];
 const WANT_FIELD: ModuleId[] = ['well', 'filter', 'garden', 'garden', 'kitchen', 'garden', 'garden', 'latrine', 'shelter'];
 
 function buildNext(s: GameState, site: Site, want: ModuleId[]): void {

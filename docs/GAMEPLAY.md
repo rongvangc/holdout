@@ -390,6 +390,10 @@ khả năng tránh = min(0.9, 0.55 + 0.03 × Lén lút cao nhất + 0.1 nếu l�
 | Giếng ★ | Sân | 4 | 12 sắt, 10 gỗ, 1 dụng cụ | Tối đa 1500 L/ngày; cách nhà vệ sinh ≥ 10 m |
 | Tháp canh ★ | Mái/sân | 4 | 25 gỗ, 10 sắt | +12 phòng thủ, ×1.15 phòng thủ |
 | Phòng sinh hoạt | Trong nhà | 8 | 8 gỗ, 6 vải | +8 tinh thần |
+| Vườn thuốc | Mái/sân | 4 | ⌈m²/10⌉ gỗ, ⌈m²/20⌉ vải | Chu kỳ 40 ngày: thu m²/12 liều thuốc, tối đa m²/6 băng gạc (0.25 vải/cuộn) |
+| Kệ sách | Trong nhà | 4 | 4 gỗ, 2 vải | Mở "Tự học" ở tab Người: gán kỹ năng → đọc đúng skill |
+| Chòi xe | Sân | 12 | 10 gỗ, 20 sắt, 1 phụ tùng | Xe từ điểm này: 0.08 L/km (thay vì 0.1) và +80 kg sức chở |
+| Máy phát ★ | Sân | 2 | 15 sắt, 2 phụ tùng, 4 gỗ | Đêm chạy máy: đốt 24 L xăng → đêm đó làm việc hết ×0.75; heat +6 |
 | Lán trại | Sân | 8 | 5 gỗ + 3 vải mỗi 6 m² | 1 chỗ ngủ / 6 m². Bão xoé 50% số lán mỗi trận |
 
 **Gia cố** (cửa, cửa sổ) và **Tường rào** (quanh sân):
