@@ -4,6 +4,7 @@ import { ROLES, SKILLS, TRAITS, type Role, type SkillId } from '../sim/data';
 import { setRole, setStudy } from '../sim/engine';
 import { setCommute } from '../sim/commute';
 import { autoAssign, baseStats } from '../sim/state';
+import { planTreatment, treatNow } from '../sim/medical';
 import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
 import { ITEMS } from '../data/items';
@@ -54,6 +55,7 @@ function topSkills(v: Survivor): [SkillId, number][] {
 
 export function PeopleView({ s, world, site, refresh }: ViewProps) {
   const [sel, setSel] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
   const [onlyHere, setOnlyHere] = useState(false);
   const people = s.survivors.filter((v) => v.status === 'alive' && (!onlyHere || v.siteId === site.id));
   const siteName = (id: string) => s.sites.find((x) => x.id === id)?.name ?? '?';
@@ -61,6 +63,11 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
   const counts: Partial<Record<Role, number>> = {};
   for (const v of people) counts[v.role] = (counts[v.role] ?? 0) + 1;
   const v = people.find((x) => x.id === sel);
+  // Bác sĩ giỏi nhất đang ở điểm này quyết định làm được gì.
+  const doctorSkill = Math.max(
+    0,
+    ...s.survivors.filter((x) => x.status === 'alive' && x.siteId === site.id).map((x) => skill(x, 'medical')),
+  );
 
   return (
     <div style={{ padding: 12 }} className="col">
@@ -110,6 +117,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             <th>Khát</th>
             <th>Mệt</th>
             <th>Tinh thần</th>
+            <th title="Cần gì để điều trị ngay">Cần</th>
             <th>Kỹ năng</th>
             <th>Trạng thái</th>
           </tr>
@@ -196,6 +204,18 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                 <Bar v={p.morale} title="Tinh thần" color="#e0a030" />
               </td>
               <td>
+                {(() => {
+                  const plan = planTreatment(site, p, doctorSkill);
+                  if (!plan) return <span className="faint">—</span>;
+                  return (
+                    <span className={plan.blocked ? 'amber' : 'ok'} title={plan.blocked ?? 'Làm được ngay'}>
+                      {plan.label}
+                      {plan.blocked ? ' · thiếu' : ''}
+                    </span>
+                  );
+                })()}
+              </td>
+              <td>
                 {topSkills(p).map(([k, l]) => (
                   <span key={k} className="tag">
                     {SKILLS[k]} {l}
@@ -240,6 +260,27 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
             HP {Math.round(v.hp)} · {Math.round(v.kcal)} kcal · {Math.round(v.water)} ml · mệt {Math.round(v.fatigue)} · tinh thần {Math.round(v.morale)}
           </div>
           <div className="dim">{ROLES[v.role].desc}</div>
+          {(() => {
+            const plan = planTreatment(site, v, doctorSkill);
+            if (!plan) return null;
+            return (
+              <div className="row" style={{ gap: 6 }}>
+                <span className={plan.blocked ? 'amber' : 'ok'}>Cần: {plan.label}</span>
+                <button
+                  disabled={!!plan.blocked || v.treatedToday}
+                  title={plan.blocked ?? (v.treatedToday ? 'Hôm nay đã được điều trị' : 'Dùng vật tư ngay')}
+                  onClick={() => {
+                    const err = treatNow(s, site, v, doctorSkill);
+                    setMsg(err ?? `Đã điều trị cho ${v.name}.`);
+                    if (!err) refresh();
+                  }}
+                >
+                  Điều trị ngay
+                </button>
+              </div>
+            );
+          })()}
+          {msg && <div className={msg.startsWith('Đã') ? 'ok' : 'amber'}>{msg}</div>}
           {v.woundPart && (
             <div className="dim">
               Vết thương:{' '}

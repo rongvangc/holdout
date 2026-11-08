@@ -5,6 +5,8 @@ import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
 import { availableRecipes } from '../data/recipes';
+import { KitchenPanel } from './KitchenPanel';
+import { GearPanel } from './GearPanel';
 import { APPLIANCES } from '../sim/power';
 import { foodFxLabel } from '../sim/diet';
 import {
@@ -65,6 +67,8 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   const [pending, setPending] = useState<number[] | null>(null);
   const [name, setName] = useState('');
   const [craftOpen, setCraftOpen] = useState(false);
+  const [kitchenOpen, setKitchenOpen] = useState(false);
+  const [gearOpen, setGearOpen] = useState(false);
   const [err, setErr] = useState('');
   const [, setTick] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -809,6 +813,16 @@ export function BaseView({ s, site, refresh }: ViewProps) {
             })}
           </div>
         )}
+
+        <div className="label" style={{ cursor: 'pointer' }} onClick={() => setKitchenOpen((v) => !v)}>
+          Bếp &amp; món ăn {kitchenOpen ? '▾' : '▸'}
+        </div>
+        {kitchenOpen && <KitchenPanel s={s} site={site} refresh={refresh} />}
+
+        <div className="label" style={{ cursor: 'pointer' }} onClick={() => setGearOpen((v) => !v)}>
+          Trang bị {gearOpen ? '▾' : '▸'}
+        </div>
+        {gearOpen && <GearPanel s={s} site={site} refresh={refresh} />}
 
         <div className="label">Điện &amp; sưởi</div>
         <div className="kv">

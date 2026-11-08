@@ -827,3 +827,20 @@ Trại/chuồng giữ một **bầy** (`room.herdState`), không phải một co
 - **Sức chứa**: gà 0,25 m²/con → bò 4 m²/con; vượt trần thì bầy tự loại bớt.
 - **Không có dịch bệnh** (theo yêu cầu): chỉ hao hụt do đói/khát/chật.
 - Kho hiển thị bầy: `Gà · 8 lớn · 2 non · chửa 1 (12 ngày) · sữa 3 (95 ngày) / 20`.
+
+---
+
+## 18. Bảng điều khiển (UI) cho các hệ mới
+
+Mọi hệ thêm trong thời gian qua đều có chỗ thao tác, không chỉ nằm trong log:
+
+| Bảng | Ở đâu | Làm được gì |
+|---|---|---|
+| **Chế tạo (n)** | tab Căn cứ | 93 công thức, khoá theo cấp trạm, giá + thời gian, nút Chế |
+| **Bếp & món ăn** | tab Căn cứ | tồn nguyên liệu tươi, 12 món với kcal / tinh thần / **công dụng**, tồn kho, nút Nấu (báo rõ vì sao chưa nấu được) |
+| **Trang bị** | tab Căn cứ | vũ khí trong kho: % giảm sát thương, độ bền, **số đạn theo cỡ**; giáp đang có; danh sách món mòn + nút Sửa |
+| **Điện & sưởi** | tab Căn cứ | kW đang chạy / tổng, nguồn + kWh ắc quy, từng thiết bị bật/tắt, thứ tự cắt tải, nguồn sưởi đang chạy |
+| **Cột "Cần"** | tab Người | mỗi người cần gì để điều trị (kháng sinh / cầm máu / thuốc / hồi HP / rửa vết thương) và **thiếu gì** |
+| **Điều trị ngay** | tab Người (chi tiết) | dùng vật tư ngay tại chỗ, không phải chờ y tá — kiểm đúng luật của AI (Y tế 4+ cho kháng sinh, 1 lần/người/ngày) |
+| **Nâng cấp module** | tab Căn cứ (chọn phòng) | lên cấp với giá, thời gian, và ghi chú cấp đó mở gì |
+| **Tín hiệu cầu cứu** | drawer Kho | tiến độ x/7 đêm (ẩn khi cờ tắt) |

@@ -94,3 +94,83 @@ export function rollWound(severity: number, rngPick: <T>(arr: readonly T[]) => T
   const bleed = severity >= 25 ? 3 : severity >= 12 ? 2 : 1;
   return { part, bleed: part === 'head' || part === 'torso' ? Math.min(BLEED_MAX, bleed + 1) : bleed };
 }
+
+/** What a patient needs right now, in the same order the medic triages them. */
+export interface Treatment {
+  /** Recipe the action consumes: an item id, or the legacy `medicine` dose. */
+  item: ItemId | null;
+  label: string;
+  /** Why it cannot be done, or null when it can. */
+  blocked: string | null;
+}
+
+/**
+ * One call answers both "what does this person need" and "can I do it now",
+ * so the UI never has to re-derive the rules and drift from the medic AI.
+ */
+export function planTreatment(site: { stock: Record<string, number> }, v: Survivor, doctorSkill: number): Treatment | null {
+  if (v.status !== 'alive') return null;
+  if (v.infected && (v.infection ?? 0) < ANTIBIOTIC_LIMIT) {
+    const item = findMed(site as never, 'antibiotic');
+    return {
+      item,
+      label: `kháng sinh (nhiễm ${Math.round(v.infection ?? 0)}%)`,
+      blocked: doctorSkill < ANTIBIOTIC_SKILL ? `cần người Y tế ${ANTIBIOTIC_SKILL}+` : item ? null : 'không có kháng sinh',
+    };
+  }
+  if (bleedOf(v) > 0) {
+    const item = findMed(site as never, 'tourniquet') ?? findMed(site as never, 'hemostatic') ?? findMed(site as never, 'bandage');
+    return { item, label: `cầm máu (${bleedOf(v)}/3)`, blocked: item ? null : 'không có băng/garo' };
+  }
+  if (v.sickDays > 0) {
+    const has = (site.stock.medicine ?? 0) >= 1;
+    return { item: has ? 'medicine' : null, label: `thuốc (bệnh ${v.sickDays} ngày)`, blocked: has ? null : 'không có thuốc' };
+  }
+  if (v.hp < 70) {
+    const item = findMed(site as never, 'medkit') ?? findMed(site as never, 'bandage') ?? findMed(site as never, 'infusion');
+    return { item, label: `hồi HP (${Math.round(v.hp)}/100)`, blocked: item ? null : 'không có băng/medkit' };
+  }
+  if (v.woundPart) {
+    const item = findMed(site as never, 'antiseptic');
+    return { item, label: 'rửa vết thương', blocked: item ? null : 'không có cồn/iodine' };
+  }
+  return null;
+}
+
+/**
+ * Treat immediately, consuming the item. The medic AI does the same work on a
+ * timer; this is the manual override so a player can spend a dose *now*.
+ */
+export function treatNow(
+  s: { t: number },
+  site: { stock: Record<string, number> },
+  v: Survivor,
+  doctorSkill: number,
+): string | null {
+  const plan = planTreatment(site, v, doctorSkill);
+  if (!plan) return 'Người này không cần gì';
+  if (plan.blocked) return `Không làm được: ${plan.blocked}`;
+  if (!plan.item) return 'Thiếu vật tư';
+  site.stock[plan.item] = Math.max(0, (site.stock[plan.item] ?? 0) - 1);
+
+  if (v.infected && (v.infection ?? 0) < ANTIBIOTIC_LIMIT) {
+    v.infection = Math.max(0, (v.infection ?? 0) - ANTIBIOTIC_RELIEF);
+    if (v.infection === 0) {
+      v.infected = false;
+      v.biteKnown = false;
+    }
+  } else if (bleedOf(v) > 0) {
+    const kind = medKind(plan.item);
+    const stopped = kind === 'tourniquet' ? 3 : kind === 'hemostatic' ? 2 : 1;
+    v.bleed = Math.max(0, bleedOf(v) - stopped);
+    if (kind === 'tourniquet') v.fatigue = Math.min(100, v.fatigue + 8);
+  } else if (v.sickDays > 0) {
+    v.sickDays = 0;
+  } else if (v.hp < 70) {
+    v.hp = Math.min(100, v.hp + 15);
+  } else if (v.woundPart) {
+    v.woundCleanedDay = Math.floor(s.t / 86400) + 1;
+  }
+  v.treatedToday = true;
+  return null;
+}
