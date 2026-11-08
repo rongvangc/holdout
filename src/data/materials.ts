@@ -142,6 +142,18 @@ export const MATERIALS: Record<string, ItemDef> = {
     desc: 'Xé từ vải. Khâu giáp, vá quần áo, làm băng gạc.',
   },
 
+  // ---- Thuốc tự viết: catalog innawoods không có kháng sinh ---------------------
+  khang_sinh: {
+    label: 'Kháng sinh',
+    unit: 'liều',
+    kgPerUnit: 0.05,
+    category: 'medicine',
+    tier: 2,
+    mechanic: 'medicine',
+    icon: P + 'items/medicine/pills__411.png',
+    desc: 'Amoxicillin/tetracycline còn hạn. Chỉ lục soát được ở hiệu thuốc, phòng khám, bệnh viện. Chặn được nhiễm trùng nếu dùng sớm.',
+  },
+
   // ---- L2: components ---------------------------------------------------------
   blade: {
     label: 'Lưỡi',

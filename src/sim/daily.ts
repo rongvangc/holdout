@@ -8,6 +8,7 @@ import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { survivorArmor, survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
+import { bleedOf, CLEAN_SEPSIS_CHANCE, limbPenalty, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
@@ -136,6 +137,26 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     }
     v.treatedToday = false;
   }
+  // Vết thương hở không được rửa thì dễ nhiễm trùng; rửa bằng cồn/iodine thì hiếm hơn nhiều.
+  for (const v of home) {
+    if (!v.woundPart) continue;
+    const cleaned = v.woundCleanedDay === day;
+    const p = cleaned ? CLEAN_SEPSIS_CHANCE : WOUND_SEPSIS_CHANCE;
+    if (!v.infected && chance(s.rng, p)) {
+      v.infected = true;
+      v.infection = Math.max(v.infection ?? 0, 10);
+      v.biteKnown = v.biteKnown || false;
+      log(s, `${v.name}: vết thương ở ${v.woundPart === 'arm' ? 'tay' : v.woundPart === 'leg' ? 'chân' : v.woundPart === 'head' ? 'đầu' : 'thân'} bị nhiễm trùng.`, 'bad');
+    }
+    // Máu tự cầm dần: cơ thể đông máu, nên không băng ngay cũng không chết chắc.
+    if ((v.bleed ?? 0) > 0 && v.hp > 35 && chance(s.rng, 0.45)) v.bleed = (v.bleed ?? 0) - 1;
+    // Vết thương lành thì hết trạng thái vết thương.
+    if ((v.bleed ?? 0) === 0 && v.hp > 75 && chance(s.rng, 0.25)) {
+      v.woundPart = undefined;
+      v.woundCleanedDay = undefined;
+    }
+  }
+
   // Thiếu rau quả lâu ngày: scorbut (thiếu vitamin C) — HP tụt dần cho tới khi ăn rau.
   const noVegDays = day - (site.lastVegDay ?? 1);
   if (noVegDays > SCURVY_DAYS) {
@@ -280,7 +301,7 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   let defense = st.defenseStatic;
   for (const g of guards) {
     const w = survivorWeapon(site, g);
-    defense += (8 + 2 * skill(g, 'melee') + weaponDefense(w)) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
+    defense += (8 + 2 * skill(g, 'melee') * limbPenalty(g) + weaponDefense(w)) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
     if (w) {
       const worn = wearWeapon(s, site, w, 1);
       if (worn.broke) log(s, `${site.name}: ${describeWeapon(w)} của ${g.name} gãy trong đêm.`, 'warn');
@@ -316,7 +337,14 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   // Giáp của từng người biến trận đòn thành vết bầm: mất ít HP hơn, ít bị cắn hơn.
   for (const v of shuffled.slice(0, hurt)) {
     const armour = survivorArmor(v);
-    v.hp -= range(s.rng, 10, 40) * (1 - armour);
+    const hit = range(s.rng, 10, 40) * (1 - armour);
+    v.hp -= hit;
+    // A hard hit tears something open: bleeding starts and needs a medic.
+    if (hit >= 12) {
+      const w = rollWound(hit, (arr) => arr[int(s.rng, 0, arr.length - 1)]);
+      v.bleed = Math.min(3, Math.max(bleedOf(v), w.bleed));
+      v.woundPart = w.part;
+    }
     if (chance(s.rng, 0.2 * (1 - armour))) {
       v.bitten = true;
       v.biteKnown = true;

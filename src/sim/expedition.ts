@@ -10,6 +10,7 @@ import { ZOMBIES } from './data';
 import { describeWeapon, wearWeapon } from './equipment';
 import { bestArmed, packCapacity, survivorArmor } from './gear';
 import { applyFoodFx } from './diet';
+import { bleedOf, limbPenalty, PART_LABEL, rollWound } from './medical';
 import { applyBiteLaw, handleStrangers, killSurvivor, noteBite } from './lifecycle';
 import { addStock, alert, baseStats, log, makeSite, newId, siteById, siteOfSource, take } from './state';
 import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
@@ -391,7 +392,8 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
     const z = zombieType(s.rng, day, night);
     const def = ZOMBIES[z];
     const victim = pick(s.rng, alive);
-    const meleeAvg = alive.reduce((a, m) => a + skill(m, 'melee'), 0) / alive.length;
+    // Người cụt tay/chân chiến đấu kém hơn: tính vào sức mạnh trung bình của đội.
+    const meleeAvg = alive.reduce((a, m) => a + skill(m, 'melee') * limbPenalty(m), 0) / alive.length;
     // Vũ khí tốt nhất trong đội (người cầm nó là người đánh) + giáp của chính nạn nhân.
     const armed = bestArmed(from, alive);
     const weapon = armed?.weapon ?? null;
@@ -402,6 +404,12 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
         Math.sqrt(alive.length)) *
       (1 - mitigation);
     victim.hp -= dmg;
+    if (dmg >= 12 && chance(s.rng, Math.min(0.75, dmg / 40))) {
+      const w = rollWound(dmg, (arr) => pick(s.rng, arr));
+      victim.bleed = Math.min(3, Math.max(bleedOf(victim), w.bleed));
+      victim.woundPart = w.part;
+      e.report.push(`${victim.name} bị rách ${PART_LABEL[w.part]} (−${Math.round(dmg)} HP, chảy máu).`);
+    }
     for (const m of alive) gainXp(m, 'melee', 6);
     if (weapon?.isFirearm && weapon.noise) {
       // A gunshot at night pulls the whole cell toward you.

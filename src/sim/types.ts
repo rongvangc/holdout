@@ -39,6 +39,8 @@ export interface Task {
   target?: string;
   amount?: number;
   inBed?: boolean;
+  /** Which item the task consumes (bandage, tourniquet, antibiotic...). */
+  item?: ItemId;
 }
 
 export interface Survivor {
@@ -65,6 +67,13 @@ export interface Survivor {
   infected: boolean;
   bitten: boolean;
   biteKnown: boolean;
+  /** Wound state: how much they are bleeding (0..3) and where they were torn. */
+  bleed?: number;
+  woundPart?: 'arm' | 'leg' | 'torso' | 'head';
+  /** Day the wound was cleaned with antiseptic (dirty wounds turn septic). */
+  woundCleanedDay?: number;
+  /** Limb lost to amputation: permanent penalty. */
+  lostLimb?: boolean;
   sickDays: number;
   treatedToday: boolean;
   status: 'alive' | 'dead' | 'gone';

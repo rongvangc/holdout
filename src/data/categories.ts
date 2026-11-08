@@ -103,6 +103,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
       ['medicine', 50, 2, 8],
       ['bandage', 35, 2, 8],
       ['water', 10, 1, 3],
+      ['khang_sinh', 12, 1, 3],
       ['med_painkiller-pills', 10, 1, 3],
       ['med_antiseptic-spray', 8, 1, 2],
       ['hyg_medical-alcohol', 6, 1, 2],
@@ -116,6 +117,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
     danger: 1.3,
     loot: [
       ['medicine', 40, 1, 5],
+      ['khang_sinh', 8, 1, 2],
       ['bandage', 40, 2, 6],
       ['cloth', 10, 0.5, 2],
     ],
@@ -127,6 +129,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
     danger: 2,
     loot: [
       ['medicine', 35, 1, 6],
+      ['khang_sinh', 10, 1, 3],
       ['bandage', 35, 2, 10],
       ['cloth', 15, 1, 3],
       ['water', 10, 1, 4],

@@ -159,8 +159,9 @@ export function survivorArmor(v: Survivor): number {
 /** Extra kilograms this survivor can haul thanks to their pack. */
 export function packCapacity(v: Survivor): number {
   const id = v.gear?.pack;
-  if (!id) return 0;
-  return ITEMS[id]?.capacity ?? 26;
+  const base = id ? (ITEMS[id]?.capacity ?? 26) : 0;
+  // A lost limb means fewer hands and a weaker back.
+  return Math.max(0, base - (v.lostLimb ? 15 : 0));
 }
 
 /** The best weapon among a group, plus the person carrying it. */

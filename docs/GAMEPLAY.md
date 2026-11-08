@@ -650,3 +650,40 @@ Ba chỗ rò đã bịt trong quá trình đo:
 1. Nguyên liệu tươi thêm vào bảng loot **pha loãng kcal** của chợ/quán ăn (rau 200 kcal/kg thay vì 1500–6000 kcal/lượt) → giảm trọng số nguyên liệu, tăng trọng số `rawFood`.
 2. Bot xây trạm quá sớm (forge/tailor/lò) làm chuyển vật tư khỏi vườn/tường → chỉ xây khi gỗ ≥ 120 và sắt ≥ 60.
 3. Bot nấu ăn như nghĩa vụ → nay chỉ nấu khi có nguyên liệu sắp hỏng và tinh thần trung bình < 62 (vì nấu không tạo thêm kcal, chỉ thêm tinh thần/sức khoẻ).
+
+---
+
+## 13. Y tế (`sim/medical.ts`)
+
+Trước đây sim chỉ biết hai thứ: "bệnh" (`sickDays`) và "bị cắn" (`infected`). Nay có **vết thương** như một trạng thái riêng.
+
+### 13.1 Vết thương và chảy máu
+
+| | |
+|---|---|
+| Khi nào | Một cú đánh ≥ 12 sát thương (viễn chinh hoặc tập kích đêm) → rách tay/chân/thân/đầu |
+| Chảy máu | 0–3 bậc. Mỗi bậc mất **1,2 HP/giờ** (3 bậc = 3,6/giờ) |
+| Tự cầm | Mỗi ngày 45% giảm 1 bậc nếu HP > 35 — cơ thể tự đông máu |
+| Cầm máu | Garo (tourniquet) −3 bậc nhưng +8 mệt; băng cầm máu (hemostatic) −2; băng thường −1 |
+| Lành | Hết chảy máu, HP > 75 và 25%/ngày thì vết thương đóng lại |
+
+### 13.2 Nhiễm trùng
+
+- Vết thương hở: **12%/ngày** chuyển nhiễm trùng. Được rửa bằng cồn/iodine/antiseptic → còn **3%/ngày**.
+- Nhiễm trùng tiến triển như cũ: +100 trong 3,5 ngày, đủ 100 → biến thành zombie.
+- **Kháng sinh** (`khang_sinh`, item mới — catalog innawoods không có): dùng khi nhiễm < 60, người có Y tế 4+, giảm **−40**; về 0 thì khỏi hẳn. Quá 60 thì vô phương.
+- Kháng sinh **chỉ lục soát được** (hiệu thuốc, phòng khám, bệnh viện), không chế tạo.
+
+### 13.3 Cắt chi — lối thoát duy nhất của vết cắn
+
+Điều kiện: vết cắn ở **tay hoặc chân** (thân/đầu thì chịu), Phòng y tế **cấp 2**, người mổ có **Y tế 5+**, **2 liều thuốc + 1 dao + 1 băng gạc**.
+
+Kết quả: hết nhiễm trùng hoàn toàn, nhưng **vĩnh viễn −25% sức chiến đấu, −15 kg sức chở**, −15 tinh thần, mất 25 HP, và còn chảy máu 2 bậc phải theo dõi.
+
+### 13.4 Phân loại bệnh nhân
+
+Y tá chọn theo thứ tự: **nhiễm trùng còn chữa được → chảy máu → bệnh → HP thấp → rửa vết thương**. Mỗi người vẫn 1 lần được điều trị/ngày.
+
+### 13.5 Item y tế có tác dụng
+
+`medKind()` phân loại item theo tên, nên **72 item y tế trong catalog đều vào được một trong 8 nhóm** (garo, băng cầm máu, băng, sát trùng, kháng sinh, giảm đau, truyền dịch, medkit) thay vì chỉ 2 id như trước.

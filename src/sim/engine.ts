@@ -6,6 +6,7 @@ import { dayEvent, raidEvent, strangersEvent } from './daily';
 import { FATIGUE_PER_HOUR, INTENSITY, KCAL_PER_HOUR, LAW_COOLDOWN_DAYS, LAW_DEFS, WATER_ML_PER_HOUR, type LawId, type Laws, type Role, type SkillId } from './data';
 import { feedOnRoad, onExpeditionEvent, runRoutes } from './expedition';
 import { killSurvivor, turnSurvivor } from './lifecycle';
+import { BLEED_HP_PER_HOUR, bleedOf } from './medical';
 import { autoAssign, baseStats, log } from './state';
 import { hasTrait } from './survivors';
 import { chooseTask, finishTask, interrupt, sleepRate } from './tasks';
@@ -38,6 +39,9 @@ function integrate(s: GameState, dt: number): void {
         }
       }
     }
+    // Vết thương hở: mất máu liên tục cho tới khi được cầm.
+    const bleed = bleedOf(v);
+    if (bleed > 0) v.hp -= BLEED_HP_PER_HOUR * bleed * h;
     if (v.kcal <= 0) v.hp -= 1.5 * h;
     if (v.water <= 0) v.hp -= 5 * h;
     v.kcal = Math.max(0, v.kcal);

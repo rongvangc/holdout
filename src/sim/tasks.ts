@@ -1,8 +1,9 @@
 import { push } from '../core/eventQueue';
 import { chance, pick } from '../core/rng';
 import { DAY, HOUR, isNight } from '../core/time';
-import { ITEMS as ITEMS_LIB, type FoodFx, type ItemDef } from '../data/items';
+import { ITEMS, type FoodFx, type ItemDef } from '../data/items';
 import { applyFoodFx, edibleStock, isVegetable, pushMeal } from './diet';
+import { ANTIBIOTIC_RELIEF, ANTIBIOTIC_SKILL, bleedOf, canTreatSepsis, findMed, isBleeding, medKind, triageOrder } from './medical';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
 import { activeProject, applyBuildWork, projectSkill } from './build';
 import { releaseFromQuarantine } from './lifecycle';
@@ -141,8 +142,28 @@ export function finishTask(s: GameState, v: Survivor): void {
         if (task.amount === 1 && p.sickDays > 0 && chance(s.rng, 0.7)) {
           p.sickDays = 0;
           log(s, `${v.name} chữa khỏi bệnh cho ${p.name}.`, 'good');
+        } else if (task.amount === 2) {
+          p.hp = Math.min(100, p.hp + 15 * workMult(s, v, 'medical', site));
+        } else if (task.amount === 3) {
+          // How much a bandage stops depends on what was used.
+          const kind = task.item ? medKind(task.item) : 'bandage';
+          const stopped = kind === 'tourniquet' ? 3 : kind === 'hemostatic' ? 2 : 1;
+          p.bleed = Math.max(0, bleedOf(p) - stopped);
+          if (kind === 'tourniquet') p.fatigue = Math.min(100, p.fatigue + 8);
+          log(s, `${v.name} cầm máu cho ${p.name} (${task.item ? ITEMS[task.item]?.label : 'băng'}).`, 'good');
+        } else if (task.amount === 4) {
+          p.infection = Math.max(0, (p.infection ?? 0) - ANTIBIOTIC_RELIEF);
+          if (p.infection === 0) {
+            p.infected = false;
+            p.biteKnown = false;
+            log(s, `${v.name} chặn được nhiễm trùng cho ${p.name}.`, 'good');
+          } else {
+            log(s, `${v.name} dùng kháng sinh cho ${p.name}, nhiễm trùng còn ${Math.round(p.infection)}%.`, 'info');
+          }
+        } else if (task.amount === 5) {
+          p.woundCleanedDay = Math.floor(s.t / DAY) + 1;
+          log(s, `${v.name} rửa sạch vết thương cho ${p.name}.`, 'info');
         }
-        if (task.amount === 2) p.hp = Math.min(100, p.hp + 15 * workMult(s, v, 'medical', site));
         p.treatedToday = true;
       }
       xp(s, v, 'medical', h);
@@ -216,7 +237,7 @@ function takeDish(s: GameState, site: Site, want: number): { kcal: number; kind:
   let morale = 0;
   let units = 0;
   const fx: FoodFx = {};
-  const dishes = (Object.entries(ITEMS_LIB) as [string, ItemDef][])
+  const dishes = (Object.entries(ITEMS) as [string, ItemDef][])
     .filter(([id, d]) => d.dish && (site.stock[id] ?? 0) > 0)
     .sort((a, b) => (b[1].morale ?? 0) - (a[1].morale ?? 0) || (b[1].kcal ?? 0) - (a[1].kcal ?? 0));
   for (const [id, def] of dishes) {
@@ -400,20 +421,54 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
       start(s, v, 'guard', 'rest', HOUR);
       return true;
     case 'medic': {
-      const patients = s.survivors.filter(
-        (p) => p.status === 'alive' && p.siteId === site.id && p.location !== 'expedition' && !p.treatedToday,
+      const patients = triageOrder(
+        s.survivors.filter((p) => p.status === 'alive' && p.siteId === site.id && p.location !== 'expedition'),
       );
-      const sick = patients.find((p) => p.sickDays > 0 && stock.medicine >= 1);
-      if (sick) {
-        take(site, 'medicine', 1);
-        start(s, v, 'treat', 'light', 1800, { target: sick.id, amount: 1 });
-        return true;
-      }
-      const hurt = patients.find((p) => p.hp < 70 && stock.bandage >= 1);
-      if (hurt) {
-        take(site, 'bandage', 1);
-        start(s, v, 'treat', 'light', 1800, { target: hurt.id, amount: 2 });
-        return true;
+      const skillLvl = skill(v, 'medical');
+      for (const p of patients) {
+        if (p.treatedToday) continue;
+        // 1) Sepsis with a deadline: antibiotics before anything else.
+        if (canTreatSepsis(p) && skillLvl >= ANTIBIOTIC_SKILL) {
+          const med = findMed(site, 'antibiotic');
+          if (med) {
+            take(site, med, 1);
+            start(s, v, 'treat', 'light', 2400, { target: p.id, amount: 4 });
+            return true;
+          }
+        }
+        // 2) Bleeding: a tourniquet beats a bandage, both beat nothing.
+        if (isBleeding(p)) {
+          const stop = findMed(site, 'tourniquet') ?? findMed(site, 'hemostatic') ?? findMed(site, 'bandage');
+          if (stop) {
+            take(site, stop, 1);
+            start(s, v, 'treat', 'light', 1200, { target: p.id, amount: 3, item: stop });
+            return true;
+          }
+        }
+        // 3) Illness, as before.
+        if (p.sickDays > 0 && site.stock.medicine >= 1) {
+          take(site, 'medicine', 1);
+          start(s, v, 'treat', 'light', 1800, { target: p.id, amount: 1 });
+          return true;
+        }
+        // 4) Bruises and blood loss.
+        if (p.hp < 70) {
+          const kit = findMed(site, 'medkit') ?? findMed(site, 'bandage') ?? findMed(site, 'infusion');
+          if (kit) {
+            take(site, kit, 1);
+            start(s, v, 'treat', 'light', 1800, { target: p.id, amount: 2, item: kit });
+            return true;
+          }
+        }
+        // 5) Nothing urgent: clean a dirty wound so it does not turn septic.
+        if (isBleeding(p) === false && p.woundPart && p.woundCleanedDay !== Math.floor(s.t / DAY) + 1) {
+          const wash = findMed(site, 'antiseptic');
+          if (wash) {
+            take(site, wash, 1);
+            start(s, v, 'treat', 'light', 900, { target: p.id, amount: 5 });
+            return true;
+          }
+        }
       }
       return false;
     }
