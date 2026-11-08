@@ -25,7 +25,6 @@ export function TopStrip({
   saved = '',
   onSave = () => {},
   onExit = () => {},
-  onKho,
 }: {
   s: GameState;
   site: Site;
@@ -37,7 +36,6 @@ export function TopStrip({
   saved?: string;
   onSave?: () => void;
   onExit?: () => void;
-  onKho: () => void;
 }) {
   const st = baseStats(s, site);
   const here = present(s, site).length;
@@ -102,9 +100,6 @@ export function TopStrip({
         </div>
       </div>
       <div className="topstrip-nav">
-        <button className="kho-toggle" onClick={onKho} aria-label="Mở kho của điểm đang chọn">
-          Kho
-        </button>
         <div className="sitesbar">
           {s.sites.map((candidate) => {
             const people = present(s, candidate).length;

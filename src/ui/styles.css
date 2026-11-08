@@ -941,7 +941,21 @@ table.grid tr.sel td {
 .overlay-shell {
   height: 100%;
   min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.kho-sidebar {
+  flex: 0 0 250px;
+  width: 250px;
+  overflow: auto;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+.overlay-main {
+  flex: 1;
   position: relative;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 .topstrip {

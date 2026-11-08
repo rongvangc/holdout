@@ -34,27 +34,30 @@ export function OverlayShell({
   onExit?: () => void;
 }) {
   void _world;
-  const { khoOpen, toggleKho, sheet, closeSheet } = useOverlay();
-  const title = sheet === 'kho' || khoOpen ? `Kho · ${site.name}` : sheet ?? '';
+  const { sheet, closeSheet } = useOverlay();
 
   return (
     <div className="overlay-shell">
-      <TopStrip
-        s={s}
-        site={site}
-        setSite={setSite}
-        tab={tab}
-        setTab={setTab}
-        speed={speed}
-        setSpeed={setSpeed}
-        saved={saved}
-        onSave={onSave}
-        onExit={onExit}
-        onKho={toggleKho}
-      />
-      <main className="overlay-stage">{children}</main>
-      <Sheet open={khoOpen || sheet !== null} onClose={closeSheet} title={title}>
-        {khoOpen ? <KhoDrawer s={s} site={site} /> : null}
+      <aside className="kho-sidebar">
+        <KhoDrawer s={s} site={site} />
+      </aside>
+      <div className="overlay-main">
+        <TopStrip
+          s={s}
+          site={site}
+          setSite={setSite}
+          tab={tab}
+          setTab={setTab}
+          speed={speed}
+          setSpeed={setSpeed}
+          saved={saved}
+          onSave={onSave}
+          onExit={onExit}
+        />
+        <main className="overlay-stage">{children}</main>
+      </div>
+      <Sheet open={sheet !== null && sheet !== 'kho'} onClose={closeSheet} title={sheet ?? ''}>
+        {null}
       </Sheet>
     </div>
   );
