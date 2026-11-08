@@ -7,11 +7,12 @@ import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
-import { Icon, ITEM_ICONS } from './icons';
+import { Icon, ITEM_ICONS, StatusIcon } from './icons';
 import { LawsView } from './LawsView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
+import { ReadoutBar } from './ReadoutBar';
 import { saveGame } from './save';
 
 // Game seconds per real second.
@@ -164,37 +165,20 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             </button>
           ))}
         </div>
-        <div className="stat">
-          <span className="label">Thời tiết</span>
-          <span className="v">
-            {s.weather.label} · {s.weather.tempC}°C{s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}
-          </span>
-          <span style={{ fontSize: 11 }}>{dayOf(s.t) <= s.hordeUntilDay ? <span className="red">■ Bầy zombie đi qua</span> : <span className="faint">□ Không có bầy</span>}</span>
+        <div
+          className="badge"
+          title={`${s.weather.label} · ${s.weather.tempC}°C${s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}`}
+        >
+          <StatusIcon name={s.weather.storm ? 'storm' : s.weather.rainMm > 0 ? 'rain' : 'sun'} size={18} />
+          <span>{s.weather.tempC}°C</span>
         </div>
-        <div className="stat">
-          <span className="label">Nhân lực</span>
-          <span className="v">
-            <b>{alive.length}</b> người
-            <span className="faint">/</span>
-            <b>{here}</b> ở đây
-            <span className="faint">/</span>
-            <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
-          </span>
-        </div>
-        <div className="stat">
-          <span className="label">Điểm này</span>
-          <span className="v">
-            <span className={site.heat > 45 ? 'red' : ''}> Nhiệt {Math.round(site.heat)}</span>
-            <span className="faint">/</span>
-            <span className={site.filth > 40 ? 'red' : ''}>Bẩn {Math.round(site.filth)}</span>
-            <span className="faint">/</span>
-            <span>Xác {Math.round(site.corpses)}</span>
-          </span>
-        </div>
-        <div className="stat">
-          <span className="label">Phòng thủ</span>
-          <span className="v">{Math.round(st.defenseStatic)}</span>
-        </div>
+        {dayOf(s.t) <= s.hordeUntilDay && (
+          <div className="badge horde" title="Bầy zombie đi qua">
+            <StatusIcon name="horde" size={18} />
+            <span>Bầy</span>
+          </div>
+        )}
+        <ReadoutBar s={s} site={site} />
         <div className="grow" style={{ justifyContent: 'flex-end' }}>
           <span className="ok">{saved}</span>
           <button onClick={doSave}>Lưu</button>

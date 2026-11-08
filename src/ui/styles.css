@@ -450,6 +450,74 @@ hr.thick {
   padding: 5px 10px;
   font-size: 11px;
 }
+.readout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.gauge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg);
+}
+.gauge .rtext {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 13px;
+}
+.gauge .bar {
+  width: 56px;
+  height: 5px;
+  background: var(--line);
+}
+.gauge .bar .fill {
+  height: 100%;
+  background: var(--ok);
+}
+.tone-warn {
+  color: var(--amber);
+}
+.tone-bad {
+  color: var(--red);
+}
+.tone-warn .fill {
+  background: var(--amber);
+}
+.tone-bad .fill {
+  background: var(--red);
+}
+.badge {
+  gap: 8px;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 13px;
+}
+.badge.horde {
+  color: var(--red);
+}
+.chips {
+  display: flex;
+  gap: 6px;
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--line-strong);
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--fg);
+}
+.chip.tone-warn {
+  border-color: var(--amber);
+}
+.chip.tone-bad {
+  border-color: var(--red);
+}
 .sitesbar {
   display: flex;
   gap: 0;
