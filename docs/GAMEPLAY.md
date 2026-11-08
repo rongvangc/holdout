@@ -892,3 +892,11 @@ Mỗi người một dòng: vũ khí / giáp / mũ / ba lô / quần áo, **% gi
 - Trước khi sửa: dân chết hết ở **ngày 34** vì khát (vườn tự mở 30 khoảnh/1.140 m² nhưng 0 nông dân).
 - Sau khi sửa: **9 người sống, 0 chết**, 57 chuyến viễn chinh (lục soát + lấy nước), vườn 1.208 m² **31/32 khoảnh có cây**, không còn cảnh báo.
 - Tắt cả 3 công tắc: **không có chuyến nào, không chế gì, vườn không đổi** (đúng là no-op).
+
+### 12.17 Ba lỗi cân bằng tìm được khi soi seed chết ngày 61
+
+1. **Chọn cây ngược**: hễ kho < 30 ngày lương là gieo **rau cho toàn bộ khoảnh** — đúng lúc cần calo nhất lại trồng cây ít calo nhất (rau 4,8 kcal/m²/ngày so với khoai 12). Giờ: **1/3 khoảnh giữ rau** (thu rải đều mỗi ~7 ngày), **2/3 trồng khoai**; chỉ khi kho < 12 ngày mới dồn hết sang rau.
+2. **Khoảnh quá lớn so với một ngày công**: gieo tốn `m² × 40 s`, thu `m² × 30 s`. Khoảnh 1.200 m² = **13 giờ gieo** → người đi làm thuê về nhà giữa việc, việc không bao giờ xong, khoảnh vĩnh viễn trống (đã gặp: 36/60 khoảnh trống dù kho có 68 gói giống). Giờ khoảnh **≤ 300 m² ở ruộng, ≤ 180 m² ở sân** (3,3 h gieo / 2,5 h thu).
+3. **Tập kích không co theo dân số**: nhóm 2–4 người vẫn phải chịu đợt dành cho 10 người, thua 28–38 trận/ván. Giờ hệ số là `0,25 + 0,75 × min(1, người/10)`.
+
+Kết quả 120 ngày × 4 seed: **4/4 sống hết**, dân 4–6, chết 12–21 (chủ yếu tập kích), thu hoạch 64k–199k kcal/ván.

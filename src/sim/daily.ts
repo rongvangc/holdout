@@ -210,16 +210,17 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   } else if (power.on.length) {
     log(s, `${site.name}: ${power.on.length} thiết bị chạy bằng ${power.source === 'solar' ? 'pin mặt trời' : 'máy phát'}.`, 'info');
   }
-  // Lò sưởi: chỉ tốn củi khi trời thật sự lạnh, và tắt nếu hết gỗ.
-  const stoveLvl = (site.interior.rooms.find((r) => r.module === 'stove')?.moduleLevel ?? 0) as number;
-  if (stoveLvl > 0 && s.weather.tempC < 18) {
-    const woodPerNight = [6, 8, 10][Math.min(2, stoveLvl - 1)];
+  // Sưởi: bếp củi vốn đã đốt lửa, nên giữ lửa qua đêm lạnh là cùng một việc — không
+  // cần thêm một lò sưởi riêng. Tốn ít củi hơn vì bếp có sẵn than nóng.
+  const kitchenLvl = (site.interior.rooms.find((r) => r.module === 'kitchen')?.moduleLevel ?? 0) as number;
+  if (kitchenLvl > 0 && s.weather.tempC < 18) {
+    const woodPerNight = [3, 4, 5][Math.min(2, kitchenLvl - 1)];
     if ((site.stock.wood ?? 0) >= woodPerNight) {
       take(site, 'wood', woodPerNight);
       site.warmthActive = true;
     } else {
       site.warmthActive = false;
-      log(s, `${site.name}: hết củi sưởi — đêm nay lạnh.`, 'warn');
+      log(s, `${site.name}: hết củi — bếp tắt, đêm nay lạnh.`, 'warn');
     }
   } else {
     site.warmthActive = false;
@@ -356,7 +357,8 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
     (danger / 3) *
     (densityMult(day, horde, s.weather.tempC) / 1.5) *
     (1 + site.heat / 100) *
-    (0.6 + 0.4 * Math.min(1, home.length / 10)) *
+    // Đợt tập kích co theo số người: nhóm 2-4 người không chịu nổi đợt dành cho 10 người.
+    (0.25 + 0.75 * Math.min(1, home.length / 10)) *
     range(s.rng, 0.7, 1.3);
   // Traps thin the wave first, but can never stop more than 70% of it.
   const strength = Math.max(raw * 0.3, raw - structureEffects(site.interior.structures).spikes);

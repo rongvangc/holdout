@@ -41,9 +41,10 @@ function consolidateField(s: GameState, site: Site): boolean {
   if (freeYard.length <= 1) return false;
   if (freeYard.some((r) => r.area >= 1000)) return false; // đã có khoảnh lớn, khỏi gom lại
   const perCell = it.cellSize * it.cellSize;
-  // Mỗi khoảnh ~1.200 m² là một người chăm vừa (1.200 × 0,003 = 3,6 h/ngày);
-  // gộp 5.000 m² vào một khoảnh thì gieo/chăm không kịp và vườn bỏ hoang.
-  const maxCells = Math.floor(Math.min(DESIGN_LIMITS.maxRoomField, 1200) / perCell);
+  // Mỗi khoảnh ≤ 300 m²: gieo tốn `m² × 40 s`, thu hoạch `m² × 30 s`
+  // (600 m² = 6,7 h gieo) — khoảnh lớn hơn thì một ngày công không xong, người đi
+  // làm về giữa việc và vườn không bao giờ được gieo (đã gặp: 36/60 khoảnh trống).
+  const maxCells = Math.floor(Math.min(DESIGN_LIMITS.maxRoomField, 300) / perCell);
   const cells = freeYard.flatMap((r) => r.cells).slice(0, maxCells);
   if (cells.length < 2) return false;
   return !paintRoom(s, site, { floor: 0, outdoor: true }, cells, 'Khoảnh lớn');
@@ -58,9 +59,10 @@ function consolidateYard(s: GameState, base: Site): boolean {
   const it = base.interior;
   const freeYard = it.rooms.filter((r) => !r.module && r.outdoor && r.walled !== false);
   if (freeYard.length <= 1) return false;
-  if (freeYard.some((r) => r.area >= 300)) return false;
+  if (freeYard.some((r) => r.area >= 180)) return false;
   const perCell = it.cellSize * it.cellSize;
-  const maxCells = Math.floor(DESIGN_LIMITS.maxRoomOutdoor / perCell);
+  // Sân nhà: khoảnh ≤ 180 m² để gieo/thu gọn trong một buổi.
+  const maxCells = Math.floor(Math.min(DESIGN_LIMITS.maxRoomOutdoor, 180) / perCell);
   const cells = freeYard.flatMap((r) => r.cells).slice(0, maxCells);
   if (cells.length < 2) return false;
   return !paintRoom(s, base, { floor: 0, outdoor: true }, cells, 'Sân trồng rau');
