@@ -1,4 +1,4 @@
-import { withDerivedArmor, withDerivedWeaponClass } from './item-fields';
+import { withDerivedArmor, withDerivedAttack, withDerivedWeaponClass } from './item-fields';
 import { GENERATED_ITEMS } from './items.generated';
 import { FOOD_ITEMS } from './dishes';
 import { MATERIALS } from './materials';
@@ -47,6 +47,10 @@ export interface ItemDef {
   durability?: number; // fights before it breaks
   biteMult?: number; // <1 means reach: teeth can't get to you
   cls?: string; // heavy | reach | long_blade | sword | axe | short_blade | crowbar | blunt | fist
+  /** Sát thương mỗi đòn (đòn chuẩn = 3). Quyết định hạ được zombie nhanh hay không. */
+  dmg?: number;
+  /** Xuyên giáp tự nhiên của zombie (0..1). */
+  pierce?: number;
   noise?: number; // heat added per fight when used
   rare?: boolean;
   capacity?: number; // kg carried (backpack/container)
@@ -92,13 +96,19 @@ const CORE: Record<string, ItemDef> = {
  * Everything the game knows about. Order matters: core ids win over generated
  * ones so a catalog item can never shadow `wood` or `water`.
  */
-export const ITEMS: Record<string, ItemDef> = withDerivedWeaponClass(
-  withDerivedArmor({
+const BASE_ITEMS: Record<string, ItemDef> = {
   ...GENERATED_ITEMS,
   ...MATERIALS,
   ...FOOD_ITEMS,
   ...CORE,
-  }),
+};
+
+/**
+ * Ba lượt suy ra, theo đúng thứ tự: giáp → lớp vũ khí (công thức dựa vào nó)
+ * → sát thương/xuyên giáp (cần lớp vũ khí).
+ */
+export const ITEMS: Record<string, ItemDef> = withDerivedAttack(
+  withDerivedWeaponClass(withDerivedArmor({ ...BASE_ITEMS })),
 );
 
 /** Lookup that never throws — UI falls back to the id when a def is missing. */

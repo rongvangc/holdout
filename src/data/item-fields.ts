@@ -83,3 +83,51 @@ export function withDerivedArmor(items: Record<string, ItemDef>): Record<string,
   }
   return items;
 }
+
+/**
+ * Damage and penetration per weapon form. `mitigation` stays the defensive side
+ * (đỡ đòn / giữ khoảng cách); these two decide how fast a zombie goes down and
+ * whether its natural armour matters.
+ */
+const FORM_ATTACK: Record<string, { dmg: number; pierce: number }> = {
+  fist: { dmg: 1.4, pierce: 0.05 },
+  short_blade: { dmg: 2.6, pierce: 0.12 },
+  blunt: { dmg: 2.9, pierce: 0.18 },
+  crowbar: { dmg: 3.2, pierce: 0.3 },
+  reach: { dmg: 2.3, pierce: 0.15 },
+  axe: { dmg: 3.6, pierce: 0.35 },
+  long_blade: { dmg: 3.8, pierce: 0.22 },
+  sword: { dmg: 4.0, pierce: 0.26 },
+  heavy: { dmg: 5.2, pierce: 0.45 },
+};
+
+/** Firearms hit far harder, but they are loud and eat ammunition. */
+function firearmAttack(subtype: string, tier: number): { dmg: number; pierce: number } {
+  const s = subtype.toLowerCase();
+  if (/svd|sniper|bolt|long|marksman/.test(s)) return { dmg: 9.5, pierce: 0.85 };
+  if (/shotgun|break|pump|revolv/.test(s)) return { dmg: 7.5, pierce: 0.6 };
+  if (/semi-auto|full-auto|ak/.test(s)) return { dmg: 6.2, pierce: 0.7 };
+  if (/pm|pistol/.test(s)) return { dmg: 3.4, pierce: 0.5 };
+  return { dmg: 5 + tier, pierce: 0.65 };
+}
+
+/** Fill `dmg`/`pierce` in place for weapons. */
+export function withDerivedAttack(items: Record<string, ItemDef>): Record<string, ItemDef> {
+  for (const def of Object.values(items)) {
+    if (def.dmg && def.pierce) continue;
+    const tier = Math.max(1, Math.min(4, def.tier ?? 1));
+    if (def.mechanic === 'firearm') {
+      const a = firearmAttack(def.subtype ?? '', tier);
+      def.dmg = Math.round(a.dmg * (0.9 + 0.05 * tier) * 10) / 10;
+      def.pierce = Math.min(0.95, Math.round((a.pierce + 0.03 * tier) * 100) / 100);
+      continue;
+    }
+    if (def.mechanic !== 'weapon_blade' && def.mechanic !== 'weapon_blunt') continue;
+    const form = FORM_ATTACK[def.cls ?? 'short_blade'] ?? FORM_ATTACK.short_blade;
+    // Heavier weapons of the same form hit a bit harder; light ones stay quick.
+    const weightBonus = Math.min(0.25, Math.max(0, (def.kgPerUnit - 1) * 0.04));
+    def.dmg = Math.round(form.dmg * (1 + weightBonus) * 10) / 10;
+    def.pierce = Math.round(Math.min(0.9, form.pierce * (1 + weightBonus)) * 100) / 100;
+  }
+  return items;
+}

@@ -103,13 +103,40 @@ export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: num
 export const TEND_H_PER_M2_DAY = 0.005;
 
 export type ZombieType = 'walker' | 'runner' | 'screamer' | 'bloater' | 'brute' | 'stalker';
-export const ZOMBIES: Record<ZombieType, { label: string; dmg: number; bite: number; w0: number; w1: number }> = {
-  walker: { label: 'Walker', dmg: 8, bite: 0.05, w0: 80, w1: 40 },
-  runner: { label: 'Runner', dmg: 11, bite: 0.08, w0: 6, w1: 20 },
-  screamer: { label: 'Screamer', dmg: 6, bite: 0.04, w0: 4, w1: 12 },
-  bloater: { label: 'Bloater', dmg: 14, bite: 0.06, w0: 3, w1: 11 },
-  brute: { label: 'Brute', dmg: 32, bite: 0.12, w0: 0.5, w1: 8 },
-  stalker: { label: 'Stalker', dmg: 16, bite: 0.1, w0: 0, w1: 6 },
+export interface ZombieDef {
+  label: string;
+  /** Sát thương mỗi đòn khi nó áp sát được. */
+  dmg: number;
+  /** Xác suất cắn mỗi lần chạm. */
+  bite: number;
+  /** Tỷ trọng quần thể ngày 1 → ngày 61. */
+  w0: number;
+  w1: number;
+  /** Máu: số "đòn chuẩn" (dmg 3) cần để hạ. */
+  hp: number;
+  /** Giáp tự nhiên: giảm sát thương theo `pierce` của vũ khí. */
+  armor: number;
+  /** Phần giáp của người chơi bị vô hiệu (0..1). */
+  bypass: number;
+  /** Nhanh: lao vào sát, nên vũ khí dài (`biteMult`) mất lợi thế. */
+  fast?: boolean;
+  /** Bị hạ lặng lẽ thì không kêu gọi bầy (+heat). */
+  screams?: boolean;
+}
+
+export const ZOMBIES: Record<ZombieType, ZombieDef> = {
+  // Đông, dai vừa, gần như không giáp — sát thương đều + độ bền vũ khí quyết định.
+  walker: { label: 'Walker', dmg: 8, bite: 0.05, w0: 80, w1: 40, hp: 3.0, armor: 0.05, bypass: 0 },
+  // Nhanh: khoảng cách không cứu được, phải hạ nhanh.
+  runner: { label: 'Runner', dmg: 11, bite: 0.08, w0: 6, w1: 20, hp: 2.4, armor: 0, bypass: 0.1, fast: true },
+  // Kêu gọi bầy: giết nhanh thì bớt ồn, để nó hét thì +8 heat.
+  screamer: { label: 'Screamer', dmg: 6, bite: 0.04, w0: 4, w1: 12, hp: 2.0, armor: 0, bypass: 0, screams: true },
+  // Mỡ dày: cần xuyên giáp; mật phun bỏ qua giáp mềm trừ khi có mặt nạ.
+  bloater: { label: 'Bloater', dmg: 14, bite: 0.06, w0: 3, w1: 11, hp: 4.0, armor: 0.35, bypass: 0.7 },
+  // Giáp dày: vũ khí nặng/xuyên mới ăn; đập bỏ qua giáp mềm, cần tấm thép.
+  brute: { label: 'Brute', dmg: 32, bite: 0.12, w0: 0.5, w1: 8, hp: 6.5, armor: 0.5, bypass: 0.6 },
+  // Đêm, nhanh và lì: ồn là kẻ thù, khoảng cách mất tác dụng.
+  stalker: { label: 'Stalker', dmg: 16, bite: 0.1, w0: 0, w1: 6, hp: 3.4, armor: 0.15, bypass: 0.2, fast: true },
 };
 
 export interface Laws {

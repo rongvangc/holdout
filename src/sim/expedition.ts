@@ -188,8 +188,22 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
   const rSearch = encounterRate({ ...common, danger: target.danger, heat: tHeat, travelling: false }) * sr.rate;
   const expectedEncounters = rTravel * ((legs * travelSec) / MIN) + (kind === 'convoy' ? 0 : rSearch * (searchSec / MIN));
   const avoid = avoidChance(members, o.mode);
-  const expectedFights =
+  const rawFights =
     rTravel * ((legs * travelSec) / MIN) * (1 - avoid) + (kind === 'convoy' ? 0 : rSearch * (searchSec / MIN) * (1 - avoid * sr.avoid));
+  // Trang bị hạ được một phần trước khi chúng áp sát — dự báo phải tính phần đó.
+  const killShareAvg = (() => {
+    let weight = 0;
+    let acc = 0;
+    const k = Math.min(1, (day - 1) / 60);
+    for (const t of ['walker', 'runner', 'screamer', 'bloater'] as const) {
+      const d = ZOMBIES[t];
+      const w = d.w0 + (d.w1 - d.w0) * k;
+      weight += w;
+      acc += w * killShare(from, members, t);
+    }
+    return weight ? acc / weight : 0;
+  })();
+  const expectedFights = rawFights * (1 - killShareAvg);
   const biteRisk = 1 - Math.exp((-expectedFights * meanBite(day)) / Math.sqrt(members.length));
 
   let reason: string | undefined;
@@ -625,7 +639,8 @@ function lost(s: GameState, e: Expedition): void {
 /** Each kill thins the area; neighbours get half. Zombies drift back daily (see dayEvent). */
 function sweep(s: GameState, e: Expedition): void {
   if (!e.target.cell) return;
-  const gain = Math.min(0.5, 0.12 + 0.04 * e.fights);
+  // Hạ được con nào thì ô đó sạch thêm: 1 phần theo trận, 1 phần theo số con đã hạ.
+  const gain = Math.min(0.5, 0.1 + 0.03 * e.fights + 0.03 * (e.kills ?? 0));
   for (const c of gridDisk(e.target.cell, 1)) {
     const g = c === e.target.cell ? gain : gain / 2;
     s.cellClear[c] = Math.min(1, (s.cellClear[c] ?? 0) + g);

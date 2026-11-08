@@ -238,14 +238,17 @@ mật độ = (1 + 1.6 × (1 − e^(−ngày/25)))           lây lan, bão hoà
 
 Tỷ lệ chuyển dần từ ngày 1 sang ngày 61:
 
-| Loại | Sát thương | Cắn | Tỷ trọng N1 → N61 |
-|---|---|---|---|
-| Walker | 8 | 5% | 80 → 40 |
-| Runner | 11 | 8% | 6 → 20 |
-| Screamer | 6 | 4% | 4 → 12 (gây ồn, +8 heat) |
-| Bloater | 14 | 6% | 3 → 11 |
-| Brute | 32 | 12% | 0.5 → 8 |
-| Stalker | 16 | 10% | 0 → 6 (chỉ ban đêm) |
+| Loại | Sát thương | Cắn | Máu | Giáp | Bỏ qua giáp | Tỷ trọng N1 → N61 |
+|---|---|---|---|---|---|---|
+| Walker | 8 | 5% | 3.0 | 5% | 0 | 80 → 40 |
+| Runner | 11 | 8% | 2.4 | 0% | 10% | 6 → 20 (nhanh) |
+| Screamer | 6 | 4% | 2.0 | 0% | 0 | 4 → 12 (hét +8 heat) |
+| Bloater | 14 | 6% | 4.0 | 35% | 70% | 3 → 11 (mật bỏ qua giáp mềm) |
+| Brute | 32 | 12% | 6.5 | 50% | 60% | 0.5 → 8 (đập bỏ qua giáp mềm) |
+| Stalker | 16 | 10% | 3.4 | 15% | 20% | 0 → 6 (chỉ ban đêm, nhanh) |
+
+- **Máu**: số đòn chuẩn (dmg 3) để hạ; **Giáp**: giảm theo `pierce` của vũ khí; **Bỏ qua giáp**: phần giáp người chơi bị vô hiệu — mặt nạ giảm 65% hiệu lực của Bloater, tấm thép (`armor_plate`) giảm 70% của Brute.
+- **Nhanh** (Runner/Stalker): chúng lao vào sát, nên lợi thế của vũ khí dài (`biteMult`) chỉ còn 1/3.
 
 ### 7.3 Heat (độ ồn)
 
@@ -533,6 +536,16 @@ Trang bị là **của từng người**, không phải của kho. Mỗi ngườ
 - **Súng thiếu đạn thì không dùng được** — `canField()` kiểm tra kho của điểm đang đứng; cầm súng không đạn coi như tay không.
 - **Chết/ra đi**: người chết trong căn cứ → đồ **trả lại kho**; chết ngoài đường hoặc bỏ trốn → **mất đồ**.
 - **Độ mòn vẫn theo loại** (`site.condition`), không theo từng món: hai người cầm cùng một loại thì dùng chung độ mòn.
+
+**Chỉ số đánh nhau** (`data/items.ts` + `sim/combat.ts`): vũ khí có `dmg` (sát thương/đòn, đòn chuẩn = 3) và `pierce` (xuyên giáp tự nhiên). Mỗi trận resolve **2 pha**:
+
+1. **Hạ trước khi chúng áp sát** — `killShare()`: `Σ strikePower × độ đông × kỹ năng Cận chiến`, kẹp 0–95%. `strikePower = dmg × (1 − armor × (1 − pierce)) / hp của loại đó`.
+2. **Nếu chưa hạ hết** — chúng vào được: sát thương `dmg của loại × roll`, giáp của **chính nạn nhân** bị `bypass` của loại đó bào mòn (`armourAgainst()`); xác suất cắn `bite × reachFactor()`.
+
+- Vũ khí gây sát thương theo hình dạng: dao 2.6 / gậy 3.0 / xà beng 3.4 / búa-rìu 3.8 / kiếm-rựa 3.9 / nặng 5.2 / súng lục 3.2 / súng trường 5.9 / shotgun 7.1 / bắn tỉa 9.0. `pierce` từ 0.05 (tay không) → 0.37 (rìu) → 0.88 (súng bắn tỉa).
+- **Raid đêm** cũng dùng hỗn hợp loại zombie như ngoài đường (5 con ngẫu nhiên theo ngày/đêm) → loại quyết định sát thương, khả năng cắn và bypass; người gác hạ được nhiều thì phòng thủ tăng (tối đa +50%).
+- **Dự báo viễn chinh** đã trừ phần hạ được, nên `nguy cơ bị cắn` không còn cao hơn thực tế.
+- Hạ được nhiều thì ô đó **sạch nhanh hơn** (dùng chung `cellClear` của đi tuần).
 
 ### 12.6 Thức ăn
 
