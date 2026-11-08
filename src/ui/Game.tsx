@@ -173,7 +173,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         <div className="stat" title="Tình trạng điểm này: độ ồn, độ bẩn, xác chưa dọn">
           <span className="label">Tình trạng điểm</span>
           <span className="v">
-            <span className={site.heat > 45 ? 'red' : ''} title="Độ ồn — tăng khi làm việc ồn; càng cao, xác đưa càng dễ tìm thấy điểm này">Ồn {Math.round(site.heat)}</span>
+            <span className={site.heat > 45 ? 'red' : ''} title="Độ ồn — công việc ồn tăng nó lên; càng cao, đám zombie càng dễ chú ý tới điểm này">Ồn {Math.round(site.heat)}</span>
             <span className="faint">/</span>
             <span className={site.filth > 40 ? 'red' : ''} title="Độ bẩn — tăng nguy cơ bệnh cho người ở đây">Độ bẩn {Math.round(site.filth)}</span>
             <span className="faint">/</span>
