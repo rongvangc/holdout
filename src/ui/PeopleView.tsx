@@ -190,7 +190,10 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                 <Bar v={100 - p.fatigue} title="Tỉnh táo" />
               </td>
               <td>
-                <Bar v={p.morale} title="Tinh thần" color="#e0a030" />
+                <span className="row" style={{ gap: 4 }}>
+                  <Bar v={p.morale} title="Tinh thần" color="#e0a030" />
+                  <b className={p.morale < 15 ? 'red' : p.morale < 25 ? 'amber' : ''}>{Math.round(p.morale)}</b>
+                </span>
               </td>
               <td>
                 {topSkills(p).map(([k, l]) => (

@@ -108,6 +108,8 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   const site = siteById(s, siteId);
   const st = baseStats(s, site);
   const here = present(s, site).length;
+  const hereList = present(s, site);
+  const moraleAvg = hereList.length ? Math.round(hereList.reduce((a, v) => a + v.morale, 0) / hereList.length) : null;
   const alive = s.survivors.filter((v) => v.status === 'alive');
   const refresh = () => bump();
   const expandWorld = async (onProgress: (msg: string) => void): Promise<string | null> => {
@@ -168,6 +170,23 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             <b>{here}</b> ở đây
             <span className="faint">/</span>
             <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
+          </span>
+        </div>
+        <div className="stat" title="Tinh thần TB của những người đang ở điểm này · dưới 15 có nguy cơ bỏ trốn">
+          <span className="label">Tinh thần</span>
+          <span className="v">
+            {moraleAvg === null ? (
+              <span className="faint">—</span>
+            ) : moraleAvg < 25 ? (
+              <b className="red">{moraleAvg}/100</b>
+            ) : moraleAvg < 40 ? (
+              <b className="amber">{moraleAvg}/100</b>
+            ) : (
+              <b>{moraleAvg}/100</b>
+            )}
+          </span>
+          <span style={{ fontSize: 11 }} className="faint">
+            TB của {here} người ở đây
           </span>
         </div>
         <div className="stat">
