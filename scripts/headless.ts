@@ -6,6 +6,8 @@ import { dist } from '../src/world/geo';
 import { newGame, autoAssign, baseStats, mainSite, present } from '../src/sim/state';
 import { advanceTo } from '../src/sim/engine';
 import { maxStationLevel, queueCraft, queueModule, queueDefense, upgradeModule } from '../src/sim/build';
+import { paintRoom } from '../src/sim/design';
+import { DESIGN_LIMITS } from '../src/data/structures';
 import { canAfford } from '../src/sim/state';
 import { canPlace } from '../src/base/interior';
 import { MODULES } from '../src/data/modules';
@@ -25,10 +27,32 @@ export function makeTestWorld(): World {
 }
 
 const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine'];
-const WANT_FIELD: ModuleId[] = ['well', 'filter', 'garden', 'garden', 'kitchen', 'garden', 'garden', 'latrine', 'shelter'];
+const WANT_FIELD: ModuleId[] = ['garden', 'garden', 'shelter', 'latrine'];
+
+
+/**
+ * Ruộng: gom các khoảnh trống nhỏ thành MỘT khoảnh lớn (tối đa 5.000 m²) trước khi trồng.
+ * Ở năng suất thật, vườn 70 m² nuôi chưa nổi nửa người; phải làm vườn lớn thì trồng
+ * trọt mới có nghĩa. Chỉ chạy khi ruộng chưa có vườn nào.
+ */
+function consolidateField(s: GameState, site: Site): boolean {
+  const it = site.interior;
+  const freeYard = it.rooms.filter((r) => !r.module && r.outdoor && r.walled !== false);
+  if (freeYard.length <= 1) return false;
+  if (freeYard.some((r) => r.area >= 1000)) return false; // đã có khoảnh lớn, khỏi gom lại
+  const perCell = it.cellSize * it.cellSize;
+  // Mỗi khoảnh ~1.200 m² là một người chăm vừa (1.200 × 0,003 = 3,6 h/ngày);
+  // gộp 5.000 m² vào một khoảnh thì gieo/chăm không kịp và vườn bỏ hoang.
+  const maxCells = Math.floor(Math.min(DESIGN_LIMITS.maxRoomField, 1200) / perCell);
+  const cells = freeYard.flatMap((r) => r.cells).slice(0, maxCells);
+  if (cells.length < 2) return false;
+  return !paintRoom(s, site, { floor: 0, outdoor: true }, cells, 'Khoảnh lớn');
+}
 
 function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
-  if (site.projects.length) return;
+  // Ruộng: hạng mục vườn không bị chặn bởi một hạng mục khác đang chờ thợ.
+  if (site.projects.length && site.kind !== 'field') return;
+  if (site.projects.filter((p) => p.kind === 'module' && p.module === 'garden').length > 2) return;
   const have = site.interior.rooms.filter((r) => r.module).map((r) => r.module!);
   const counts: Record<string, number> = {};
   let next = want.find((m) => {
@@ -41,7 +65,10 @@ function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
     if (baseStats(s, site).gardenArea < farmers * (6 / TEND_H_PER_M2_DAY) * 0.8) next = 'garden';
   }
   if (!next) return;
-  const free = site.interior.rooms.filter((r) => !r.module).sort((a, b) => a.area - b.area);
+  // Vườn cần khoảnh LỚN (năng suất thật), trạm khác thì vừa là đủ → xếp ngược lại.
+  const free = site.interior.rooms
+    .filter((r) => !r.module)
+    .sort((a, b) => (next === 'garden' ? b.area - a.area : a.area - b.area));
   for (const r of free) if (!queueModule(s, site, r.id, next)) break;
 }
 
@@ -83,7 +110,7 @@ function sendLoot(s: GameState, world: World, from: Site, team: string[]): void 
 /** Claim the nearest decent green as a field once the base can spare a crew. */
 function maybeClaimField(s: GameState, world: World, base: Site, idle: string[]): boolean {
   const fields = s.sites.filter((x) => x.kind === 'field').length;
-  const wantFields = s.survivors.filter((v) => v.status === 'alive').length >= 14 ? 3 : 1;
+  const wantFields = s.survivors.filter((v) => v.status === 'alive').length >= 9 ? 3 : 1;
   if (!useFields || fields >= wantFields || dayOf(s.t) < 8 || idle.length < 6) return false;
   // Đừng mở ruộng mới khi ruộng hiện tại còn chưa ai chăm.
   for (const f of s.sites.filter((x) => x.kind === 'field')) if (present(s, f).length < 2) return false;
@@ -91,15 +118,15 @@ function maybeClaimField(s: GameState, world: World, base: Site, idle: string[])
   const g = [...world.greens].filter((x) => x.area >= 1500).sort((a, b) => dist(a.centroid, base.centroid) - dist(b.centroid, base.centroid))[0];
   if (!g) return false;
   const cargo: StockDelta = {
-    seeds: Math.min(20, Math.floor(base.stock.seeds)),
-    wood: Math.min(18, Math.floor(base.stock.wood)),
+    seeds: Math.min(40, Math.floor(base.stock.seeds)),
+    wood: Math.min(80, Math.floor(base.stock.wood)),
     cloth: Math.min(6, Math.floor(base.stock.cloth)),
     scrap: Math.min(20, Math.floor(base.stock.scrap)),
     tools: Math.min(1, Math.floor(base.stock.tools)),
     water: Math.min(30, Math.floor(base.stock.water)),
     rawFood: Math.min(30000, Math.floor(base.stock.rawFood)),
   };
-  if (cargo.tools! < 1 || cargo.scrap! < 20) return false;
+  if (cargo.tools! < 1 || cargo.scrap! < 20 || cargo.wood! < 40) return false;
   const team = idle.slice(0, 4);
   return launchExpedition(s, world, { fromSite: base.id, members: team, target: { type: 'green', id: g.id }, mode: 'walk', cargo }) === null;
 }
@@ -317,6 +344,8 @@ export function botDay(s: GameState, world: World): void {
   buildStations(s, base);
   buildNext(s, base, WANT_BASE);
   for (const f of s.sites.filter((x) => x.kind === 'field')) {
+    // Ruộng: chưa có vườn thì gom khoảnh lớn trước, rồi mới đặt vườn lên đó.
+    if (!baseStats(s, f).gardenArea && consolidateField(s, f)) continue;
     buildNext(s, f, WANT_FIELD);
     if (!f.projects.length && f.fence.level < 1) queueDefense(s, f, 'fence');
   }
@@ -334,11 +363,15 @@ export function botDay(s: GameState, world: World): void {
   if (maybeClaimField(s, world, base, idle)) return;
 
   // Once a field can water its workers, send day labourers from the base instead of living there.
-  for (const f of s.sites.filter((x) => x.kind === 'field' && baseStats(s, x).gardenArea > 0)) {
+  const readyPlot = (site: Site) => site.interior.rooms.some((r) => !r.module && r.outdoor && r.area >= 200);
+  for (const f of s.sites.filter((x) => x.kind === 'field' && (baseStats(s, x).gardenArea > 0 || x.projects.length > 0 || readyPlot(x)))) {
     const want = Math.max(2, Math.ceil(baseStats(s, f).gardenArea / 700));
     const have = s.survivors.filter((v) => v.status === 'alive' && v.commute?.work === f.id).length;
-    for (const id of idle.slice(0, Math.max(0, Math.min(want - have, idle.length - 6)))) {
+    for (const id of idle.slice(0, Math.max(0, Math.min(want - have, idle.length - 4)))) {
       setCommute(s, world, id, f.id);
+      // Vai trò tại điểm làm: đang có hạng mục cần xây thì xây, xong thì làm nông.
+      const v = s.survivors.find((x) => x.id === id);
+      if (v) v.role = f.projects.length ? 'builder' : 'farmer';
       idle.splice(idle.indexOf(id), 1);
     }
   }

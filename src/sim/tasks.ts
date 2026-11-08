@@ -405,7 +405,8 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
           // Giống để dành từ vụ trước (nhánh harvest trả lại); vườn thuốc không tốn giống.
           if (!herb && stock.seeds < 1) continue;
           if (!herb) take(site, 'seeds', 1);
-          const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 30;
+          // Thiếu ăn thì gieo rau (25 ngày) để có thu hoạch sớm; đủ ăn mới trồng khoai (100 ngày).
+          const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 45;
           start(s, v, 'plant', 'light', (room.area * 40) / workMult(s, v, 'farming', site), {
             target: plot.roomId,
             amount: hungry || herb ? 0 : 1,

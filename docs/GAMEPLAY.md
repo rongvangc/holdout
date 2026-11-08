@@ -767,84 +767,15 @@ Có test khoá luật "mỗi bậc phải có chỗ đọc số" (`tests/module-
 
 Đo bằng bot cho thấy bản cũ **không thể tự nuôi**: vườn 20 m² cho 317 kcal/ngày trong khi 29 người cần ~65.000 kcal/ngày, và ruộng chỉ đạt 5% công suất. Bốn chỉnh:
 
-| Hạng mục | Trước | Sau | Vì sao |
+| Hạng mục | Trước | Sau (thực tế) | Vì sao |
 |---|---|---|---|
-| Rau muống | 475 kcal/m² / 30 ngày | **1.400 / 18 ngày** | 15,8 → 78 kcal/m²/ngày; vườn 800 m² nuôi được ~27 người |
-| Khoai lang | 1.720 / 110 ngày | **3.600 / 45 ngày** | vụ ngắn để quay vòng trong ván 120 ngày |
-| Chăm vườn | 0,005 h/m²/ngày (3.400 m² = 17 h/ngày) | **0,003** (≈10 h/ngày) + cây không chăm vẫn lớn 45% | ruộng lớn không còn bị bỏ hoang vì thiếu người |
-| Khoảnh ruộng | 800 m² | **2.500 m²** với điểm `field` | đất trống rộng hơn sân trong thành phố |
+| Rau muống | 475 kcal/m² / 30 ngày | **90 kcal/m² / 25 ngày** = 3,6 kcal/m²/ngày | 0,3 kg rau/m² mỗi lứa — đúng năng suất vườn |
+| Khoai lang | 1.720 / 110 ngày | **1.080 kcal/m² / 90 ngày** = 12 kcal/m²/ngày | cây lương thực: ~2 kg/m² mỗi vụ |
+| Chăm vườn | 0,005 h/m²/ngày | **0,003** | ~2.000 m² một người; 1 nông dân 8 h nuôi ~14 người |
+| Khoảnh ruộng | 800 m² | **5.000 m²** (điểm `field`) | 20 người cần ~3.750 m² khoai |
+| Giá làm vườn | ⌈m²/20⌉ gỗ | **⌈m²/200⌉** gỗ | vườn 5.000 m² trước đó tốn 250 gỗ |
 
-- **Gieo → thu**: mỗi plot tốn 1 gói giống, thu hoạch trả `m²/150` gói (dư để mở rộng); vườn thuốc không tốn giống.
-- **Nông dân** ưu tiên theo lượt: thu hoạch → gieo → chăm (trước đây chăm plot đầu tiên là chiếm hết thời gian, không ai gieo/hái).
-- **Dân số đi sau sản xuất**: mọi luật người lạ (kể cả "Kiểm tra" mặc định) chỉ nhận khi kho còn **≥ 18 ngày lương**, số nhận = `⌊(số ngày − 18) / 2⌋`.
-- **Bot**: gieo thêm ruộng khi dân ≥ 14 (tối đa 3), mang tới 20 gói giống khi lập ruộng, hạ ngưỡng chuyển lương thô về căn cứ, và xây `chuồng gà`/`ao cá` sau các trạm chính.
-
-Kết quả bot 120 ngày (3 seed): **cả 3 sống hết 120 ngày**, dân 6–14 (bị giới hạn bởi lương thực chứ không phải bị chết đói), thu hoạch 110k–600k kcal/ván.
-
----
-
-## 15. Điện (`sim/power.ts`)
-
-Trước đây `site.powered` là một cờ boolean chỉ để bỏ hình phạt làm đêm — máy phát có đúng một công dụng. Nay điện là **ngân sách kW**.
-
-### 15.1 Nguồn
-
-| Nguồn | Cấp 1 / 2 / 3 | Ghi chú |
-|---|---|---|
-| Máy phát | 4 / 6 / 8 kW | Đốt **0,25 L/kWh**, chỉ trả cho phần tải thực sự dùng (đêm 12 giờ) |
-| Tấm pin mặt trời | 1,5 kW/tấm | Sạc ắc quy 5 giờ nắng; bão còn 15%, mưa còn 50% |
-| Ắc quy | 3 kWh/quả | Trữ điện ban ngày cho ban đêm |
-
-Không còn chuyện "đốt 24 L mỗi đêm" bất kể tải: một bóng đèn 0,3 kW tốn ~0,9 L, cả lưới 4 kW tốn ~12 L.
-
-### 15.2 Thiết bị tiêu điện
-
-Khi thiếu điện, **cắt tải theo thứ tự ưu tiên** (không phải tắt hết):
-
-| # | Thiết bị | kW | Tác dụng |
-|---|---|---|---|
-| 1 | Hàng rào điện | 3,0 | +25 / +35 / +45 phòng thủ ban đêm |
-| 2 | **Đèn điện** | 0,3 | Bỏ hình phạt làm đêm ×0,75 (đây là thứ duy nhất bật `powered`) |
-| 3 | **Tủ lạnh** | 1,5 | Thức ăn hỏng còn 25% / 15% / 8% tốc độ thường |
-| 4 | Bơm nước | 1,0 | Giếng ×1,5 / 1,8 / 2,0; trạm lọc cùng hệ số |
-| 5 | Máy móc điện | 2,0 | Xây/chế nhanh hơn 30% / 45% / 60%, heat +kW |
-| 6 | Radio | 0,3 | +4 / +6 / +8 tinh thần (biết trước bầy 1–2 ngày: dự kiến) |
-| 7 | Đèn trồng cây | 2,0 | Vườn +10% / 25% / 40% năng suất |
-
-Bật hết tốn ~10 kW, nên phải chọn. Ví dụ: hàng rào + đèn + tủ lạnh (4,8 kW) vừa một máy phát cấp 1; muốn thêm máy móc điện thì phải lên cấp 2 hoặc thêm pin mặt trời.
-
-### 15.3 Bot
-
-Bot xây máy phát → đèn → tủ lạnh → bơm → máy móc → hàng rào → radio, nhưng **chỉ khi đã ổn định** (dân số > 0 và lương thực > 10 ngày) và đã có máy phát. Nó cũng tự chế tấm pin và ắc quy khi có tấm thép.
-
-Đo 90 ngày × 10 seed: **0/10 ván sụp**, 7–18 người sống. Lưu ý: cùng lúc đó một session khác thêm giới hạn dân số theo lương thực, nên **không quy toàn bộ cải thiện này cho điện**.
-
----
-
-## 16. Sưởi mùa đông
-
-Lạnh đã có cơ chế từ trước (dưới 18 °C thì tăng mệt, dưới 12 °C thì mất HP, giảm bởi quần áo). Nhưng chỉ có **một** cách chống: mặc ấm. Nay có hai nguồn sưởi tại chỗ.
-
-| Nguồn | Nhiên liệu | Giảm rét (cấp 1/2/3) |
-|---|---|---|
-| **Lò sưởi** | 6 / 8 / 10 gỗ mỗi đêm lạnh | 50% / 70% / 85% |
-| **Máy sưởi điện** | 2 kW điện | 60% / 75% / 90% |
-
-- Lò sưởi **chỉ đốt gỗ khi trời dưới 18 °C**; hết gỗ thì đêm đó lạnh và có cảnh báo.
-- Máy sưởi điện là thiết bị thứ 8 trong danh sách cắt tải điện (ưu tiên cuối — ấm là tiện nghi, hàng rào mới là sống còn).
-- Hai nguồn cộng dồn nhưng **kẹp ở 95%**: không có chuyện miễn nhiễm rét.
-
-## 17. Điều kiện thắng: gọi cứu hộ — **TẠM TẮT**
-
-> Cờ `FEATURES.rescue` trong `src/sim/config.ts` đang là **false**. Code vẫn còn, test vẫn phủ, nhưng game chạy như vô tận. Bật lại bằng cách đổi cờ thành `true`.
-
-Radio **cấp 3** khi có điện sẽ phát tín hiệu cầu cứu:
-
-- Mỗi đêm radio cấp 3 được cấp điện **và điểm có ít nhất 4 người** → `rescueDays` +1
-- Đêm mất điện → `rescueDays` −1 (tín hiệu gián đoạn thì mất uy tín)
-- Đủ **7 đêm liên tục** → `won = true`, game kết thúc với màn "ĐƯỢC CỨU"
-
-Tiến độ hiện trong drawer Kho (`Tín hiệu cầu cứu: 3/7 đêm`). Đây là mục tiêu dài hạn đầu tiên của game: muốn thắng phải có **lưới điện ổn định** (pin mặt trời + ắc quy, vì máy phát cần xăng liên tục) và **một cộng đồng đủ người để vận hành**.
+**Ở mức thực tế này:** 1 nông dân 8 h/ngày nuôi ~14 người; một khoảnh 5.000 m² khoai cho ~60.000 kcal/ngày (26 người) khi vào vụ; 1 bò cho 8 L sữa/ngày = 5.120 kcal (2,3 người); 20 con gà ≈ 1.000 kcal/ngày. Trồng trọt là **đầu tư dài hạn** (25–90 ngày mới có thu), trong 1–2 tháng đầu cộng đồng vẫn sống bằng đồ hộp lục soát được — đúng thực tế.
 
 ### 12.14 Gia súc (`modules.barn`, `sim/daily.ts`)
 

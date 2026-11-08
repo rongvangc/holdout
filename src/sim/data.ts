@@ -95,9 +95,11 @@ export const PEOPLE_PER_LATRINE = 20;
 
 export type CropId = 'rau' | 'khoai' | 'thuoc';
 export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: number }> = {
-  // Chu kỳ ngắn lại để vườn kịp quay vòng trong một ván 120 ngày (trước: 30/110).
-  rau: { label: 'Rau muống', days: 18, kcalPerM2: 1400 },
-  khoai: { label: 'Khoai lang', days: 45, kcalPerM2: 3600 },
+  // Năng suất THẬT (không còn 78 kcal/m²/ngày):
+  //  rau muống: ~0,3 kg/m² mỗi lứa 25 ngày ≈ 90 kcal/m² → 3,6 kcal/m²/ngày
+  //  khoai lang: ~2 kg/m² mỗi vụ 100 ngày ≈ 1.200 kcal/m² → 12 kcal/m²/ngày (cây lương thực)
+  rau: { label: 'Rau muống', days: 25, kcalPerM2: 90 },
+  khoai: { label: 'Khoai lang', days: 90, kcalPerM2: 1080 },
   thuoc: { label: 'Dược liệu', days: 40, kcalPerM2: 0 },
 };
 // ~6 h of hand labour keeps ~2000 m² of vegetables going (smallholder scale).

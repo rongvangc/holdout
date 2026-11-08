@@ -192,8 +192,9 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     placement: 'top_or_outdoor',
     minArea: 6,
     workSec: (a) => 1 * H + a * 20,
-    cost: (a) => ({ wood: Math.ceil(a / 20), seeds: 1 }),
-    desc: 'Trồng rau muống (30 ngày) hoặc khoai lang (110 ngày). Vườn trên mái cũng được.',
+    // Hàng rào + cuốc đất ~1 gỗ/200 m²: vườn lớn (ruộng) không bị 250 gỗ như trước.
+    cost: (a) => ({ wood: Math.ceil(a / 200), seeds: 1 }),
+    desc: 'Trồng rau muống (25 ngày) hoặc khoai lang (100 ngày). Vườn trên mái cũng được.',
     levels: [
       { cost: { wood: 10, rope: 4, clay: 8 }, workSec: 3 * H, note: 'Cấp 2: +10% năng suất' },
       { cost: { plank: 8, lime: 6, seeds: 2 }, workSec: 5 * H, note: 'Cấp 3: +20% năng suất' },

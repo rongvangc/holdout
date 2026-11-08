@@ -14,14 +14,25 @@ function setup() {
 }
 
 describe('crop economy', () => {
-  it('a hectare of vegetables can actually feed a camp (kcal/m²/day)', () => {
+  it('yields stay in the range real farming achieves (kcal/m²/day)', () => {
     const rauPerDay = CROPS.rau.kcalPerM2 / CROPS.rau.days;
     const khoaiPerDay = CROPS.khoai.kcalPerM2 / CROPS.khoai.days;
-    // Một vườn 800 m² phải nuôi được ít nhất 10 người (2250 kcal/ngày).
-    expect(rauPerDay * 800).toBeGreaterThan(10 * 2250);
-    expect(khoaiPerDay * 800).toBeGreaterThan(10 * 2250);
-    // Chu kỳ phải quay vòng được trong một ván 120 ngày (ít nhất 2-3 vụ).
-    expect(CROPS.rau.days * 3).toBeLessThanOrEqual(120);
+    // Rau: 2–6 kcal/m²/ngày là mức vườn thật; 78 từng làm 1 nông dân nuôi 92 người.
+    expect(rauPerDay).toBeGreaterThan(1.5);
+    expect(rauPerDay).toBeLessThan(8);
+    // Khoai là cây lương thực: 8–16 kcal/m²/ngày.
+    expect(khoaiPerDay).toBeGreaterThan(7);
+    expect(khoaiPerDay).toBeLessThan(18);
+    // Chu kỳ quay vòng được trong một ván 120 ngày.
+    expect(CROPS.rau.days * 4).toBeLessThanOrEqual(120);
+    expect(CROPS.khoai.days).toBeLessThanOrEqual(120);
+  });
+
+  it('one farmer feeds a household, not a village', () => {
+    const khoaiPerHour = (1 / TEND_H_PER_M2_DAY) * (CROPS.khoai.kcalPerM2 / CROPS.khoai.days);
+    const peoplePerFarmer = (khoaiPerHour * 8) / 2250;
+    expect(peoplePerFarmer).toBeGreaterThan(4);
+    expect(peoplePerFarmer).toBeLessThan(25);
   });
 
   it('tending a big field is a day of work, not a week', () => {
