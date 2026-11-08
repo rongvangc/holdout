@@ -405,11 +405,13 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
           // Giống để dành từ vụ trước (nhánh harvest trả lại); vườn thuốc không tốn giống.
           if (!herb && stock.seeds < 1) continue;
           if (!herb) take(site, 'seeds', 1);
-          // Thiếu ăn thì gieo rau (25 ngày) để có thu hoạch sớm; đủ ăn mới trồng khoai (100 ngày).
-          const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 45;
+          // Luôn giữ một vòng rau (25 ngày) để có thu hoạch sớm; phần còn lại trồng khoai
+          // (90 ngày) để dành. Trước đây cả ruộng trồng khoai nên 3 tháng đầu không có gì ăn.
+          const hasRau = Object.values(site.plots).some((p) => p.crop === 'rau');
+          const hungry = stock.food + stock.rawFood + stock.meals < pop * 2250 * 30;
           start(s, v, 'plant', 'light', (room.area * 40) / workMult(s, v, 'farming', site), {
             target: plot.roomId,
-            amount: hungry || herb ? 0 : 1,
+            amount: hungry || herb || !hasRau ? 0 : 1,
           });
           return true;
         }

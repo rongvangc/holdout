@@ -111,7 +111,8 @@ function sendLoot(s: GameState, world: World, from: Site, team: string[]): void 
 function maybeClaimField(s: GameState, world: World, base: Site, idle: string[]): boolean {
   const fields = s.sites.filter((x) => x.kind === 'field').length;
   const wantFields = s.survivors.filter((v) => v.status === 'alive').length >= 9 ? 3 : 1;
-  if (!useFields || fields >= wantFields || dayOf(s.t) < 8 || idle.length < 6) return false;
+  // Nhóm nhỏ vẫn phải ra ruộng được: trước đây cần 6 người rảnh nên cộng đồng 3-4 người chết đói.
+  if (!useFields || fields >= wantFields || dayOf(s.t) < 8 || idle.length < 4) return false;
   // Đừng mở ruộng mới khi ruộng hiện tại còn chưa ai chăm.
   for (const f of s.sites.filter((x) => x.kind === 'field')) if (present(s, f).length < 2) return false;
   if (!baseStats(s, base).workshop || s.expeditions.some((e) => e.kind === 'claim')) return false;
@@ -376,7 +377,7 @@ export function botDay(s: GameState, world: World): void {
     }
   }
 
-  if (idle.length < 4 || s.expeditions.some((e) => e.fromSite === base.id && e.kind !== 'convoy')) return;
+  if (idle.length < 2 || s.expeditions.some((e) => e.fromSite === base.id && e.kind !== 'convoy')) return;
   // Sweep the home block every few days so night raids stay small.
   if (dayOf(s.t) % 4 === 0 && (s.cellClear[base.cell] ?? 0) < 0.5 && idle.length >= 6) {
     launchExpedition(s, world, { fromSite: base.id, members: idle.slice(0, 3), target: { type: 'site', id: base.id }, mode: 'walk', patrol: true });
