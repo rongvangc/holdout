@@ -82,6 +82,8 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   const [name, setName] = useState('');
   // One section visible at a time: the sidebar used to stack seven jobs at once.
   const [section, setSection] = useState<'plan' | 'modules' | 'craft' | 'kitchen' | 'gear' | 'power'>('plan');
+  const [buildOpen, setBuildOpen] = useState(false);
+  const [showAllModules, setShowAllModules] = useState(false);
   const [err, setErr] = useState('');
   const [, setTick] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -589,7 +591,10 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
             </button>
           ))}
           <span className="faint">|</span>
-          {(Object.keys(STRUCTS) as StructId[]).map((t) => (
+          <button className={buildOpen ? 'on' : ''} onClick={() => setBuildOpen((v) => !v)} title="Công trình ngoài sân">
+            {buildOpen ? '▾' : '▸'} Xây
+          </button>
+          {buildOpen && (Object.keys(STRUCTS) as StructId[]).map((t) => (
             <button
               key={t}
               className={tool === t ? 'on' : ''}
@@ -600,9 +605,11 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
               <Icon src={STRUCT_IMG[t]} size={14} /> {STRUCTS[t].label}
             </button>
           ))}
-          <button className={tool === 'demolish' ? 'on' : ''} disabled={floor !== 0} onClick={() => (setTool('demolish'), setPending(null))}>
-            ✕ Dỡ
-          </button>
+          {buildOpen && (
+            <button className={tool === 'demolish' ? 'on' : ''} disabled={floor !== 0} onClick={() => (setTool('demolish'), setPending(null))}>
+              ✕ Dỡ
+            </button>
+          )}
           {isStruct && (
             <>
               <span className="faint">|</span>
@@ -744,6 +751,8 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
                   const def = MODULES[m];
                   const why = canPlace(it, room, def) ?? (def.needsWorkshop && !workshop ? 'Cần Bàn thợ' : null);
                   if (why && why.startsWith('Phải')) return null;
+                  // Mặc định chỉ hiện mục đặt được; phần còn lại nằm sau một nút.
+                  if (why && !showAllModules) return null;
                   const cost = def.cost(room.area);
                   return (
                     <button key={m} disabled={!!why} onClick={() => act(() => queueModule(s, site, room.id, m))} title={def.desc}>
@@ -757,6 +766,18 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
                     </button>
                   );
                 })}
+                {(() => {
+                  const blocked = (Object.keys(MODULES) as ModuleId[]).filter((m) => {
+                    const why = canPlace(it, room, MODULES[m]) ?? (MODULES[m].needsWorkshop && !workshop ? 'Cần Bàn thợ' : null);
+                    return !!why && !why.startsWith('Phải');
+                  }).length;
+                  if (!blocked) return null;
+                  return (
+                    <button className="faint" onClick={() => setShowAllModules((v) => !v)}>
+                      {showAllModules ? 'Ẩn mục chưa đặt được' : `+ ${blocked} mục chưa đặt được`}
+                    </button>
+                  );
+                })()}
               </div>
             )}
           </div>

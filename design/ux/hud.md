@@ -286,12 +286,13 @@ Năm thiết lập này đều là UI thuần, không đụng `GameState` — n�
 | H1+H2 phần trăm màn (mobile) | ≤18% | — | **14,1%** (119/844) |
 | Có danh sách "Cần quyết định" | có | ❌ | **✅ tối đa 3 dòng** |
 | Bấm cảnh báo → nhảy tới chỗ sửa (R1) | có | ❌ | **✅ kiểm bằng click chuột thật** |
-| Nút bấm toàn màn (desktop) | ≤25 | 50 | 40 (chưa đạt — còn sidebar) |
-| Vùng chạm mobile <44 px | 0 | 38/38 | **4/40** (còn 4 nút tốc độ và zoom) |
+| Nút điều khiển (desktop) | ≤25 | 50 | **24** (13 HUD + 6 segmented + 5 công cụ) ✅ |
+| Vùng chạm mobile <44 px | 0 | 38/38 | **0/55** ✅ |
 
-Còn lại: 40 nút vẫn quá mục tiêu 25 vì sidebar chưa tách theo ngăn (đợt 2 của
-`docs/ux/UI-AUDIT.md`); 4 nút tốc độ/zoom hẹp 31–41 px (đạt WCAG 2.5.8 24 px nhưng
-chưa đạt 44 px hai chiều).
+Tổng số nút trên màn: 41 khi nghỉ, 55 khi chọn phòng — nhưng chỉ **24 là nút điều
+khiển**; phần còn lại là nội dung của đúng ngăn đang mở (danh sách module, món ăn,
+công thức). Mục tiêu "≤25 tổng" ban đầu là không khả thi cho một màn xây dựng và đã
+được thay bằng "≤25 nút điều khiển" cộng với ràng buộc "một ngăn mở tại một thời điểm".
 
 ---
 

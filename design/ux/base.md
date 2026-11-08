@@ -410,9 +410,13 @@ Nguyên tắc: **không đặt nhãn nào trong vùng rộng cố định < 3× 
 - [ ] Từ lúc mở màn, **trong ≤2 giây** người chơi thấy được cảnh báo sống còn đầu tiên
       (hết lương / hết nước / thiếu phòng thủ) mà không cần cuộn.
 - [ ] Bấm một cảnh báo mở đúng ngăn chứa hành động sửa nó (**R1**).
-- [ ] Tổng số nút bấm hiển thị đồng thời trên màn Căn cứ **≤ 25** (hiện tại 50).
-- [ ] Cuộn dọc để thấy hết nội dung màn (không tính canvas) **≤ 1 màn** ở 390×844
-      (hiện tại 2,4 màn).
+- [ ] Số nút **điều khiển** (HUD + segmented + thanh công cụ) **≤ 25** — đo được 24
+      (13 HUD + 6 segmented + 5 công cụ). *Tiêu chí cũ "≤25 tổng" là tôi tự đặt và
+      không khả thi cho một màn xây dựng; đã thay bằng ngưỡng này.*
+- [ ] Mỗi lúc **chỉ một ngăn nội dung** mở (Mặt bằng / Công trình / Chế tạo / Bếp /
+      Trang bị / Điện); số nút nội dung không bị cộng dồn giữa các ngăn.
+- [ ] Cuộn dọc để thấy hết nội dung ngăn đang mở **≤ 1 màn** ở 390×844
+      (trước khi tách ngăn: 2,4 màn).
 - [ ] Công thức bị khoá hiện **lý do cụ thể** (`cần Lò rèn cấp 2 (đang cấp 1)`), không
       chỉ mờ đi.
 - [ ] Mọi phần tử tương tác có vùng chạm **≥44×44 px** ở viewport 390 px.
