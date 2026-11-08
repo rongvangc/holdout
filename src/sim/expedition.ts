@@ -1,8 +1,9 @@
 import { gridDisk } from 'h3-js';
 import { push } from '../core/eventQueue';
-import { chance, int, pick, range, weighted } from '../core/rng';
+import { chance, int, pick, range, weighted, type Rng } from '../core/rng';
 import { dayOf, isNight, MIN } from '../core/time';
 import { CATS } from '../data/categories';
+import { regionStaple, regionStapleAlt } from '../data/staples';
 import { gearPool } from '../data/lootPools';
 import { ITEMS, itemLabel, stockWeight, type ItemId, type Stock } from '../data/items';
 import { shortestPath } from '../world/graph';
@@ -360,6 +361,14 @@ export function launchExpedition(s: GameState, world: World, o: ExpeditionOrder)
     fights: 0,
     avoided: 0,
   };
+  if (exp.kind === 'loot' && exp.target.type === 'building') {
+    const tb = world.buildings.find((x) => x.id === exp.target.id);
+    if (tb) {
+      const occ = occupancyFor(s.rng, tb, dayOf(s.t), exp.target.danger);
+      (exp as Expedition).occupPeople = occ.people;
+      exp.occupZombies = occ.zombies;
+    }
+  }
   for (const v of members(s, exp)) {
     interrupt(s, v);
     v.location = 'expedition';
@@ -371,6 +380,32 @@ export function launchExpedition(s: GameState, world: World, o: ExpeditionOrder)
   const verb = { loot: 'lục soát', water: 'lấy nước ở', claim: 'chiếm', convoy: 'vận chuyển tới', patrol: 'đi tuần quanh' }[exp.kind];
   log(s, `Đội ${members(s, exp).map((m) => m.name).join(', ')} rời ${from.name} để ${verb} ${exp.target.name}.`);
   return null;
+}
+
+
+/**
+ * Trong toà nhà có gì khi đội tới? Roll một lần lúc khởi hành:
+ * người trốn (nhà dân nhiều, thưa dần theo ngày, khu danger cao thì vắng)
+ * hoặc zombie trú (đông theo danger của khu). Hai bên không cùng lúc trong one visit.
+ */
+export function occupancyFor(
+  rng: Rng,
+  b: { cat: string },
+  day: number,
+  danger: number,
+): { people: number; zombies: number } {
+  const residential = ['house', 'apartment', 'religious', 'generic'].includes(b.cat);
+  const pPeople = Math.max(0.02, Math.min(0.4, 0.22 - 0.003 * day + (residential ? 0.12 : -0.05) - 0.06 * Math.max(0, danger - 2)));
+  if (chance(rng, pPeople)) {
+    const k = chance(rng, 0.25) ? int(rng, 2, 4) : 1;
+    return { people: k, zombies: 0 };
+  }
+  const pZ = Math.min(0.85, 0.2 + 0.1 * Math.max(1, danger));
+  if (chance(rng, pZ)) {
+    const n = Math.max(1, Math.round(1 + 0.6 * danger + range(rng, 0, 2)));
+    return { people: 0, zombies: n };
+  }
+  return { people: 0, zombies: 0 };
 }
 
 const members = (s: GameState, e: Expedition) =>
@@ -405,6 +440,12 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
       for (const m of alive) gainXp(m, 'stealth', 4);
       continue;
     }
+    fightContact(s, e, from, alive, day, night);
+  }
+}
+
+/** Một lần chạm zombie: pha 1 (hạ trước khi áp sát) hoặc pha 2 (thương tích + cắn). */
+function fightContact(s: GameState, e: Expedition, from: Site, alive: Survivor[], day: number, night: boolean): void {
     e.fights++;
     const z = zombieType(s.rng, day, night);
     const def = ZOMBIES[z];
@@ -428,7 +469,7 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
       e.kills = (e.kills ?? 0) + 1;
       for (const m of alive) gainXp(m, 'melee', 3);
       if (chance(s.rng, 0.35)) e.report.push(`Hạ một ${def.label}${armed ? ` bằng ${describeWeapon(weapon)}` : ' bằng tay không'}.`);
-      continue;
+      return;
     }
     // Pha 2 — nó vào được: giáp của chính nạn nhân, bị `bypass` của loại zombie bào mòn.
     const victim = pick(s.rng, alive);
@@ -455,8 +496,8 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
       killSurvivor(s, victim, `bị ${def.label} giết ngoài đường`);
       e.report.push(`${victim.name} đã hi sinh.`);
     }
-  }
 }
+
 
 /** Roll loot for n containers of a building. `capKg` limits what fits in bags. */
 function rollContainers(s: GameState, world: World, buildingId: string, n: number, scav: number, out: StockDelta, capKg: number): { searched: number; full: boolean; vehicle: boolean } {
@@ -488,14 +529,23 @@ function rollContainers(s: GameState, world: World, buildingId: string, n: numbe
         if (chance(s.rng, 0.5)) vehicle = true;
         continue;
       }
-      const amount = range(s.rng, lo, hi) * (0.5 + 0.5 * lf);
+      let amount = range(s.rng, lo, hi) * (0.5 + 0.5 * lf);
+      // Lương thực thô trong bảng loot là kcal; đổi sang lương thực của vùng này
+      // (gạo/lúa mì/khoai/sắn) để mỗi ván ăn đúng thứ mọc ở đó.
+      let rolledItem: ItemId = item as ItemId;
+      if (rolledItem === 'rawFood') {
+        const st = chance(s.rng, 0.25) ? regionStapleAlt(s.latitude) : regionStaple(s.latitude);
+        const perKg = Math.max(1, ITEMS[st]?.kcal ?? 3000);
+        rolledItem = st;
+        amount = amount / perKg;
+      }
       const room = capKg - stockWeight(out);
-      const fit = Math.min(amount, room / Math.max(1e-6, ITEMS[item as ItemId].kgPerUnit));
+      const fit = Math.min(amount, room / Math.max(1e-6, ITEMS[rolledItem].kgPerUnit));
       if (fit <= 0) {
         full = true;
         break;
       }
-      out[item] = (out[item] ?? 0) + fit;
+      out[rolledItem] = (out[rolledItem] ?? 0) + fit;
     }
   }
   s.looted[b.id] = (s.looted[b.id] ?? 0) + searched;
@@ -503,6 +553,7 @@ function rollContainers(s: GameState, world: World, buildingId: string, n: numbe
 }
 
 function searchBuilding(s: GameState, world: World, e: Expedition): void {
+  if (e.occupPeople) return; // nhà có người — không cướp bóc (chỉ đưa các người trốn về theo Luật)
   const b = world.buildings.find((x) => x.id === e.target.id);
   if (!b) return;
   const team = members(s, e);
@@ -516,20 +567,6 @@ function searchBuilding(s: GameState, world: World, e: Expedition): void {
   s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + r.searched * 0.15 * (e.mode === 'sneak' ? 0.5 : 1));
   for (const m of team) gainXp(m, 'scavenging', (8 * r.searched) / team.length);
   e.report.push(`Lục ${r.searched}/${remaining} chỗ${r.full ? ' (đầy túi)' : ''}.`);
-  const residential = b.cat === 'house' || b.cat === 'apartment' || b.cat === 'religious' || b.cat === 'generic';
-  if (chance(s.rng, residential ? 0.1 : 0.04)) {
-    const k = chance(s.rng, 0.2) ? int(s.rng, 2, 4) : 1;
-    for (let i = 0; i < k; i++) {
-      const v = makeSurvivor(s.rng, newId(s, 's'), dayOf(s.t));
-      if (chance(s.rng, 0.12)) {
-        v.bitten = true;
-        v.infected = true;
-        v.infection = range(s.rng, 5, 50);
-      }
-      e.recruits.push(v);
-    }
-    e.report.push(`Gặp ${k} người sống sót trốn trong ${b.name ?? CATS[b.cat].label}.`);
-  }
 }
 
 /** Members (and anything carried) settle at `site`; their trip ends there. */
@@ -584,6 +621,36 @@ export function onExpeditionEvent(s: GameState, world: World, eid: string): void
     return;
   }
   if (e.phase === 'search') {
+    // Occupancy chốt lần đầuiance tới đây:
+    if (!e.occupantsSeen && e.kind === 'loot' && (e.occupPeople || e.occupZombies)) {
+      e.occupantsSeen = true;
+      if (e.occupPeople) {
+        // Nhà còn người trốn — đội bỏ qua, không cướp bóc; họ theo đội về và đi qua Luật Người lạ.
+        for (let i = 0; i < e.occupPeople; i++) {
+          const v = makeSurvivor(s.rng, newId(s, 's'), dayOf(s.t));
+          if (chance(s.rng, 0.12)) {
+            v.bitten = true;
+            v.infected = true;
+            v.infection = range(s.rng, 5, 50);
+          }
+          e.recruits.push(v);
+        }
+        e.report.push(`Nhà còn ${e.occupPeople} người trồn — đội bỏ qua, không lấy đồ.`);
+      } else if (e.occupZombies) {
+        e.report.push(`Trong nhà có ~${e.occupZombies} zombie trú ẩn - tran m o cua!`);
+        const from0 = siteById(s, e.fromSite);
+        const day = dayOf(s.t);
+        const night = isNight(s.t);
+        const alive0 = members(s, e);
+        const avoid = avoidChance(alive0, e.mode) * searchRates(e.kind).avoid;
+        for (let i = 0; i < e.occupZombies; i++) {
+          const alive = members(s, e);
+          if (!alive.length) break;
+          if (chance(s.rng, avoid)) continue; // né được lúc mở cửa (Lén lút)
+          fightContact(s, e, from0, alive, day, night);
+        }
+      }
+    }
     resolveEncounters(s, world, e, elapsed, false);
     if (!members(s, e).length) return lost(s, e);
     if (e.kind === 'claim') return finishClaim(s, world, e);

@@ -161,6 +161,10 @@ export interface Expedition {
   avoided: number;
   /** Zombie hạ được trước khi chúng áp sát (pha 1 của trận). */
   kills?: number;
+  /** Occupancy khi tới toà nhà (khoác lên lúc khởi hành, roll 1 lần — khôngützen state cho mọi visit). */
+  occupPeople?: number;
+  occupZombies?: number;
+  occupantsSeen?: boolean;
 }
 
 export interface HordeState {
