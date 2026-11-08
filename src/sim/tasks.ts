@@ -113,7 +113,7 @@ export function finishTask(s: GameState, v: Survivor): void {
           addStock(s, site, { medicine, bandage });
           log(s, `${site.name}: thu hoạch dược liệu +${medicine.toFixed(1)} liều thuốc` + (bandage > 0 ? ` +${bandage.toFixed(1)} băng gạc.` : '.'), 'good', { medicine, bandage });
         } else {
-          const kcal = CROPS[plot.crop].kcalPerM2 * area;
+          const kcal = CROPS[plot.crop].kcalPerM2 * area * baseStats(s, site).gardenYield;
           const seeds = Math.max(1, Math.round(area / 100));
           // Rau muống/khoai còn cho rau tươi: nguyên liệu cho món ăn và nguồn vitamin.
           const veg = plot.crop === 'rau' ? Math.round((area / 60) * 10) / 10 : Math.round((area / 200) * 10) / 10;
@@ -502,7 +502,7 @@ function waterWork(s: GameState, v: Survivor, site: Site, st: BaseStats, pop: nu
   const stock = site.stock;
   if (stock.water < pop * 8 && stock.dirtyWater >= 2) {
     if (st.filter) {
-      const amount = take(site, 'dirtyWater', 12 * workMult(s, v, 'crafting', site));
+      const amount = take(site, 'dirtyWater', st.filterRate * workMult(s, v, 'crafting', site));
       start(s, v, 'filter', 'light', HOUR, { amount });
       return true;
     }
@@ -513,7 +513,7 @@ function waterWork(s: GameState, v: Survivor, site: Site, st: BaseStats, pop: nu
       return true;
     }
   }
-  if (st.well && stock.dirtyWater < st.waterCapacity - 50 && site.wellDrawnToday < 1500) {
+  if (st.well && stock.dirtyWater < st.waterCapacity - 50 && site.wellDrawnToday < st.wellDaily) {
     start(s, v, 'draw', 'moderate', HOUR, { amount: 120 * workMult(s, v, 'fitness', site) });
     return true;
   }

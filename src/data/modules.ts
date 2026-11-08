@@ -92,6 +92,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 2 * H,
     cost: () => ({ wood: 8, scrap: 10 }),
     desc: 'Giảm chuột/ẩm làm hao gạo, giảm vật tư mất khi bị tập kích.',
+    levels: [
+      { cost: { plank: 10, hinge: 4, scrap: 8 }, workSec: 4 * H, note: 'Cấp 2: mất khi tập kích 5%' },
+      { cost: { plate: 3, hinge: 6, gear: 1 }, workSec: 7 * H, note: 'Cấp 3: mất 2%, hàng khô lâu hỏng' },
+    ],
   },
   workshop: {
     label: 'Bàn thợ',
@@ -118,6 +122,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 2.5 * H,
     cost: () => ({ wood: 10, cloth: 10 }),
     desc: 'Người bệnh/bị thương hồi nhanh hơn. Dùng để cách ly người bị cắn.',
+    levels: [
+      { cost: { cloth: 8, thread: 6, medicine: 2 }, workSec: 5 * H, note: 'Cấp 2: hồi HP ×3,0' },
+      { cost: { plank: 8, plate: 1, medicine: 4 }, workSec: 8 * H, note: 'Cấp 3: hồi HP ×3,5, chữa bệnh chắc hơn' },
+    ],
   },
   latrine: {
     label: 'Nhà vệ sinh',
@@ -128,6 +136,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 1.5 * H,
     cost: () => ({ wood: 6, scrap: 2 }),
     desc: 'Chuẩn Sphere: 1 nhà vệ sinh / 20 người. Thiếu → bẩn → dịch bệnh.',
+    levels: [
+      { cost: { wood: 4, lime: 4, clay: 6 }, workSec: 2 * H, note: 'Cấp 2: 25 người/nhà' },
+      { cost: { brick: 8, lime: 6 }, workSec: 4 * H, note: 'Cấp 3: 30 người/nhà, đỡ mùi' },
+    ],
   },
   water_tank: {
     label: 'Bể hứng mưa',
@@ -138,6 +150,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 2.5 * H,
     cost: () => ({ wood: 8, scrap: 12 }),
     desc: 'Hứng nước mưa từ toàn bộ mái (diện tích thật của toà nhà). Mỗi bể chứa 1000 L.',
+    levels: [
+      { cost: { scrap: 8, plank: 6 }, workSec: 3 * H, note: 'Cấp 2: +40% sức chứa' },
+      { cost: { plate: 2, scrap: 10, lime: 4 }, workSec: 6 * H, note: 'Cấp 3: +80% sức chứa' },
+    ],
   },
   filter: {
     label: 'Trạm lọc nước',
@@ -150,6 +166,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 2 * H,
     cost: () => ({ scrap: 8, cloth: 6, wood: 4 }),
     desc: 'Lọc nước bẩn → sạch 12 L/giờ, không tốn củi.',
+    levels: [
+      { cost: { scrap: 10, cloth: 4, charcoal: 2 }, workSec: 4 * H, note: 'Cấp 2: 18 L/giờ' },
+      { cost: { plate: 2, charcoal: 4, cloth: 6 }, workSec: 7 * H, note: 'Cấp 3: 24 L/giờ' },
+    ],
   },
   garden: {
     label: 'Vườn rau',
@@ -160,6 +180,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: (a) => 1 * H + a * 20,
     cost: (a) => ({ wood: Math.ceil(a / 20), seeds: 1 }),
     desc: 'Trồng rau muống (30 ngày) hoặc khoai lang (110 ngày). Vườn trên mái cũng được.',
+    levels: [
+      { cost: { wood: 6, rope: 4, clay: 6 }, workSec: 3 * H, note: 'Cấp 2: +10% năng suất' },
+      { cost: { plank: 8, lime: 6, seeds: 2 }, workSec: 5 * H, note: 'Cấp 3: +20% năng suất' },
+    ],
   },
   herb_garden: {
     label: 'Vườn thuốc',
@@ -182,6 +206,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 8 * H,
     cost: () => ({ scrap: 12, wood: 10, tools: 1 }),
     desc: 'Nguồn nước bẩn ổn định ~1500 L/ngày. Phải cách nhà vệ sinh tối thiểu 10 m.',
+    levels: [
+      { cost: { scrap: 14, plate: 1, rope: 4 }, workSec: 6 * H, note: 'Cấp 2: 2000 L/ngày' },
+      { cost: { plate: 3, gear: 1, brick: 8 }, workSec: 9 * H, note: 'Cấp 3: 2500 L/ngày, bơm tay' },
+    ],
   },
   watchtower: {
     label: 'Tháp canh',
@@ -194,6 +222,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 4 * H,
     cost: () => ({ wood: 25, scrap: 10 }),
     desc: '+12 phòng thủ và phát hiện tập kích sớm.',
+    levels: [
+      { cost: { plank: 8, scrap: 4, rope: 3 }, workSec: 4 * H, note: 'Cấp 2: +16 phòng thủ' },
+      { cost: { plate: 2, wire: 6, plank: 10 }, workSec: 7 * H, note: 'Cấp 3: +20 phòng thủ, thấy trước bầy' },
+    ],
   },
   rec_room: {
     label: 'Phòng sinh hoạt',
@@ -238,6 +270,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 3 * H,
     cost: () => ({ scrap: 15, parts: 2, wood: 4 }),
     desc: 'Cần Bàn thợ. Nếu đủ xăng: đốt 24 L/đêm để đêm đó làm việc không còn chậm 25%. Ồn: heat +6 mỗi đêm chạy.',
+    levels: [
+      { cost: { scrap: 12, gear: 1, wire: 6 }, workSec: 4 * H, note: 'Cấp 2: 20 L/đêm' },
+      { cost: { plate: 2, gear: 2, wire: 10 }, workSec: 7 * H, note: 'Cấp 3: 16 L/đêm' },
+    ],
   },
   // ---- crafting stations: each one owns a rung of the material ladder ---------
   forge: {

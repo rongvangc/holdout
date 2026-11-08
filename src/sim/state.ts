@@ -291,6 +291,15 @@ export interface BaseStats {
   bookshelf: boolean;
   /** Cellar level 0..3 — slowest rot at 3. */
   cellar: number;
+  /** Level-aware derived numbers: the module ladders must change real digits. */
+  filterRate: number; // L/hour
+  wellDaily: number; // L/day
+  gardenYield: number; // multiplier
+  latrineCapacity: number; // people
+  healMult: number; // HP/day multiplier while resting
+  generatorFuel: number; // litres per night
+  towerDefense: number; // defence per watchtower
+  storeLoss: number; // share of stores lost to an unguarded raid
   /** Number of coop rooms, and their best level. */
   coop: number;
   coopLevel: number;
@@ -307,12 +316,29 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     roomsWith(it, 'shelter').reduce((n, r) => n + Math.max(1, Math.floor(r.area / 6)), 0);
   const tanks = count('water_tank');
   const watchtowers = count('watchtower');
+  // One pass over the rooms: this runs on every simulation tick, so no per-module scans.
+  const bestLevel: Partial<Record<string, number>> = {};
+  for (const r of it.rooms) {
+    if (!r.module) continue;
+    const lv = r.moduleLevel ?? 1;
+    if (lv > (bestLevel[r.module] ?? 0)) bestLevel[r.module] = lv;
+  }
+  const lvlOf = (m: string) => Math.max(1, bestLevel[m] ?? 1);
+  const tankLvl = lvlOf('water_tank');
+  const filterLvl = lvlOf('filter');
+  const wellLvl = lvlOf('well');
+  const gardenLvl = lvlOf('garden');
+  const latrineLvl = lvlOf('latrine');
+  const infLvl = lvlOf('infirmary');
+  const genLvl = lvlOf('generator');
+  const towerLvl = lvlOf('watchtower');
+  const storeLvl = lvlOf('storage');
   return {
     population: present(s, site).length,
     beds,
     latrines: count('latrine'),
     tanks,
-    waterCapacity: 300 + tanks * 1000,
+    waterCapacity: Math.round(300 + tanks * 1000 * (1 + 0.4 * (tankLvl - 1))),
     kitchen: count('kitchen') > 0,
     filter: count('filter') > 0,
     workshop: count('workshop') > 0,
@@ -331,15 +357,24 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     coopLevel: roomsWith(it, 'coop').reduce((n, r) => Math.max(n, r.moduleLevel ?? 1), 0),
     pond: count('pond'),
     pondLevel: roomsWith(it, 'pond').reduce((n, r) => Math.max(n, r.moduleLevel ?? 1), 0),
+    filterRate: 12 * (1 + 0.5 * (filterLvl - 1)),
+    wellDaily: 1500 * (1 + 0.35 * (wellLvl - 1)),
+    gardenYield: 1 + 0.1 * (gardenLvl - 1),
+    latrineCapacity: Math.round(PEOPLE_PER_LATRINE * (1 + 0.25 * (latrineLvl - 1))),
+    healMult: 2.5 + 0.5 * (infLvl - 1),
+    generatorFuel: Math.max(8, 24 - 4 * (genLvl - 1)),
+    towerDefense: 12 * (1 + 0.3 * (towerLvl - 1)),
+    // Level 1 keeps the original 8%; each level halves the loss.
+    storeLoss: Math.max(0.02, 0.08 - 0.03 * (storeLvl - 1)),
     defenseStatic:
       site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
       site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +
-      watchtowers * 12 +
+      watchtowers * (12 * (1 + 0.3 * (towerLvl - 1))) +
       structureEffects(it.structures).defense,
   };
 }
 
-export const latrineShortfall = (st: BaseStats) => Math.max(0, st.population - st.latrines * PEOPLE_PER_LATRINE);
+export const latrineShortfall = (st: BaseStats) => Math.max(0, st.population - st.latrines * st.latrineCapacity);
 
 /** Greedy role assignment per site by need and best matching skill — the "manager" default. */
 export function autoAssign(s: GameState, only?: Site): void {

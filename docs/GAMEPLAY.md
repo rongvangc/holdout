@@ -695,3 +695,39 @@ Y tá chọn theo thứ tự: **nhiễm trùng còn chữa được → chảy m
 ### 13.4 Item y tế có tác dụng
 
 `medKind()` phân loại item theo tên, nên **72 item y tế trong catalog đều vào được một trong 8 nhóm** (garo, băng cầm máu, băng, sát trùng, kháng sinh, giảm đau, truyền dịch, medkit) thay vì chỉ 2 id như trước.
+
+---
+
+## 14. Cấp của module (`data/modules.ts`, `sim/state.ts`)
+
+Mỗi module có `levels` là bậc nâng tiếp (cấp 1 = lúc xây xong). Nâng cấp đi qua đúng hàng đợi xây.
+
+### 14.1 Cấp phải đổi số thật, không chỉ là chữ
+
+| Module | Cấp 1 | Cấp 2 | Cấp 3 |
+|---|---|---|---|
+| Trạm lọc | 12 L/giờ | 18 | 24 |
+| Giếng | 1500 L/ngày | 2000 | 2500 |
+| Bể hứng mưa | ×1,0 sức chứa | ×1,4 | ×1,8 |
+| Vườn rau | ×1,0 năng suất | ×1,1 | ×1,2 |
+| Nhà vệ sinh | 20 người | 25 | 30 |
+| Phòng y tế | hồi HP ×2,5 | ×3,0 | ×3,5 |
+| Máy phát | 24 L/đêm | 20 | 16 |
+| Tháp canh | +12 phòng thủ | +16 | +20 |
+| Kho có khoá | mất 8% khi tập kích | 5% | 2% |
+| Hầm lạnh | hỏng 50% | 35% | 25% |
+| Chuồng gà | 3 trứng/ngày | 4,8 | 4,8 + không mất gà đêm |
+| Ao cá | ×1 sản lượng | ×1,2 | ×1,5 |
+| Bếp củi | mẻ 3000 kcal | mẻ 8000 | — |
+
+Ngoài ra **trạm chế tạo nhanh hơn 25% mỗi cấp**: công thức ở cấp 2 làm nhanh hơn cấp 1 một phần tư.
+
+### 14.2 Trạm và công thức
+
+Công thức khai báo `station` + `level`, nên cấp trạm còn là **công tắc mở khoá**: Lò rèn cấp 2 mở tấm thép và vũ khí dài, cấp 3 mở đồ nặng; Xưởng may cấp 3 mở giáp tấm; Bàn thợ cấp 3 mở pin mặt trời.
+
+### 14.3 Cái gì chưa có cấp
+
+`bedroom`, `latrine` (đã có), `shelter`, `rec_room`, `bookshelf`, `garage`, `herb_garden` — chưa có bậc nâng cấp. Cố ý: giường và lán đã scale theo diện tích, còn nhà xe/kệ sách không có chỉ số nào để nâng.
+
+Có test khoá luật "mỗi bậc phải có chỗ đọc số" (`tests/module-levels.test.ts`), để không ai thêm bậc chỉ có chữ.

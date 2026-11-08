@@ -164,7 +164,8 @@ export function queueCraft(s: GameState, site: Site, recipeId: string): string |
     kind: 'craft',
     recipe: r.id,
     label: `Chế ${ITEMS_LABEL(r.out)} ×${r.qty}${r.upgradeFrom ? ` (từ ${ITEMS_LABEL(r.upgradeFrom)})` : ''}`,
-    workTotal: r.workSec,
+    // A better station works faster: +25% per level above the first.
+    workTotal: Math.round(r.workSec / (1 + 0.25 * (lvl - 1))),
     progress: 0,
     cost: Object.fromEntries(r.in) as StockDelta,
     paid: false,

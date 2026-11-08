@@ -175,11 +175,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   if (solar) {
     site.powered = true;
     log(s, `${site.name}: pin mặt trời nạp ắc quy, đêm có điện.`, 'good');
-  } else if (st.generator && site.stock.fuel >= 24) {
-    take(site, 'fuel', 24);
+  } else if (st.generator && site.stock.fuel >= st.generatorFuel) {
+    take(site, 'fuel', st.generatorFuel);
     site.powered = true;
     site.heat = Math.min(100, site.heat + 6);
-    log(s, `${site.name}: máy phát chạy đêm, tiêu 24 L xăng.`, 'info');
+    log(s, `${site.name}: máy phát chạy đêm, tiêu ${st.generatorFuel} L xăng.`, 'info');
   } else {
     site.powered = false;
   }
@@ -363,7 +363,7 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
       if (chance(s.rng, 0.65)) v.infected = true;
     }
   }
-  const loss = ratio * (st.storage ? 0.08 : 0.25);
+  const loss = ratio * (st.storage ? st.storeLoss : 0.25);
   for (const k of ['food', 'rawFood', 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
   alert(
     s,

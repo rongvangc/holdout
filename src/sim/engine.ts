@@ -18,7 +18,12 @@ function integrate(s: GameState, dt: number): void {
   if (dt <= 0) return;
   const h = dt / HOUR;
   const hotMult = s.weather.hot ? 1.2 : 1;
-  const infirmary = new Set(s.sites.filter((x) => baseStats(s, x).infirmary).map((x) => x.id));
+  // Infirmary level decides how fast people mend while resting.
+  const infirmary = new Map<string, number>();
+  for (const site of s.sites) {
+    const st = baseStats(s, site);
+    if (st.infirmary) infirmary.set(site.id, st.healMult);
+  }
   for (const v of s.survivors) {
     if (v.status !== 'alive') continue;
     const kind = v.task?.kind;
@@ -48,7 +53,7 @@ function integrate(s: GameState, dt: number): void {
     v.water = Math.max(0, v.water);
     if (v.kcal > 0 && v.water > 0 && v.sickDays === 0 && !v.infected) {
       const resting = kind === 'sleep' || kind === 'rest' || kind === 'quarantine';
-      v.hp = Math.min(100, v.hp + (1.5 / 24) * h * (resting && v.location !== 'expedition' && infirmary.has(v.siteId) ? 2.5 : 1));
+      v.hp = Math.min(100, v.hp + (1.5 / 24) * h * (resting && v.location !== 'expedition' ? (infirmary.get(v.siteId) ?? 1) : 1));
     }
     if (v.infected) v.infection = Math.min(100, v.infection + INFECTION_PER_HOUR * h);
   }
