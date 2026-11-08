@@ -73,7 +73,8 @@ export const DESIGN_LIMITS = {
   maxRoomIndoor: 150, // m²
   maxRoomOutdoor: 800, // m²
   /** Đất trống (ruộng) thì làm được vườn lớn hơn sân trong thành phố. */
-  maxRoomField: 5000,
+  // Vườn hộ làm bằng tay: 500–2.000 m² là thực tế. 5.000 m² (0,5 ha) cần máy/trâu cày.
+  maxRoomField: 2000,
   partitionSecPerCell: 120,
   partitionWoodPerCell: 0.5,
 };

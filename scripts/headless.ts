@@ -15,7 +15,6 @@ import { RECIPE_BY_ID, RECIPES } from '../src/data/recipes';
 import { ITEMS } from '../src/data/items';
 import { launchExpedition, planExpedition } from '../src/sim/expedition';
 import { setCommute } from '../src/sim/commute';
-import { TEND_H_PER_M2_DAY } from '../src/sim/data';
 import type { ModuleId } from '../src/data/modules';
 import type { GameState, Site, StockDelta } from '../src/sim/types';
 
@@ -80,14 +79,25 @@ function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
   });
   // Fields keep adding gardens while there are hands to tend them.
   if (!next && site.kind === 'field') {
-    const farmers = present(s, site).length + s.survivors.filter((v) => v.status === 'alive' && v.commute?.work === site.id).length + 2;
-    if (baseStats(s, site).gardenArea < farmers * (6 / TEND_H_PER_M2_DAY) * 0.8) next = 'garden';
+    // Một nông dân chăm ~1.200 m²; chỉ mở thêm vườn khi diện tích hiện tại còn dưới
+    // sức của người làm nông thật (trước đây tính cả người không làm nông → 6.384 m²
+    // mà chỉ 1 nông dân và 6 khoảnh được trồng).
+    const farmers = s.survivors.filter(
+      (v) => v.status === 'alive' && (v.siteId === site.id || v.commute?.work === site.id) && v.role === 'farmer',
+    ).length;
+    const covered = Math.max(1, farmers) * 1200;
+    if (baseStats(s, site).gardenArea < covered) next = 'garden';
   }
   if (!next) return;
   // Vườn cần khoảnh LỚN (năng suất thật), trạm khác thì vừa là đủ → xếp ngược lại.
   const free = site.interior.rooms
     .filter((r) => !r.module)
     .sort((a, b) => (next === 'garden' ? b.area - a.area : a.area - b.area));
+  // Ruộng: chỉ xếp hạng mục trả được ngay, không để hàng đợi đầy project chết.
+  if (site.kind === 'field') {
+    const cost = MODULES[next].cost(free[0]?.area ?? 0);
+    if (!canAfford(site, cost)) return;
+  }
   for (const r of free) if (!queueModule(s, site, r.id, next)) break;
 }
 
@@ -393,7 +403,9 @@ export function botDay(s: GameState, world: World): void {
       setCommute(s, world, id, f.id);
       // Vai trò tại điểm làm: đang có hạng mục cần xây thì xây, xong thì làm nông.
       const v = s.survivors.find((x) => x.id === id);
-      if (v) v.role = f.projects.length ? 'builder' : 'farmer';
+      // Hạng mục chưa trả tiền không phải việc để làm: nếu để nó biến người đi làm thuê
+      // thành 'builder' thì cả ruộng mất nông dân (đã xảy ra: 39 khoảnh, 6 khoảnh có cây).
+      if (v) v.role = f.projects.some((p) => p.paid) ? 'builder' : 'farmer';
       idle.splice(idle.indexOf(id), 1);
     }
   }

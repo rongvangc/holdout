@@ -105,7 +105,7 @@ export function autoGarden(s: GameState, site: Site): string | null {
   if (site.projects.some((p) => p.kind === 'module' && p.module === 'garden')) return null;
   // Mở vườn mà không có ai chăm thì chỉ tạo cảnh "vườn bỏ hoang" (đúng lỗi đã gặp).
   const farmers = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base' && !v.commute && v.role === 'farmer').length;
-  const covered = farmers * 1500;
+  const covered = farmers * 1200; // 1 người 10 h chăm ~1.200 m² rau thâm canh
   if (farmers === 0 || st.gardenArea + 300 > covered) return null;
   const room = site.interior.rooms.find(
     (r) => !r.module && r.walled !== false && canPlace(site.interior, r, { placement: 'top_or_outdoor', minArea: 20 }) === null,

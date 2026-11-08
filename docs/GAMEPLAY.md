@@ -905,3 +905,21 @@ Mỗi người một dòng: vũ khí / giáp / mũ / ba lô / quần áo, **% gi
 3. **Tập kích không co theo dân số**: nhóm 2–4 người vẫn phải chịu đợt dành cho 10 người, thua 28–38 trận/ván. Giờ hệ số là `0,25 + 0,75 × min(1, người/10)`.
 
 Kết quả 120 ngày × 4 seed: **4/4 sống hết**, dân 4–6, chết 12–21 (chủ yếu tập kích), thu hoạch 64k–199k kcal/ván.
+
+### 12.18 Quy mô canh tác thật bằng tay (sửa 2026-11)
+
+5.000 m² một khoảnh là con số vô lý với lao động tay. Sửa lại:
+
+| | Cũ | Mới | Cơ sở |
+|---|---|---|---|
+| Khoảnh ruộng tối đa | 5.000 m² (0,5 ha) | **2.000 m² (0,2 ha)** | vườn hộ làm tay ở VN: 500–2.000 m²; 0,5 ha cần trâu/máy cày |
+| Công chăm vườn | 0,003 h/m²/ngày (3.300 m²/người) | **0,008 h/m²/ngày (~1.250 m²/người)** | một người 10 h/ngày chăm rau thâm canh |
+| Khoảnh vườn | ≤1.200 m² | **≤300 m² (ruộng) / ≤180 m² (sân)** | gieo 3,3 h, thu 2,5 h — vừa một buổi |
+| Vườn tự mở | theo "người dự kiến" | **theo số nông dân thật × 1.200 m²** | trước đây mở tới 6.384 m² mà chỉ 1 nông dân, 6/39 khoảnh có cây |
+
+**Ba lỗi chuỗi cũng đã sửa** (chúng làm ruộng "có mà không trồng"):
+1. Người đi làm thuê ở ruộng bị đặt vai **thợ xây** chỉ vì ruộng có hạng mục *chưa trả tiền* → cả ruộng không còn nông dân. Giờ chỉ thành thợ xây khi có hạng mục **đã trả tiền**.
+2. Bot xếp hạng mục trên ruộng dù **không đủ vật tư** → hàng đợi đầy project chết. Giờ ruộng chỉ xếp khi trả được ngay.
+3. Diện tích vườn tính theo "người dự kiến" (10–12) thay vì số nông dân thật (1) → ruộng phình to nhưng bỏ hoang.
+
+Kết quả 120 ngày × 5 seed: **4/5 sống hết**, thu hoạch **114k–229k kcal/ván**.

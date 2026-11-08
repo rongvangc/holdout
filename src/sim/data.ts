@@ -109,10 +109,9 @@ export const CROPS: Record<CropId, { label: string; days: number; kcalPerM2: num
   khoai: { label: 'Khoai lang', days: 90, kcalPerM2: 1080 },
   thuoc: { label: 'Dược liệu', days: 40, kcalPerM2: 0 },
 };
-// ~6 h of hand labour keeps ~2000 m² of vegetables going (smallholder scale).
-// 0.005 made a 3 400 m² field need 17 h/day; the untended floor then stalled crops
-// at 1%/day and the farm ran at 5% capacity.
-export const TEND_H_PER_M2_DAY = 0.003;
+// Lao động tay thật: một người 10 h/ngày chăm được ~1.250 m² rau thâm canh
+// (0,008 h/m²/ngày). Trước đây 0,003 = 3.300 m²/người — không ai làm nổi bằng tay.
+export const TEND_H_PER_M2_DAY = 0.008;
 
 export type ZombieType = 'walker' | 'runner' | 'screamer' | 'bloater' | 'brute' | 'stalker';
 export interface ZombieDef {

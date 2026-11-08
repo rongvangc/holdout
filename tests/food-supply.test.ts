@@ -35,8 +35,10 @@ describe('crop economy', () => {
     expect(peoplePerFarmer).toBeLessThan(25);
   });
 
-  it('tending a big field is a day of work, not a week', () => {
-    expect(3400 * TEND_H_PER_M2_DAY).toBeLessThanOrEqual(12);
+  it('one person can keep about 1.200 m², not a hectare', () => {
+    // 10 h/ngày là mức tối đa của một người; 1.200 m² phải nằm trong đó.
+    expect(1200 * TEND_H_PER_M2_DAY).toBeLessThanOrEqual(10);
+    expect(1200 * TEND_H_PER_M2_DAY).toBeGreaterThan(4);
   });
 });
 
