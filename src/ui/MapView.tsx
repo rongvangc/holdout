@@ -9,6 +9,7 @@ import { skill } from '../sim/survivors';
 import type { StockDelta } from '../sim/types';
 import { unproject } from '../world/geo';
 import { fmtNum, MAX_RADIUS, type ViewProps } from './Game';
+import { Icon, ITEM_ICONS } from './icons';
 import { buildingsGeoJSON, cellsGeoJSON, greensGeoJSON, waterGeoJSON } from './mapData';
 import { setGeo, useMap } from './useMap';
 
@@ -46,7 +47,12 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
     setGeo(map, 'greens', greensGeoJSON(world, new Set(s.sites.map((x) => x.sourceId))));
     setGeo(map, 'bld', buildingsGeoJSON(world));
     setGeo(map, 'water', waterGeoJSON(world));
-    map.addLayer({ id: 'cells', type: 'fill', source: 'cells', paint: { 'fill-color': '#ff2a2a', 'fill-opacity': ['/', ['get', 'danger'], 30] } });
+    map.addLayer({
+      id: 'cells',
+      type: 'fill',
+      source: 'cells',
+      paint: { 'fill-color': '#ff2a2a', 'fill-opacity': ['/', ['get', 'danger'], 30], 'fill-outline-color': 'rgba(255,42,42,0.3)' },
+    });
     map.addLayer({
       id: 'greens',
       type: 'fill',
@@ -62,9 +68,16 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
         'fill-opacity': ['case', ['boolean', ['feature-state', 'owned'], false], 1, ['-', 0.9, ['*', 0.75, ['coalesce', ['feature-state', 'looted'], 0]]]],
       },
     });
-    map.addLayer({ id: 'bld-sel', type: 'line', source: 'bld', paint: { 'line-color': '#ff2a2a', 'line-width': 3 }, filter: ['==', ['get', 'id'], ''] });
-    map.addLayer({ id: 'green-sel', type: 'line', source: 'greens', paint: { 'line-color': '#ff2a2a', 'line-width': 3 }, filter: ['==', ['get', 'id'], ''] });
-    map.addLayer({ id: 'water-pt', type: 'circle', source: 'water', paint: { 'circle-radius': 6, 'circle-color': '#5a9ad0', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' } });
+    map.addLayer({ id: 'bld-line', type: 'line', source: 'bld', paint: { 'line-color': '#0a0a0a', 'line-width': 0.8, 'line-opacity': 0.85 } });
+    map.addLayer({ id: 'bld-sel-glow', type: 'line', source: 'bld', paint: { 'line-color': '#ff2a2a', 'line-width': 9, 'line-opacity': 0.22 }, filter: ['==', ['get', 'id'], ''] });
+    map.addLayer({ id: 'bld-sel', type: 'line', source: 'bld', paint: { 'line-color': '#ff2a2a', 'line-width': 2.5 }, filter: ['==', ['get', 'id'], ''] });
+    map.addLayer({ id: 'green-sel', type: 'line', source: 'greens', paint: { 'line-color': '#ff2a2a', 'line-width': 2.5 }, filter: ['==', ['get', 'id'], ''] });
+    map.addLayer({
+      id: 'water-pt',
+      type: 'circle',
+      source: 'water',
+      paint: { 'circle-radius': 5, 'circle-color': '#5a9ad0', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#cfe6ff' },
+    });
     const click = (e: maplibregl.MapMouseEvent) => {
       const w = map.queryRenderedFeatures(e.point, { layers: ['water-pt'] })[0];
       if (w) return setTarget({ type: 'water', id: String(w.properties?.id) });
@@ -103,30 +116,30 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
 
   useEffect(() => {
     if (!map?.getLayer('bld-sel')) return;
-    map.setFilter('bld-sel', ['==', ['get', 'id'], target?.type === 'building' ? target.id : '']);
+    const bldFilter: maplibregl.FilterSpecification = ['==', ['get', 'id'], target?.type === 'building' ? target.id : ''];
+    map.setFilter('bld-sel', bldFilter);
+    map.setFilter('bld-sel-glow', bldFilter);
     map.setFilter('green-sel', ['==', ['get', 'id'], target?.type === 'green' ? target.id : '']);
   }, [map, target]);
 
   useEffect(() => {
     if (!map) return;
     for (const m of markers.current) m.remove();
-    const mk = (pos: [number, number], css: string, title: string) => {
+    const mk = (pos: [number, number], cls: string, title: string) => {
       const el = document.createElement('div');
-      el.style.cssText = css;
+      el.className = cls;
       el.title = title;
       return new maplibregl.Marker({ element: el }).setLngLat(unproject(world.center, pos)).addTo(map);
     };
     markers.current = [
-      ...s.sites.map((x) =>
-        mk(x.centroid, `padding:1px 4px;background:${x.id === from.id ? '#ff2a2a' : '#0e0e0e'};color:#fff;font:11px monospace;border:1px solid #fff;white-space:nowrap`, x.name),
-      ),
+      ...s.sites.map((x) => mk(x.centroid, `map-marker${x.id === from.id ? ' on' : ''}`, x.name)),
       ...s.expeditions.map((e) => {
         const b = world.buildings.find((x) => x.id === e.target.id);
         const g = world.greens.find((x) => x.id === e.target.id);
         const w = world.waterPoints.find((x) => x.id === e.target.id);
         const site = s.sites.find((x) => x.id === e.target.id);
         const pos = b?.centroid ?? g?.centroid ?? w?.pos ?? site?.centroid ?? from.centroid;
-        return mk(pos, 'width:12px;height:12px;background:#ff2a2a;border:2px solid #fff;', e.target.name);
+        return mk(pos, 'map-marker exp', e.target.name);
       }),
     ];
     for (const m of markers.current.slice(0, s.sites.length)) {
@@ -199,7 +212,7 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
     <div className="mapview">
       <div className="map">
         <div ref={ref} />
-        <div className="attrib" style={{ left: 4, right: 'auto' }}>
+        <div className="map-layer-ctrl">
           <button className={layer === 'danger' ? 'on' : ''} onClick={() => setLayer('danger')}>
             Mật độ
           </button>
@@ -382,6 +395,7 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
                 </div>
                 {cargoItems.map((k: ItemId) => (
                   <label key={k} className="row" style={{ gap: 6 }}>
+                    <Icon src={ITEM_ICONS[k]} size={16} />
                     <span className="grow">{ITEMS[k].label}</span>
                     <span className="faint">/{fmtNum(from.stock[k])}</span>
                     <input

@@ -279,6 +279,7 @@ phòng thủ = gia cố cấp × 22 × HP%  +  rào cấp × 14 × HP%  +  12 ×
 - **Thắng** (phòng thủ ≥ sức): mỗi người gác có 25% bị thương nhẹ (3–12 HP).
 - **Thua**: gọi `tỷ lệ = (sức − phòng thủ) / sức`.
   - Gia cố mất tỷ lệ × 60 HP, rào mất tỷ lệ × 80 HP.
+  - Phá ⌊tỷ lệ × số ô⌋ (làm tròn ngẫu nhiên) công trình ngoài trời: tường, chướng ngại, bẫy, chòi.
   - Số người bị thương = ⌈tỷ lệ × n × 0.4⌉, mỗi người mất 10–40 HP. Mỗi người bị thương có 20% bị cắn, và 65% số vết cắn gây nhiễm.
   - Mất tỷ lệ × 25% đồ ăn, nước, thuốc (×8% nếu có Kho có khoá).
 
@@ -386,10 +387,10 @@ khả năng tránh = min(0.9, 0.55 + 0.03 × Lén lút cao nhất + 0.1 nếu l�
 | Bể hứng mưa | Mái/sân | 4 | 8 gỗ, 12 sắt | +1000 L chứa, hứng nước từ mái |
 | Trạm lọc ★ | Tầng trệt/sân | 4 | 8 sắt, 6 vải, 4 gỗ | 12 L/h, không tốn củi |
 | Vườn rau | Mái/sân | 6 | m²/20 gỗ, 1 hạt | §6.3 |
-| Giếng ★ | Sân | 4 | 12 sắt, 10 gỗ, 1 dụng cụ | Tối đa 1500 L/ngày |
+| Giếng ★ | Sân | 4 | 12 sắt, 10 gỗ, 1 dụng cụ | Tối đa 1500 L/ngày; cách nhà vệ sinh ≥ 10 m |
 | Tháp canh ★ | Mái/sân | 4 | 25 gỗ, 10 sắt | +12 phòng thủ, ×1.15 phòng thủ |
 | Phòng sinh hoạt | Trong nhà | 8 | 8 gỗ, 6 vải | +8 tinh thần |
-| Lán trại | Sân | 8 | 5 gỗ + 3 vải mỗi 6 m² | 1 chỗ ngủ / 6 m² |
+| Lán trại | Sân | 8 | 5 gỗ + 3 vải mỗi 6 m² | 1 chỗ ngủ / 6 m². Bão xoé 50% số lán mỗi trận |
 
 **Gia cố** (cửa, cửa sổ) và **Tường rào** (quanh sân):
 
@@ -397,10 +398,11 @@ khả năng tránh = min(0.9, 0.55 + 0.03 × Lén lút cao nhất + 0.1 nếu l�
 - Chi phí mỗi cấp: công = cấp × chu vi × 240 s; gỗ = cấp × chu vi × 0.5; sắt = cấp × chu vi × 0.2.
 - Phòng thủ: 22/cấp với gia cố, 14/cấp với rào, nhân với HP%.
 - Sửa chữa tốn (100 − HP)% × 50% chi phí.
+- Mòn chậm theo thời gian: gia cố −0,25 HP/ngày, rào −0,4 HP/ngày.
 
 **Hàng đợi**:
 
-- Hạng mục tự trừ vật liệu khi kho đủ. Thợ xây chỉ làm các hạng mục đã trả.
+- Hạng mục tự trừ vật liệu khi kho đủ. Thợ xây làm các hạng mục đã trả theo thứ tự hàng đợi; nút ▲▼ đổi ưu tiên.
 - Huỷ hạng mục đã trả: hoàn 80%. Tháo dỡ module: hoàn 40%.
 
 ### 9.3 Tự thiết kế (tab Căn cứ → thanh công cụ)

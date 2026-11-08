@@ -147,6 +147,7 @@ export interface LogEntry {
   t: number;
   msg: string;
   level: 'info' | 'good' | 'warn' | 'bad';
+  items?: StockDelta; // materials gained/lost with this entry, shown as icons in the journal
 }
 
 export type GameEvent =

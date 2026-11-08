@@ -10,9 +10,13 @@ export type ModuleId =
   | 'water_tank'
   | 'filter'
   | 'garden'
+  | 'herb_garden'
   | 'well'
   | 'watchtower'
   | 'rec_room'
+  | 'bookshelf'
+  | 'garage'
+  | 'generator'
   | 'shelter';
 
 export type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
@@ -123,6 +127,16 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: (a) => ({ wood: Math.ceil(a / 20), seeds: 1 }),
     desc: 'Trồng rau muống (30 ngày) hoặc khoai lang (110 ngày). Vườn trên mái cũng được.',
   },
+  herb_garden: {
+    label: 'Vườn thuốc',
+    icon: '✥',
+    color: '#4fa77a',
+    placement: 'top_or_outdoor',
+    minArea: 4,
+    workSec: (a) => 1 * H + a * 20,
+    cost: (a) => ({ wood: Math.ceil(a / 10), cloth: Math.ceil(a / 20) }),
+    desc: 'Trồng dược liệu, chu kỳ 40 ngày. Thu hoạch: thuốc và băng gạc (cần vải khi thu băng). Farmer chăm như vườn thường.',
+  },
   well: {
     label: 'Giếng khoan tay',
     icon: '◎',
@@ -132,7 +146,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     needsWorkshop: true,
     workSec: () => 8 * H,
     cost: () => ({ scrap: 12, wood: 10, tools: 1 }),
-    desc: 'Nguồn nước bẩn ổn định ~1500 L/ngày. Phải xa nhà vệ sinh.',
+    desc: 'Nguồn nước bẩn ổn định ~1500 L/ngày. Phải cách nhà vệ sinh tối thiểu 10 m.',
   },
   watchtower: {
     label: 'Tháp canh',
@@ -155,6 +169,37 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: () => ({ wood: 8, cloth: 6 }),
     desc: 'Bữa ăn chung, kể chuyện. Tinh thần +8 cho cả nhóm.',
   },
+  bookshelf: {
+    label: 'Kệ sách',
+    icon: '▤',
+    color: '#b09060',
+    placement: 'indoor',
+    minArea: 4,
+    workSec: () => 1 * H,
+    cost: () => ({ wood: 4, cloth: 2 }),
+    desc: 'Mở "Tự học" trong tab Người: người được gán kỹ năng sẽ đọc dẫn đúng cập kỹ năng đó thay vì ngẫu nhiên.',
+  },
+  garage: {
+    label: 'Chòi xe',
+    icon: '⌷',
+    color: '#8a8a80',
+    placement: 'outdoor',
+    minArea: 12,
+    workSec: () => 4 * H,
+    cost: () => ({ wood: 10, scrap: 20, parts: 1 }),
+    desc: 'Xe xuất phát từ điểm có chòi: tốn 0.08 L/km (thay vì 0.1) và thêm 80 kg sức chở.',
+  },
+  generator: {
+    label: 'Máy phát điện',
+    icon: '⚡',
+    color: '#c0a83a',
+    placement: 'ground',
+    minArea: 2,
+    needsWorkshop: true,
+    workSec: () => 3 * H,
+    cost: () => ({ scrap: 15, parts: 2, wood: 4 }),
+    desc: 'Cần Bàn thợ. Nếu đủ xăng: đốt 24 L/đêm để đêm đó làm việc không còn chậm 25%. Ồn: heat +6 mỗi đêm chạy.',
+  },
   shelter: {
     label: 'Lán trại',
     icon: '⛺',
@@ -163,7 +208,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     minArea: 8,
     workSec: (a) => 1 * H + Math.floor(a / 6) * 0.3 * H,
     cost: (a) => ({ wood: 5 * Math.max(1, Math.floor(a / 6)), cloth: 3 * Math.max(1, Math.floor(a / 6)) }),
-    desc: 'Chỗ ngủ ngoài trời cho ruộng/tiền đồn: 1 chỗ / 6 m². Mưa bão sẽ hỏng.',
+    desc: 'Chỗ ngủ ngoài trời cho ruộng/tiền đồn: 1 chỗ / 6 m². Bão xoé 50% số lán mỗi trận.',
   },
 };
 

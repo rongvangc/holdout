@@ -7,7 +7,9 @@ import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
+import { Icon, ITEM_ICONS } from './icons';
 import { LawsView } from './LawsView';
+import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
 import { saveGame } from './save';
@@ -148,43 +150,50 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   return (
     <div className="game">
       <div className="topbar">
-        <div>
+        <div className="stat">
           <span className="label">Ngày</span>
-          <span className="clock">{dayOf(s.t)}</span>
-          <span className="clock dim">{fmtClock(s.t)}</span>
+          <div className="row" style={{ gap: 10 }}>
+            <span className="clock">{dayOf(s.t)}</span>
+            <span className="clock dim">{fmtClock(s.t)}</span>
+          </div>
         </div>
-        <div>
+        <div className="speed">
           {SPEED_LABEL.map((l, i) => (
             <button key={l} className={speed === i ? 'on' : ''} onClick={() => setSpeed(i)} title="Space / 1-4">
               {l}
             </button>
           ))}
         </div>
-        <div className="col" style={{ gap: 0, alignItems: 'flex-start' }}>
-          <span>
+        <div className="stat">
+          <span className="label">Thời tiết</span>
+          <span className="v">
             {s.weather.label} · {s.weather.tempC}°C{s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}
           </span>
-          <span className="dim">{dayOf(s.t) <= s.hordeUntilDay ? <span className="red">BẦY ZOMBIE ĐI QUA</span> : 'Không có bầy'}</span>
+          <span style={{ fontSize: 11 }}>{dayOf(s.t) <= s.hordeUntilDay ? <span className="red">■ Bầy zombie đi qua</span> : <span className="faint">□ Không có bầy</span>}</span>
         </div>
-        <div>
-          <span className="label">Người</span>
-          <b>{alive.length}</b>
-          <span className="label">Ở đây</span>
-          <b>{here}</b>
-          <span className="label">Giường</span>
-          <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b>
+        <div className="stat">
+          <span className="label">Nhân lực</span>
+          <span className="v">
+            <b>{alive.length}</b> người
+            <span className="faint">/</span>
+            <b>{here}</b> ở đây
+            <span className="faint">/</span>
+            <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
+          </span>
         </div>
-        <div>
-          <span className="label">Heat</span>
-          <b className={site.heat > 45 ? 'red' : ''}>{Math.round(site.heat)}</b>
-          <span className="label">Bẩn</span>
-          <b className={site.filth > 40 ? 'red' : ''}>{Math.round(site.filth)}</b>
-          <span className="label">Xác</span>
-          <b>{Math.round(site.corpses)}</b>
+        <div className="stat">
+          <span className="label">Điểm này</span>
+          <span className="v">
+            <span className={site.heat > 45 ? 'red' : ''}> Nhiệt {Math.round(site.heat)}</span>
+            <span className="faint">/</span>
+            <span className={site.filth > 40 ? 'red' : ''}>Bẩn {Math.round(site.filth)}</span>
+            <span className="faint">/</span>
+            <span>Xác {Math.round(site.corpses)}</span>
+          </span>
         </div>
-        <div>
+        <div className="stat">
           <span className="label">Phòng thủ</span>
-          <b>{Math.round(st.defenseStatic)}</b>
+          <span className="v">{Math.round(st.defenseStatic)}</span>
         </div>
         <div className="grow" style={{ justifyContent: 'flex-end' }}>
           <span className="ok">{saved}</span>
@@ -205,7 +214,9 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           <tbody>
             {STOCK_ORDER.map((k) => (
               <tr key={k}>
-                <td className={stock[k] < 0.5 ? 'faint' : ''}>{ITEMS[k].label}</td>
+                <td className={stock[k] < 0.5 ? 'faint' : ''}>
+                  <Icon src={ITEM_ICONS[k]} size={20} /> {ITEMS[k].label}
+                </td>
                 <td>
                   {fmtNum(stock[k])} <span className="faint">{ITEMS[k].unit}</span>
                 </td>
@@ -213,7 +224,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             ))}
           </tbody>
         </table>
-        <hr />
+        <div className="dither" />
         <div className="label">Đủ dùng ({here} người)</div>
         <div className="kv">
           <span>Ăn</span>
@@ -229,7 +240,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           <span>Củi gom</span>
           <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết (đi xa hơn)'}</span>
         </div>
-        <hr />
+        <div className="dither" />
         <div className="label">Điểm này</div>
         <div className="kv">
           <span>Nhà vệ sinh</span>
@@ -249,7 +260,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         </div>
         {s.gameOver && (
           <>
-            <hr />
+            <div className="dither" />
             <div className="red">
               <b>KẾT THÚC.</b> Cộng đồng tồn tại {dayOf(s.t)} ngày. {s.stats.recruited} người đã gia nhập, {s.stats.deaths} người chết.
             </div>
@@ -291,13 +302,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           {tab === 'people' && <PeopleView {...props} />}
           {tab === 'map' && <MapView key={world.key} {...props} />}
           {tab === 'laws' && <LawsView {...props} />}
-          {tab === 'log' && (
-            <div style={{ padding: 12 }} className="col">
-              {[...s.log].reverse().map((e, i) => (
-                <LogLine key={i} e={e} />
-              ))}
-            </div>
-          )}
+          {tab === 'log' && <LogView {...props} />}
         </div>
       </div>
 

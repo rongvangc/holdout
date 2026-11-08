@@ -218,15 +218,15 @@ export function addSurvivor(s: GameState, v: Survivor, siteId = mainSite(s).id):
   push(s.queue, s.t, { k: 'task', sid: v.id });
 }
 
-export function log(s: GameState, msg: string, level: LogEntry['level'] = 'info'): void {
-  s.log.push({ t: s.t, msg, level });
+export function log(s: GameState, msg: string, level: LogEntry['level'] = 'info', items?: StockDelta): void {
+  s.log.push({ t: s.t, msg, level, items });
   if (s.log.length > LOG_MAX) s.log.splice(0, s.log.length - LOG_MAX);
 }
 
 /** Important events: logged and surfaced so the UI can auto-pause. */
-export function alert(s: GameState, msg: string, level: LogEntry['level'] = 'warn'): void {
-  log(s, msg, level);
-  s.alerts.push({ t: s.t, msg, level });
+export function alert(s: GameState, msg: string, level: LogEntry['level'] = 'warn', items?: StockDelta): void {
+  log(s, msg, level, items);
+  s.alerts.push({ t: s.t, msg, level, items });
 }
 
 export function addStock(s: GameState, site: Site, d: StockDelta, mult = 1): void {
@@ -276,6 +276,10 @@ export interface BaseStats {
   watchtowers: number;
   recRoom: boolean;
   gardenArea: number;
+  herbArea: number;
+  generator: boolean;
+  garage: boolean;
+  bookshelf: boolean;
   defenseStatic: number;
 }
 
@@ -302,6 +306,10 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     watchtowers,
     recRoom: count('rec_room') > 0,
     gardenArea: roomsWith(it, 'garden').reduce((a, r) => a + r.area, 0),
+    herbArea: roomsWith(it, 'herb_garden').reduce((a, r) => a + r.area, 0),
+    generator: count('generator') > 0,
+    garage: count('garage') > 0,
+    bookshelf: count('bookshelf') > 0,
     defenseStatic:
       site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
       site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +

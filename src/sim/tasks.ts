@@ -96,9 +96,13 @@ export function finishTask(s: GameState, v: Survivor): void {
       if (plot?.crop && f >= 0.99) {
         const room = site.interior.rooms.find((r) => r.id === plot.roomId);
         const kcal = CROPS[plot.crop].kcalPerM2 * (room?.area ?? 0);
-        addStock(s, site, { rawFood: kcal, seeds: Math.max(1, Math.round((room?.area ?? 0) / 100)) });
+        const seeds = Math.max(1, Math.round((room?.area ?? 0) / 100));
+        addStock(s, site, { rawFood: kcal, seeds });
         s.stats.harvestedKcal += kcal;
-        log(s, `${site.name}: thu hoạch ${CROPS[plot.crop].label} +${Math.round(kcal).toLocaleString('vi')} kcal (giữ lại ngọn/dây để trồng tiếp).`, 'good');
+        log(s, `${site.name}: thu hoạch ${CROPS[plot.crop].label} +${Math.round(kcal).toLocaleString('vi')} kcal (giữ lại ngọn/dây để trồng tiếp).`, 'good', {
+          rawFood: kcal,
+          seeds,
+        });
         plot.crop = null;
         plot.growth = 0;
       }

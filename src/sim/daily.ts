@@ -104,6 +104,9 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   updateMorale(s, site, home, st.beds, st.recRoom);
 
   site.heat = Math.max(0, site.heat - 12);
+  // Slow wear: walls and fences rot without upkeep, repair work tops them back up.
+  if (site.fortify.level) site.fortify.hp = Math.max(0, site.fortify.hp - 0.25);
+  if (site.fence.level) site.fence.hp = Math.max(0, site.fence.hp - 0.4);
   site.wellDrawnToday = 0;
 }
 
@@ -114,11 +117,18 @@ function siteWeather(s: GameState, site: Site): void {
     const catchment = site.interior.footprintArea || st.tanks * 20;
     const got = Math.min(s.weather.rainMm * catchment * 0.8, Math.max(0, st.waterCapacity - site.stock.dirtyWater));
     addStock(s, site, { dirtyWater: got });
-    if (got > 50) log(s, `${site.name}: mưa ${s.weather.rainMm} mm, hứng được ${Math.round(got)} L.`, 'good');
+    if (got > 50) log(s, `${site.name}: mưa ${s.weather.rainMm} mm, hứng được ${Math.round(got)} L.`, 'good', { dirtyWater: got });
   }
   if (s.weather.storm) {
     site.fortify.hp = Math.max(0, site.fortify.hp - 5);
     site.fence.hp = Math.max(0, site.fence.hp - 10);
+    // Open-air shelters are the first thing a storm tears apart.
+    for (const r of site.interior.rooms) {
+      if (r.module === 'shelter' && chance(s.rng, 0.5)) {
+        r.module = undefined;
+        log(s, `${site.name}: bão xoé một lán trại.`, 'warn');
+      }
+    }
   }
 }
 
@@ -227,6 +237,14 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   const ratio = (strength - defense) / strength;
   site.fortify.hp = Math.max(0, site.fortify.hp - ratio * 60);
   site.fence.hp = Math.max(0, site.fence.hp - ratio * 80);
+  // A lost raid also tears down outdoor works: walls, barricades, traps, stands.
+  const structKeys = Object.keys(site.interior.structures ?? {});
+  const frac = structKeys.length * ratio;
+  const brokenStructs = Math.floor(frac) + (chance(s.rng, frac % 1) ? 1 : 0);
+  if (brokenStructs > 0) {
+    const order = [...structKeys].sort(() => range(s.rng, -1, 1));
+    for (const c of order.slice(0, brokenStructs)) delete site.interior.structures![Number(c)];
+  }
   const hurt = Math.max(1, Math.ceil(ratio * home.length * 0.4));
   const shuffled = [...home].sort(() => range(s.rng, -1, 1));
   for (const v of shuffled.slice(0, hurt)) {
@@ -239,7 +257,11 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   }
   const loss = ratio * (st.storage ? 0.08 : 0.25);
   for (const k of ['food', 'rawFood', 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
-  alert(s, `${site.name}: zombie phá vào! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư.`, 'bad');
+  alert(
+    s,
+    `${site.name}: zombie phá vào! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư${brokenStructs ? `, ${brokenStructs} ô công trình bị phá` : ''}.`,
+    'bad',
+  );
   for (const v of shuffled.slice(0, hurt)) {
     if (v.hp <= 0) killSurvivor(s, v, 'tập kích đêm');
     else if (v.bitten) {

@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fmtDuration } from '../core/time';
+import { fmtDuration, isNight } from '../core/time';
 import { canPlace, CELL_FLOOR, CELL_YARD, type Room } from '../base/interior';
 import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
-import { cancelProject, demolish, hasWorkshop, queueDefense, queueModule } from '../sim/build';
+import { cancelProject, demolish, hasWorkshop, moveProject, queueDefense, queueModule } from '../sim/build';
 import { CROPS, TEND_H_PER_M2_DAY } from '../sim/data';
 import { clearCells, mergeRooms, paintRoom, placeStructures, removeStructures, renameRoom, roomName, structCapacity, type Layer } from '../sim/design';
-import { baseStats, canAfford } from '../sim/state';
+import { baseStats, canAfford, present } from '../sim/state';
+import type { Survivor } from '../sim/types';
 import type { ViewProps } from './Game';
+import { Icon, MODULE_ICONS, iconImage } from './icons';
+
+const strHash = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+};
 
 const fmtCost = (c: Partial<Stock>) =>
   Object.entries(c)
@@ -41,6 +49,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   const [pending, setPending] = useState<number[] | null>(null);
   const [name, setName] = useState('');
   const [err, setErr] = useState('');
+  const [, setTick] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
   const px = Math.max(8, Math.min(22, Math.floor(620 / Math.max(it.w, it.h))));
   const isStruct = tool in STRUCTS;
@@ -74,6 +83,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
     return out;
   };
   const preview = new Set(drag ? rectCells(drag.a, drag.b) : (pending ?? []));
+  const people = present(s, site);
 
   useEffect(() => {
     const cv = canvas.current;
@@ -81,7 +91,8 @@ export function BaseView({ s, site, refresh }: ViewProps) {
     const ctx = cv.getContext('2d')!;
     cv.width = it.w * px;
     cv.height = it.h * px;
-    ctx.fillStyle = '#0b0b0b';
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, cv.width, cv.height);
     // Grid is stored south-up (y north); draw with north at top.
     const Y = (y: number) => (it.h - 1 - y) * px;
@@ -91,22 +102,46 @@ export function BaseView({ s, site, refresh }: ViewProps) {
         const i = y * it.w + x;
         const k = it.kinds[i];
         const r = roomAt.get(i);
-        let color = '#0b0b0b';
-        if (k === CELL_FLOOR) color = '#1d1d1b';
-        if (k === CELL_YARD) color = floor === 0 ? '#161a12' : '#0f100d';
+        let color = '#0a0a0a';
+        if (k === CELL_FLOOR) color = '#1c1c19';
+        if (k === CELL_YARD) color = floor === 0 ? '#141810' : '#0f100d';
         if (r?.module) color = MODULES[r.module].color;
         else if (r?.walled === false) color = '#26263a';
         else if (r && building.has(r.id)) color = '#3a2a2a';
         ctx.fillStyle = color;
         ctx.fillRect(x * px, Y(y), px, px);
-        ctx.fillStyle = r?.outdoor ? '#2c3326' : '#5a5a55';
-        const nb = (dx: number, dy: number) => roomAt.get((y + dy) * it.w + (x + dx));
-        if (r) {
-          if (x === it.w - 1 || nb(1, 0) !== r) ctx.fillRect(x * px + px - 1, Y(y), 1, px);
-          if (x === 0 || nb(-1, 0) !== r) ctx.fillRect(x * px, Y(y), 1, px);
-          if (y === it.h - 1 || nb(0, 1) !== r) ctx.fillRect(x * px, Y(y), px, 1);
-          if (y === 0 || nb(0, -1) !== r) ctx.fillRect(x * px, Y(y) + px - 1, px, 1);
-        }
+      }
+    }
+    if (px >= 6) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let gx = 1; gx < it.w; gx++) {
+        ctx.moveTo(gx * px + 0.5, 0);
+        ctx.lineTo(gx * px + 0.5, cv.height);
+      }
+      for (let gy = 1; gy < it.h; gy++) {
+        ctx.moveTo(0, gy * px + 0.5);
+        ctx.lineTo(cv.width, gy * px + 0.5);
+      }
+      ctx.stroke();
+    }
+    // Walls: 2px along room boundaries — indoor concrete, outdoor earth.
+    const nb = (x: number, y: number, dx: number, dy: number) => roomAt.get((y + dy) * it.w + (x + dx));
+    for (let y = 0; y < it.h; y++) {
+      for (let x = 0; x < it.w; x++) {
+        const r = roomAt.get(y * it.w + x);
+        if (!r) continue;
+        ctx.fillStyle = r.outdoor ? '#3d4a32' : '#6f6f66';
+        if (x === it.w - 1 || nb(x, y, 1, 0) !== r) ctx.fillRect(x * px + px - 2, Y(y), 2, px);
+        if (x === 0 || nb(x, y, -1, 0) !== r) ctx.fillRect(x * px, Y(y), 2, px);
+        if (y === it.h - 1 || nb(x, y, 0, 1) !== r) ctx.fillRect(x * px, Y(y), px, 2);
+        if (y === 0 || nb(x, y, 0, -1) !== r) ctx.fillRect(x * px, Y(y) + px - 2, px, 2);
+      }
+    }
+    for (let y = 0; y < it.h; y++) {
+      for (let x = 0; x < it.w; x++) {
+        const i = y * it.w + x;
         if (floor === 0 && (st[i] || plannedStruct.has(i))) {
           const id = st[i] ?? plannedStruct.get(i)!;
           ctx.globalAlpha = st[i] ? 1 : 0.4;
@@ -115,8 +150,15 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           ctx.globalAlpha = 1;
         }
         if (preview.has(i)) {
-          ctx.fillStyle = tool === 'erase' || tool === 'demolish' ? 'rgba(255,42,42,0.45)' : 'rgba(230,230,227,0.35)';
+          const del = tool === 'erase' || tool === 'demolish';
+          ctx.fillStyle = del ? 'rgba(255,42,42,0.26)' : 'rgba(234,234,230,0.2)';
           ctx.fillRect(x * px, Y(y), px, px);
+          ctx.strokeStyle = del ? 'rgba(255,42,42,0.8)' : 'rgba(234,234,230,0.55)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x * px, Y(y) + px);
+          ctx.lineTo(x * px + px, Y(y));
+          ctx.stroke();
         }
       }
     }
@@ -125,21 +167,41 @@ export function BaseView({ s, site, refresh }: ViewProps) {
     for (const r of new Set(roomAt.values())) {
       let sx = 0;
       let sy = 0;
+      let x0 = it.w;
+      let x1 = 0;
+      let y0 = it.h;
+      let y1 = 0;
       for (const c of r.cells) {
-        sx += c % it.w;
-        sy += Math.floor(c / it.w);
+        const cx0 = c % it.w;
+        const cy0 = Math.floor(c / it.w);
+        sx += cx0;
+        sy += cy0;
+        if (cx0 < x0) x0 = cx0;
+        if (cx0 > x1) x1 = cx0;
+        if (cy0 < y0) y0 = cy0;
+        if (cy0 > y1) y1 = cy0;
       }
       const cx = (sx / r.cells.length + 0.5) * px;
       const cy = Y(sy / r.cells.length) + px / 2;
       if (r.module) {
-        ctx.font = `${Math.max(12, px)}px sans-serif`;
-        ctx.fillStyle = '#f2f2ee';
-        ctx.fillText(MODULES[r.module].icon, cx, cy);
+        const img = iconImage(MODULE_ICONS[r.module], () => setTick((t) => t + 1));
+        if (img.complete && img.naturalWidth) {
+          const s = Math.max(12, px * 1.15);
+          ctx.drawImage(img, cx - s / 2, cy - s / 2, s, s);
+        } else {
+          ctx.font = `${Math.max(12, px)}px sans-serif`;
+          ctx.fillStyle = '#f2f2ee';
+          ctx.fillText(MODULES[r.module].icon, cx, cy);
+        }
       } else if (building.has(r.id)) {
         const p = site.projects.find((x) => x.roomId === r.id)!;
         ctx.font = `${Math.max(10, px * 0.6)}px monospace`;
         ctx.fillStyle = '#ff8080';
         ctx.fillText(`${Math.round((p.progress / p.workTotal) * 100)}%`, cx, cy);
+      } else if (r.name && px >= 11) {
+        ctx.font = `${Math.max(9, Math.floor(px * 0.55))}px monospace`;
+        ctx.fillStyle = 'rgba(255,255,255,0.38)';
+        ctx.fillText(r.name.toUpperCase(), cx, cy);
       }
       if (r.id === sel) {
         ctx.strokeStyle = '#ff2a2a';
@@ -151,8 +213,23 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           ctx.beginPath();
           if (!n(1, 0)) (ctx.moveTo(x * px + px, Y(y)), ctx.lineTo(x * px + px, Y(y) + px));
           if (!n(-1, 0)) (ctx.moveTo(x * px, Y(y)), ctx.lineTo(x * px, Y(y) + px));
-          if (!n(0, 1)) (ctx.moveTo(x * px, Y(y)), ctx.lineTo(x * px + px, Y(y)));
+          if (!n(0, 1)) (ctx.moveTo(x * px + px, Y(y)), ctx.lineTo(x * px, Y(y)));
           if (!n(0, -1)) (ctx.moveTo(x * px, Y(y) + px), ctx.lineTo(x * px + px, Y(y) + px));
+          ctx.stroke();
+        }
+        // Registration crosshairs at the room's corners.
+        const tick = Math.max(3, px * 0.4);
+        for (const [gx, gy] of [
+          [x0 * px, Y(y0)],
+          [(x1 + 1) * px, Y(y0)],
+          [x0 * px, Y(y1) + px],
+          [(x1 + 1) * px, Y(y1) + px],
+        ]) {
+          ctx.beginPath();
+          ctx.moveTo(gx - tick, gy);
+          ctx.lineTo(gx + tick, gy);
+          ctx.moveTo(gx, gy - tick);
+          ctx.lineTo(gx, gy + tick);
           ctx.stroke();
         }
       }
@@ -165,6 +242,72 @@ export function BaseView({ s, site, refresh }: ViewProps) {
         ctx.fillText(STRUCTS[id].icon, (i % it.w) * px + px / 2, Y(Math.floor(i / it.w)) + px / 2);
       }
     }
+    if (isNight(s.t)) {
+      ctx.fillStyle = 'rgba(10,18,40,0.35)';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+    }
+    // Survivors as tiny pixel figures, standing where their current task happens.
+    const vis = [...new Set(roomAt.values())];
+    const yardCells: number[] = [];
+    if (floor === 0) {
+      for (let i = 0; i < it.kinds.length; i++) {
+        if (it.kinds[i] === CELL_YARD && roomAt.get(i)?.outdoor) yardCells.push(i);
+      }
+    }
+    const outdoorKinds = new Set(['guard', 'gather', 'clean', 'corpses']);
+    const moduleRoom = (m: ModuleId) => vis.find((r) => r.module === m);
+    const placeCell = (v: Survivor): number | null => {
+      const t = v.task;
+      let room: Room | undefined;
+      if (t?.kind === 'build' && t.target) {
+        const p = site.projects.find((x) => x.id === t.target);
+        room = vis.find((r) => r.id === p?.roomId);
+      } else if (t?.kind === 'plant' || t?.kind === 'tend' || t?.kind === 'harvest') {
+        room = vis.find((r) => r.id === t?.target);
+      } else if (t && outdoorKinds.has(t.kind) && floor === 0 && yardCells.length) {
+        return yardCells[strHash(v.id) % yardCells.length];
+      } else if (t?.kind === 'cook' || t?.kind === 'boil') room = moduleRoom('kitchen');
+      else if (t?.kind === 'filter') room = moduleRoom('filter');
+      else if (t?.kind === 'draw') room = moduleRoom('well');
+      else if (t?.kind === 'treat') room = moduleRoom('infirmary');
+      else if (t?.kind === 'sleep') room = moduleRoom('bedroom') ?? moduleRoom('shelter');
+      if (!room) room = vis[strHash(v.id) % Math.max(1, vis.length)];
+      if (!room?.cells.length) return null;
+      return room.cells[strHash(`${v.id}#`) % room.cells.length];
+    };
+    for (const v of people) {
+      const cell = placeCell(v);
+      if (cell === null) continue;
+      const u = Math.max(1, Math.round(px / 8));
+      const cx = (cell % it.w + 0.5) * px + ((strHash(v.id) % 3) - 1) * u;
+      const cy = Y(Math.floor(cell / it.w)) + px / 2;
+      const col = v.infected || v.bitten ? '#ff5a4a' : v.sickDays > 0 ? '#e0a030' : v.hp < 40 ? '#ff9a6a' : '#e8e6df';
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(cx - u - 1, cy - 4 * u - 1, 2 * u + 2, 5 * u + 2);
+      ctx.fillStyle = '#d9b38c';
+      ctx.fillRect(cx - u, cy - 4 * u, 2 * u, 2 * u);
+      ctx.fillStyle = col;
+      ctx.fillRect(cx - u, cy - 2 * u, 2 * u, 3 * u);
+    }
+    // North arrow and 5 m scale bar.
+    ctx.fillStyle = 'rgba(234,234,230,0.9)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `${Math.max(10, Math.floor(px * 0.65))}px monospace`;
+    ctx.fillText('N', 7, 14);
+    ctx.beginPath();
+    ctx.moveTo(10, 18);
+    ctx.lineTo(6, 27);
+    ctx.lineTo(14, 27);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(9, 27, 2, 7);
+    const bar = Math.round((5 * px) / it.cellSize);
+    const by = cv.height - 10;
+    ctx.fillRect(6, by, bar, 2);
+    ctx.fillRect(6, by - 2, 2, 6);
+    ctx.fillRect(4 + bar, by - 2, 2, 6);
+    ctx.fillText('5 m', 9 + bar, by + 7);
   });
 
   const cellAt = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -284,9 +427,28 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           )}
         </div>
         <canvas ref={canvas} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp} />
-        <div className="row dim" style={{ marginTop: 6 }}>
-          Phía trên = hướng Bắc. Kéo chuột để chọn vùng.
-          {roomTool && ' Bắt đầu trong nhà = sửa phòng tầng đang xem; bắt đầu ngoài sân = sửa khoảnh đất.'}
+        <div className="row dim legend" style={{ marginTop: 6 }}>
+          <span>
+            <i style={{ background: '#1c1c19' }} />Sàn nhà
+          </span>
+          <span>
+            <i style={{ background: '#141810' }} />Sân
+          </span>
+          <span>
+            <i style={{ background: '#3a2a2a' }} />Đang xây
+          </span>
+          <span>
+            <i style={{ background: '#e8e6df' }} />Người
+          </span>
+          <span>
+            <i style={{ background: '#ff5a4a' }} />Bị cắn/nhiễm
+          </span>
+          <span>
+            <i style={{ background: '#e0a030' }} />Bệnh
+          </span>
+          <span className="faint">
+            Phía trên = hướng Bắc · Kéo chuột để chọn vùng{roomTool && ' · Bắt đầu trong nhà = sửa phòng; ngoài sân = sửa khoảnh đất'}
+          </span>
         </div>
       </div>
       <div className="side-panel">
@@ -361,7 +523,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
                   const cost = def.cost(room.area);
                   return (
                     <button key={m} disabled={!!why} onClick={() => act(() => queueModule(s, site, room.id, m))} title={def.desc}>
-                      <span>{def.icon}</span>
+                      <Icon src={MODULE_ICONS[m]} size={22} />
                       <span>
                         {def.label}
                         <br />
@@ -406,6 +568,8 @@ export function BaseView({ s, site, refresh }: ViewProps) {
           <div key={p.id} className="card">
             <div className="row">
               <span className="grow">{p.label}</span>
+              <button title="Ưu tiên lên trước" onClick={() => (moveProject(site, p.id, -1), refresh())}>▲</button>
+              <button title="Hạ xuống" onClick={() => (moveProject(site, p.id, 1), refresh())}>▼</button>
               <button onClick={() => (cancelProject(s, site, p.id), refresh())}>✕</button>
             </div>
             <div className="dim">

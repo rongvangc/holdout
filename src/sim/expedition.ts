@@ -393,6 +393,7 @@ function finishClaim(s: GameState, world: World, e: Expedition): void {
   const kind = e.target.type === 'green' ? 'field' : 'outpost';
   const site = makeSite(s, world, kind, e.target.id);
   s.sites.push(site);
+  const gained: StockDelta = {};
   if (kind === 'outpost') {
     const b = world.buildings.find((x) => x.id === e.target.id)!;
     const remaining = Math.max(0, b.containers - (s.looted[b.id] ?? 0));
@@ -403,10 +404,12 @@ function finishClaim(s: GameState, world: World, e: Expedition): void {
     s.looted[b.id] = b.containers;
     addStock(s, site, found);
     if (r.vehicle) addStock(s, site, { vehicle: 1 });
+    Object.assign(gained, found);
+    if (r.vehicle) gained.vehicle = 1;
     e.report.push(`Lục toàn bộ ${r.searched} chỗ còn lại.`);
   }
   settle(s, e, site);
-  alert(s, `Đã chiếm ${site.name} làm ${kind === 'field' ? 'ruộng' : 'tiền đồn'}. ${e.report.join(' ')}`, 'good');
+  alert(s, `Đã chiếm ${site.name} làm ${kind === 'field' ? 'ruộng' : 'tiền đồn'}. ${e.report.join(' ')}`, 'good', gained);
 }
 
 export function onExpeditionEvent(s: GameState, world: World, eid: string): void {
@@ -429,18 +432,18 @@ export function onExpeditionEvent(s: GameState, world: World, eid: string): void
     if (e.kind === 'claim') return finishClaim(s, world, e);
     if (e.kind === 'convoy') {
       const dest = siteById(s, e.target.id);
-      const cargo = Object.entries(e.carried)
-        .filter(([, v]) => (v ?? 0) >= 0.5)
+      const delivered = Object.fromEntries(Object.entries(e.carried).filter(([, v]) => (v ?? 0) >= 0.5)) as StockDelta;
+      const cargo = Object.entries(delivered)
         .map(([k, v]) => `${ITEMS[k as ItemId].label} ${fmtAmt(v ?? 0)}`)
         .join(', ');
       if (e.relocate) {
         settle(s, e, dest);
-        alert(s, `Đội tới ${dest.name} và ở lại.${cargo ? ` Giao: ${cargo}.` : ''} ${e.report.join(' ')}`, 'good');
+        alert(s, `Đội tới ${dest.name} và ở lại.${cargo ? ` Giao: ${cargo}.` : ''} ${e.report.join(' ')}`, 'good', delivered);
         return;
       }
       addStock(s, dest, e.carried);
       e.carried = {};
-      log(s, `Đoàn vận chuyển đã giao tới ${dest.name}${cargo ? `: ${cargo}` : ''}.`, 'good');
+      log(s, `Đoàn vận chuyển đã giao tới ${dest.name}${cargo ? `: ${cargo}` : ''}.`, 'good', delivered);
     } else if (e.kind === 'loot') searchBuilding(s, world, e);
     else if (e.kind === 'patrol') sweep(s, e);
     else {
@@ -462,16 +465,20 @@ export function onExpeditionEvent(s: GameState, world: World, eid: string): void
   // Survivors drop loot proportionally if teammates died on the way back.
   const keep = team.length / e.members.length;
   home.heat = Math.min(100, home.heat + NOISE_HEAT[e.mode]);
-  const got = Object.entries(e.carried)
-    .filter(([, v]) => (v ?? 0) * keep >= 0.5)
-    .map(([k, v]) => `${ITEMS[k as ItemId].label} ${fmtAmt((v ?? 0) * keep)}`)
+  const brought = Object.fromEntries(
+    Object.entries(e.carried)
+      .filter(([, v]) => (v ?? 0) * keep >= 0.5)
+      .map(([k, v]) => [k, (v ?? 0) * keep]),
+  ) as StockDelta;
+  const got = Object.entries(brought)
+    .map(([k, v]) => `${ITEMS[k as ItemId].label} ${fmtAmt(v ?? 0)}`)
     .join(', ');
   const report = e.report.join(' ');
   const name = e.target.name;
   const fights = e.fights;
   settle(s, e, home, keep);
   if (e.kind === 'convoy') log(s, `Đoàn vận chuyển đã về ${home.name}. ${report}`, 'info');
-  else alert(s, `Đội về ${home.name} từ ${name}: ${got || 'tay trắng'}. ${report}`, fights > 2 ? 'warn' : 'good');
+  else alert(s, `Đội về ${home.name} từ ${name}: ${got || 'tay trắng'}. ${report}`, fights > 2 ? 'warn' : 'good', brought);
 }
 
 function lost(s: GameState, e: Expedition): void {

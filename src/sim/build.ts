@@ -1,10 +1,28 @@
-import { canPlace } from '../base/interior';
+import { canPlace, type Room } from '../base/interior';
 import { fortifyCost, MODULES, type ModuleId } from '../data/modules';
+import { dist } from '../world/geo';
 import { addStock, alert, baseStats, canAfford, log, newId } from './state';
-import type { GameState, Project, Site } from './types';
+import type { GameState, Project, Site, StockDelta } from './types';
 
 // Parts are fabricated at a workshop and carried, so one anywhere unlocks tier 2.
 export const hasWorkshop = (s: GameState) => s.sites.some((x) => baseStats(s, x).workshop);
+
+/** Groundwater rule: a dug well this close to a latrine is a hygiene problem. */
+export const WELL_LATRINE_MIN_M = 10;
+
+function roomCentroid(site: Site, r: Room): [number, number] {
+  const it = site.interior;
+  let sx = 0;
+  let sy = 0;
+  for (const c of r.cells) {
+    sx += c % it.w;
+    sy += Math.floor(c / it.w);
+  }
+  return [
+    it.origin[0] + (sx / r.cells.length + 0.5) * it.cellSize,
+    it.origin[1] + (sy / r.cells.length + 0.5) * it.cellSize,
+  ];
+}
 
 export function queueModule(s: GameState, site: Site, roomId: string, module: ModuleId): string | null {
   const room = site.interior.rooms.find((r) => r.id === roomId);
@@ -16,6 +34,20 @@ export function queueModule(s: GameState, site: Site, roomId: string, module: Mo
   const def = MODULES[module];
   const why = canPlace(site.interior, room, def);
   if (why) return why;
+  if (module === 'well' || module === 'latrine') {
+    const other: ModuleId = module === 'well' ? 'latrine' : 'well';
+    const here = roomCentroid(site, room);
+    const clash = site.interior.rooms.some(
+      (r) =>
+        (r.module === other || site.projects.some((p) => p.roomId === r.id && p.module === other)) &&
+        dist(roomCentroid(site, r), here) < WELL_LATRINE_MIN_M,
+    );
+    if (clash) {
+      return module === 'well'
+        ? `Giếng phải cách nhà vệ sinh tối thiểu ${WELL_LATRINE_MIN_M} m`
+        : `Nhà vệ sinh phải cách giếng tối thiểu ${WELL_LATRINE_MIN_M} m`;
+    }
+  }
   if (def.needsWorkshop && !hasWorkshop(s)) return 'Cần Bàn thợ (ở bất kỳ điểm nào) trước';
   site.projects.push({
     id: newId(s, 'p'),
@@ -78,13 +110,27 @@ export function cancelProject(s: GameState, site: Site, id: string): void {
 export function demolish(s: GameState, site: Site, roomId: string): void {
   const room = site.interior.rooms.find((r) => r.id === roomId);
   if (!room?.module) return;
+  const refund = Object.fromEntries(
+    Object.entries(MODULES[room.module].cost(room.area))
+      .filter(([, v]) => (v ?? 0) > 0)
+      .map(([k, v]) => [k, (v ?? 0) * 0.4]),
+  ) as StockDelta;
   addStock(s, site, MODULES[room.module].cost(room.area), 0.4);
-  log(s, `Tháo dỡ ${MODULES[room.module].label} ở ${site.name}.`);
+  log(s, `Tháo dỡ ${MODULES[room.module].label} ở ${site.name}.`, 'info', refund);
   room.module = undefined;
   delete site.plots[roomId];
 }
 
 export const activeProject = (site: Site): Project | undefined => site.projects.find((p) => p.paid);
+
+/** Reorder the build queue — builders always take the first paid project. */
+export function moveProject(site: Site, id: string, dir: -1 | 1): void {
+  const i = site.projects.findIndex((x) => x.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= site.projects.length) return;
+  const [p] = site.projects.splice(i, 1);
+  site.projects.splice(j, 0, p);
+}
 
 export function applyBuildWork(s: GameState, site: Site, p: Project, sec: number): void {
   p.progress += sec;
