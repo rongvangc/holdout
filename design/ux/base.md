@@ -215,7 +215,7 @@ Bỏ hẳn: sidebar cuộn 7 mục, bảng kho 16 dòng luôn hiện, danh sách
 | Z1 | Ô trạng thái | stat cell | số + đơn vị + màu theo ngưỡng | bấm → nhảy tới ngăn liên quan | **MỚI** `status-cell` |
 | Z2 | Thanh thời gian | toolbar | ngày/giờ/thời tiết + 4 nút tốc độ | bấm, phím Space/1–4 | đã có, giữ |
 | Z3 | Danh sách cảnh báo | alert list | tối đa 3 dòng: mức + câu + 1 nút | bấm dòng hoặc nút | **MỚI** `alert-row` |
-| Z4 | Segmented nghề | tab strip | 5 ngăn | bấm, phím ←/→ | **MỚI** `segment` |
+| Z4 | Segmented nghề | tab strip | 4 ngăn | bấm, phím ←/→ | **MỚI** `segment` |
 | Z4 | Ô tìm kiếm | input | lọc theo tên | gõ | **MỚI** `filter-input` |
 | Z4 | Chip lọc | toggle chip | "Nấu được ngay" / "Thiếu NL" / "Khoá cấp" | bấm bật/tắt | **MỚI** `filter-chip` |
 | Z4 | Dòng hành động | list row | tên + 2–3 số + 1 nút | bấm → bottom sheet | **MỚI** `action-row` |

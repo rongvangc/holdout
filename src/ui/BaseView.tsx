@@ -529,6 +529,7 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
     if (!focusPanel) return;
     if (focusPanel === 'kitchen') setSection('kitchen');
     else if (focusPanel === 'craft' || focusPanel === 'defence') setSection('craft');
+    else if (focusPanel === 'modules') setSection('plan');
     else if (focusPanel === 'power') setSection('power');
   }, [focusPanel]);
   // Điện: nguồn nào đang cấp, thiết bị nào được bật, thiết bị nào bị cắt.
@@ -649,7 +650,6 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
         <div className="seg" role="tablist" aria-label="Ngăn của căn cứ">
           {([
             ['plan', 'Mặt bằng'],
-            ['modules', 'Công trình'],
             ['craft', 'Chế tạo'],
             ['kitchen', 'Bếp'],
             ['power', 'Điện'],
@@ -878,7 +878,6 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
 
           </>
         )}
-        {section === 'modules' && <ModulesPanel s={s} site={site} refresh={refresh} />}
         {section === 'kitchen' && <KitchenPanel s={s} site={site} refresh={refresh} />}
 
 
@@ -926,6 +925,7 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
         )}
 
         {section === 'plan' && (<>
+        <ModulesPanel s={s} site={site} refresh={refresh} />
         <div className="label" title="Tổng quan thiết bị khả dụng của điểm này">Chỉ số</div>
         <div className="kv">
           <span title="Số giường ngủ — thiếu giường, người ngủ sàn, hồi mệt chậm hơn">Giường</span>

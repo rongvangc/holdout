@@ -162,7 +162,7 @@ describe('module caps (maxPerSite)', () => {
     const { s } = setup();
     const base = mainSite(s);
     addModule(base, 'k1', 'kitchen', 6, false);
-    expect(queueModule(s, base, addEmpty(base, 'k2', 6, false), 'kitchen')).toBe('Tối đa 1 bếp củi mỗi điểm');
+    expect(queueModule(s, base, addEmpty(base, 'k2', 6, false), 'kitchen')).toBe('Tối đa 1 bếp mỗi điểm');
   });
 });
 

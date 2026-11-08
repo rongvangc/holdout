@@ -95,7 +95,7 @@ Giữ nguyên tắc "mỗi trạm một việc riêng":
 | **Ao cá** | Sân, 12 m² | cá, 2 ngày/lần | cần nước, dễ bị ô nhiễm |
 | **Phòng mổ** | Trong nhà, 8 m² | kháng sinh, khâu vết thương | nâng cấp của Phòng y tế |
 
-Bếp củi hiện tại giữ nguyên; công thức nấu chuyển sang data mới.
+Bếp hiện tại giữ nguyên; công thức nấu chuyển sang data mới.
 
 ## 4. Vũ khí
 

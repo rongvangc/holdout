@@ -382,7 +382,7 @@ khả năng tránh = min(0.9, 0.55 + 0.03 × Lén lút cao nhất + 0.1 nếu l�
 | Module | Vị trí | Tối thiểu | Chi phí | Tác dụng |
 |---|---|---|---|---|
 | Phòng ngủ | Trong nhà | 5 m² | 4 gỗ + 2 vải mỗi 5 m² | 1 giường / 5 m² |
-| Bếp củi | Bất kỳ | 6 | 10 gỗ, 6 sắt | Nấu ăn, đun nước |
+| Bếp | Bất kỳ | 6 | 10 gỗ, 6 sắt | Nấu ăn, đun nước |
 | Kho có khoá | Trong nhà | 6 | 8 gỗ, 10 sắt | Đồ sống hỏng 0.5%/ngày; tập kích chỉ lấy 8% |
 | Bàn thợ | Trong nhà | 8 | 20 gỗ, 15 sắt, 1 dụng cụ | Mở khoá các mục ★ (có ở bất kỳ điểm nào là đủ) |
 | Phòng y tế | Trong nhà | 8 | 10 gỗ, 10 vải | HP hồi ×2.5 khi nghỉ |
@@ -425,7 +425,7 @@ Kéo chuột chọn vùng → xem trước chi phí → **Áp dụng**. Bắt đ
 | █ ▚ ⋀ ▥ ⌂ | Xây công trình theo từng ô ngoài sân/ruộng. Chế độ **Viền** chỉ xây mép vùng chọn, **Kín** lấp đầy |
 | ✕ Dỡ | Tháo công trình (hoàn 40%) hoặc huỷ phần đang chờ xây |
 
-**Cap số lượng** (mỗi điểm, đếm cả hạng mục đang chờ): Bếp củi/K kho/Giếng/Bàn thợ/Phòng y tế/Trạm lọc/Kệ sách/Máy phát tối đa **1**; Tháp canh và Chòi xe tối đa **2**; Cổng 6, Chòi gác 4 (theo ô). Vườn/giường/bể nước/khoảnh sân xếp chồng theo diện tích có sẵn.
+**Cap số lượng** (mỗi điểm, đếm cả hạng mục đang chờ): Bếp/K kho/Giếng/Bàn thợ/Phòng y tế/Trạm lọc/Kệ sách/Máy phát tối đa **1**; Tháp canh và Chòi xe tối đa **2**; Cổng 6, Chòi gác 4 (theo ô). Vườn/giường/bể nước/khoảnh sân xếp chồng theo diện tích có sẵn.
 
 **Công trình ngoài trời** (tính mỗi ô):
 
@@ -514,7 +514,7 @@ Cấp 1 là lúc xây xong; `ModuleDef.levels` là các bậc nâng tiếp; `Roo
 | Xưởng may | trong nhà | mũ cứng, ủng, giáp nhồi | giáp tấm, áo giáp |
 | Bếp hun khói | sân | hun nhanh | mẻ lớn |
 | Bàn thợ (cũ) | trong nhà | ắc quy, đèn dầu | pin mặt trời |
-| Bếp củi (cũ) | bất kỳ | mẻ 8000 kcal | đỡ tốn củi |
+| Bếp (cũ) | bất kỳ | mẻ 8000 kcal | đỡ tốn củi |
 
 ### 12.4 Công thức
 
@@ -717,7 +717,7 @@ Mỗi module có `levels` là bậc nâng tiếp (cấp 1 = lúc xây xong). Nâ
 | Hầm lạnh | hỏng 50% | 35% | 25% |
 | Chuồng gà | 3 trứng/ngày | 4,8 | 4,8 + không mất gà đêm |
 | Ao cá | ×1 sản lượng | ×1,2 | ×1,5 |
-| Bếp củi | mẻ 3000 kcal | mẻ 8000 | — |
+| Bếp | mẻ 3000 kcal | mẻ 8000 | — |
 | Phòng ngủ | 1 giường / 5 m² | 1 / 4 m², hồi mệt +10% | hồi mệt +20% |
 | Lán trại | 1 chỗ / 6 m², bão xoá 50% | 1 / 5 m², bão xoá 32% | 1 / 4 m², bão xoá 15% |
 | Phòng sinh hoạt | +8 tinh thần | +12 | +16 |

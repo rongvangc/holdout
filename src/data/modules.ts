@@ -81,7 +81,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     ],
   },
   kitchen: {
-    label: 'Bếp củi',
+    label: 'Bếp',
     icon: '♨',
     color: '#c0703a',
     placement: 'any',
