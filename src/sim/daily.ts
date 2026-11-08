@@ -14,6 +14,7 @@ import { chargeBatteries, planPower } from './power';
 /** Đêm phát tín hiệu liên tục cần để được cứu. */
 export const RESCUE_DAYS = 7;
 import { zombieType } from './zombies';
+import { HERDS, herdFor } from './livestock';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
@@ -73,21 +74,44 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (before < 1 && plot.growth >= 1) log(s, `${site.name}: ${CROPS[plot.crop].label} đã chín.`, 'good');
   }
 
-  // Chuồng gà và ao cá: nguồn đạm tái tạo, đổi lại tốn lương và sinh ồn.
-  if (st.coop > 0) {
-    const lvl = Math.max(1, st.coopLevel);
-    // Gà ăn ~0,4 kg/ngày (≈1200 kcal) — nuôi gà là ăn lỗ calo, đổi lấy đạm và tinh thần.
-    const feed = Math.min(site.stock.rawFood > 500 ? 0.4 * st.coop : 0, site.stock.rawFood);
-    if (feed > 0) {
-      take(site, 'rawFood', feed * 2200);
-      const eggs = st.coop * (lvl >= 2 ? 4.8 : 3) * (chance(s.rng, 0.35) ? 1.3 : 1);
-      addStock(s, site, { trung: eggs });
-      // Thỉnh thoảng làm thịt một con: đạm nhưng mất trứng về sau.
-      if (chance(s.rng, 0.04)) addStock(s, site, { thit: 1.2 });
-      site.heat = Math.min(100, site.heat + 0.6 * st.coop);
-    } else {
-      log(s, `${site.name}: chuồng gà không có gì cho ăn, gà đói.`, 'warn');
+  // Chăn nuôi: mỗi vùng nuôi loài khác nhau (vịt gần nước, bò ở đồng bằng, gà trong phố).
+  // Loài quyết định sản phẩm: gia cầm cho trứng, dê/bò cho sữa, lợn/bò cho thịt.
+  for (const room of site.interior.rooms) {
+    if (room.module !== 'coop' && room.module !== 'barn') continue;
+    if (!room.herd) room.herd = herdFor(world, site, room.module);
+    const kind = room.herd;
+    const def = HERDS[kind];
+    const lvl = Math.max(1, room.moduleLevel ?? 1);
+    const graze = site.kind === 'field' ? 1 : 0.55;
+    const pop = Math.max(1, home.length);
+
+    // Nước: bầy uống nước bẩn trước, nước sạch để dành cho người (≥3 ngày).
+    const need = def.water * (lvl >= 2 ? 1.15 : 1);
+    const fromDirty = take(site, 'dirtyWater', Math.min(need, site.stock.dirtyWater));
+    const cleanReserve = site.stock.water - pop * 3.3 * 3;
+    const fromClean = take(site, 'water', Math.max(0, Math.min(need - fromDirty, cleanReserve)));
+    const drank = fromDirty + fromClean;
+    if (drank < need * 0.6) {
+      log(s, `${site.name}: ${def.label.toLowerCase()} thiếu nước uống, yếu đi.`, 'warn');
+      site.filth = Math.min(100, site.filth + 1.5);
+      continue;
     }
+
+    // Cám: gia cầm cần hạt; dê ăn cỏ nên gần như miễn phí; chăn thả ở ruộng đỡ 45%.
+    const feedNeed = def.feed * (lvl >= 2 ? 1.2 : 1) * (1 - 0.45 * graze);
+    const feed = Math.min(feedNeed, site.stock.rawFood);
+    if (feed > 0) take(site, 'rawFood', feed);
+    const starved = feedNeed - feed > feedNeed * 0.5;
+    const vigour = (starved ? 0.3 : 1) * (0.55 + 0.45 * graze) * (1 + 0.25 * (lvl - 1));
+
+    if (def.eggs > 0) addStock(s, site, { trung: Math.round(def.eggs * vigour * 10) / 10 });
+    if (def.milk > 0) addStock(s, site, { sua: Math.round(def.milk * vigour * 10) / 10 });
+    if (chance(s.rng, def.slaughter * vigour)) {
+      addStock(s, site, { thit: Math.round(def.meat * (0.85 + 0.3 * graze) * 10) / 10 });
+      log(s, `${site.name}: mổ một con ${def.label.toLowerCase()}.`, 'good');
+    }
+    site.heat = Math.min(100, site.heat + def.heat);
+    if (starved) log(s, `${site.name}: ${def.label.toLowerCase()} thiếu cỏ/cám, gầy đi.`, 'warn');
   }
   if (st.pond > 0) {
     const lvl = Math.max(1, st.pondLevel);
@@ -97,47 +121,6 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (murky) log(s, `${site.name}: ao cá bẩn, cá chết dần.`, 'warn');
   }
 
-
-  // Trại chăn nuôi (gia súc): sữa hằng ngày, thịt khi mổ, phân bón cho vườn.
-  // Dê cấp 1 sống bằng cỏ; lợn/bò cần thêm cám (rawFood) — chăn thả ở ruộng thì đỡ hơn.
-  if (st.barn > 0) {
-    const lvl = Math.max(1, st.barnLevel);
-    const graze = site.kind === 'field' ? 1 : 0.55; // ruộng có cỏ, sân trong phố thì gần như không
-    const herd = st.barn;
-    // Bầy vật uống nước bẩn trước — nước sạch để dành cho người.
-    const need = herd * 25;
-    const fromDirty = take(site, 'dirtyWater', Math.min(need, site.stock.dirtyWater));
-    // Chỉ lấy nước sạch khi người còn dư ≥ 3 ngày.
-    const pop = Math.max(1, home.length);
-    const cleanReserve = site.stock.water - pop * 3.3 * 3;
-    const fromClean = take(site, 'water', Math.max(0, Math.min(need - fromDirty, cleanReserve)));
-    const drank = fromDirty + fromClean;
-    if (drank < need * 0.6) {
-      log(s, `${site.name}: trại chăn nuôi thiếu nước uống, bầy vật yếu đi.`, 'warn');
-      site.filth = Math.min(100, site.filth + 1.5 * herd);
-    } else {
-      // Cỏ + phụ phẩm: dê (cấp 1) gần như tự kiếm, lợn/bò cần cám.
-      // Dê (cấp 1) ăn cỏ là chính; lợn/bò mới cần cám thật.
-      const feedPerHead = lvl >= 3 ? 2.2 : lvl === 2 ? 1.6 : 0.15;
-      const feedNeed = herd * feedPerHead * (1 - 0.45 * graze);
-      const feed = Math.min(feedNeed, site.stock.rawFood);
-      if (feed > 0) take(site, 'rawFood', feed);
-      const starved = feedNeed - feed > feedNeed * 0.5;
-
-      // Sữa: dê/bò; lợn (cấp 2) cho ít sữa, nhiều thịt.
-      // Một bầy (trại) cho vài lít sữa mỗi ngày; bò cấp 3 nhiều nhất, lợn cấp 2 ít sữa.
-      const milkPerDay = herd * (lvl >= 3 ? 4.5 : lvl === 2 ? 1.2 : 3) * (starved ? 0.3 : 1) * (0.5 + 0.5 * graze);
-      if (milkPerDay > 0) addStock(s, site, { sua: Math.round(milkPerDay * 10) / 10 });
-
-      // Mổ thịt: thỉnh thoảng, cấp càng cao càng nhiều.
-      if (chance(s.rng, starved ? 0.005 : 0.03 * herd)) {
-        addStock(s, site, { thit: (lvl >= 3 ? 2.4 : lvl === 2 ? 2 : 1.2) * (0.8 + 0.4 * graze) });
-        log(s, `${site.name}: mổ một con trong trại chăn nuôi.`, 'good');
-      }
-      site.heat = Math.min(100, site.heat + 1 * herd);
-      if (starved) log(s, `${site.name}: trại chăn nuôi thiếu cỏ/cám, bầy vật gầy đi.`, 'warn');
-    }
-  }
   // Spoilage. Heat speeds everything up.
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;

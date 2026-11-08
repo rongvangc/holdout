@@ -42,7 +42,8 @@ describe('livestock', () => {
     site.stock.dirtyWater = 0;
     site.stock.rawFood = 0;
     dayEvent(s, makeTestWorld());
-    expect(s.log.some((l) => l.msg.includes('trại chăn nuôi thiếu nước'))).toBe(true);
+    // Thông báo giờ theo loài (dê/lợn/bò/gà/vịt) chứ không phải nhãn module.
+    expect(s.log.some((l) => l.msg.includes('thiếu nước uống'))).toBe(true);
   });
 
   it('higher levels give more milk per animal', () => {

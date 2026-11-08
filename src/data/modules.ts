@@ -536,7 +536,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     maxPerSite: 2,
     workSec: () => 3 * H,
     cost: () => ({ wood: 12, cloth: 3, rope: 2 }),
-    desc: 'Nuôi gà: mỗi ngày đẻ trứng, thỉnh thoảng có thịt. Cần cho ăn bằng gạo/ngô. Ồn — heat +0.6/ngày.',
+    desc: 'Gia cầm theo vùng: gà trong phố, vịt ở gần sông/hồ. Đẻ trứng mỗi ngày, thỉnh thoảng có thịt. Cần hạt cho ăn. Ồn — heat tăng mỗi ngày.',
     levels: [
       { cost: { wood: 26, rope: 8, cloth: 4 }, workSec: 5 * H, note: 'Cấp 2: nhiều gà hơn, trứng ×1.6' },
       { cost: { plank: 12, hinge: 4, gear: 1 }, workSec: 8 * H, note: 'Cấp 3: chuồng kín, gà không bị mất ban đêm' },
@@ -552,7 +552,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     workSec: () => 6 * H,
     // Cấp 1 chỉ cần gỗ + dây: tấm ván (xưởng mộc) để dành cho nâng cấp.
     cost: () => ({ wood: 26, rope: 6 }),
-    desc: 'Dê/lợn/bò: sữa hằng ngày, thịt khi mổ, phân bón cho vườn. Cần nước uống và cỏ/cám; chăn thả ở ruộng thì đỡ cám. Ồn — heat +1/ngày.',
+    desc: 'Gia súc theo vùng: dê trong phố, lợn ở vùng ruộng, bò/trâu ở đồng bằng rộng (trâu ở miền Bắc gần nước). Dê/bò cho sữa, lợn/bò cho thịt, phân bón +25% tốc độ cây. Cần nước uống, cỏ/cám — chăn thả ở ruộng đỡ 45% cám.',
     levels: [
       { cost: { plank: 14, hinge: 4, rope: 8 }, workSec: 8 * H, note: 'Cấp 2: lợn — thịt nhiều hơn, sữa ít' },
       { cost: { plank: 20, gear: 2, lime: 8 }, workSec: 12 * H, note: 'Cấp 3: bò — sữa ×1.8 và mổ được thịt bò' },

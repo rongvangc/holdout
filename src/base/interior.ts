@@ -17,6 +17,8 @@ export interface Room {
   module?: ModuleId;
   /** Station level, 1-based. Absent or 1 = the level queueModule builds. */
   moduleLevel?: number;
+  /** Loài gia súc/gia cầm của chuồng/trại này (chọn theo vùng bản đồ lúc xây). */
+  herd?: import('../sim/livestock').HerdKind;
   name?: string;
   walled?: boolean; // false while a player-drawn room is waiting for its partitions
 }

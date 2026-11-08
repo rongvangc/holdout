@@ -864,3 +864,28 @@ Chuồng gà và ao cá chỉ là đạm quy mô nhỏ. **Trại chăn nuôi** m
 - **Thiếu nước/cám** → sữa còn 30%, log cảnh báo, độ bẩn tăng.
 
 **Cân bằng**: nhờ gia súc + tăng năng suất cây, bot 120 ngày × 4 seed đều sống hết, thu hoạch 1,4–2,4 triệu kcal/ván (trước 0,1–0,6 triệu).
+
+### 12.15 Vật nuôi theo vùng (`sim/livestock.ts`)
+
+Trại/chuồng không cố định một loài — **loài do vùng bản đồ quyết định**, chọn một lần khi xây xong (`room.herd`) và giữ nguyên về sau.
+
+| Vùng (dữ liệu bản đồ) | Chuồng | Trại |
+|---|---|---|
+| Gần nước (<400 m) + đồng bằng rộng, miền Bắc (vĩ độ >16°) | **Vịt** | **Trâu** |
+| Gần nước + đồng bằng rộng, miền Nam | Vịt | **Bò** |
+| Có ruộng vừa (6.000–20.000 m²), không cần nước | Gà | **Lợn** |
+| Phố, không ruộng | **Gà** | **Dê** |
+
+| Loài | Trứng/ngày | Sữa/ngày | Thịt/lần mổ | Cám/ngày | Nước/ngày |
+|---|---|---|---|---|---|
+| Gà | 4,2 | — | 1,1 kg | 0,5 kg | 6 L |
+| Vịt | 5,4 | — | 1,6 kg | 0,6 kg | 22 L |
+| Dê | — | 3,2 L | 1,4 kg | 0,15 kg | 18 L |
+| Lợn | — | 0,4 L | 2,6 kg | 1,8 kg | 28 L |
+| Bò | — | 4,6 L | 3,2 kg | 2,2 kg | 34 L |
+| Trâu | — | 2,6 L | 4,0 kg | 2,4 kg | 40 L |
+
+- Cấp 2/3 nhân sản lượng **×1,25 / ×1,5** và tăng nhu cầu nước, cám.
+- Chăn thả ở điểm ruộng: đỡ **45% cám**, sản lượng ×(0,55+0,45×cỏ).
+- Thiếu nước/cám → sản lượng còn 30%, log cảnh báo theo tên loài.
+- Gia cầm **chỉ cho trứng**, không cho sữa; dê/bò sữa là chính; lợn thịt là chính.
