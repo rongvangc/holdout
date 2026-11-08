@@ -344,6 +344,10 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   const horde = day <= s.hordeUntilDay;
   const home = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base');
   if (!home.length) return;
+  // Nhóm 1–2 người không thành "điểm" đáng tập kích: đêm đó chỉ có lẻ tẻ, không phải cả bầy.
+  // (Với năng suất nông nghiệp thực tế, cộng đồng thường chỉ 2–4 người — đợt tập kích
+  //  dành cho 10 người sẽ quét sạch họ trong vài đêm.)
+  if (home.length < 3) return;
   // Calibrated so 2 guards + fortify L1 hold early nights, and late game needs real walls.
   const raw =
     (8 + 1.5 * day ** 0.75) *

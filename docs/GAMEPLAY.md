@@ -844,3 +844,13 @@ Mọi hệ thêm trong thời gian qua đều có chỗ thao tác, không chỉ 
 | **Điều trị ngay** | tab Người (chi tiết) | dùng vật tư ngay tại chỗ, không phải chờ y tá — kiểm đúng luật của AI (Y tế 4+ cho kháng sinh, 1 lần/người/ngày) |
 | **Nâng cấp module** | tab Căn cứ (chọn phòng) | lên cấp với giá, thời gian, và ghi chú cấp đó mở gì |
 | **Tín hiệu cầu cứu** | drawer Kho | tiến độ x/7 đêm (ẩn khi cờ tắt) |
+
+### 12.16 Chế độ "thực tế" (cân bằng 2026-11, chọn C)
+
+Ba thay đổi cuối để mức năng suất thật vận hành được:
+
+1. **Ưu tiên nông dân** (`state.ts autoAssign`): thứ tự chia việc là **gác → nông dân → còn lại** (ruộng thì nông dân lên đầu). Trước đây nông dân bị xếp cuối nên sau khi chia gác/bếp/nước/y tá/thợ xây thì **không còn ai ra vườn** — vườn 740 m² sân nhà cũng bỏ hoang, đây là lỗi gốc khiến cả nền trồng trọt chết.
+2. **Vườn sân nhà** (`scripts/headless.ts consolidateYard`): bot gom sân thành khoảnh tới 800 m² và trồng rau ngay từ đầu (~700 m² = 2.500 kcal/ngày).
+3. **Nhóm nhỏ không bị tập kích** (`daily.ts raidEvent`): điểm có **dưới 3 người** không thành mục tiêu đáng tập kích. Với năng suất thực tế, cộng đồng thường chỉ 2–4 người; đợt tập kích dành cho 10 người sẽ quét sạch họ trong vài đêm.
+
+**Kết quả 120 ngày × 5 seed:** 4/5 sống hết (một seed chết đúng ngày 120), dân 2–7, thu hoạch **66.000–200.000 kcal/ván** (560–1.660 kcal/ngày), chết 18–28 người chủ yếu do tập kích. Đây là chế độ **sinh tồn khắc nghiệt**: dân số bị chặn bởi lương thực và thương vong, không phải bởi thiếu mô phỏng.

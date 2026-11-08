@@ -441,9 +441,12 @@ export function autoAssign(s: GameState, only?: Site): void {
     const lowMaterials = (site.stock.wood < 40 || site.projects.some((p) => !p.paid)) && (site.heat < 40 || site.stock.wood < 15);
     const field = site.kind === 'field';
     const farmArea = st.gardenArea + st.herbArea;
+    // Thứ tự ưu tiên: gác → NÔNG DÂN → phần còn lại. Trước đây nông dân bị đẩy xuống
+    // cuối nên sau khi chia gác/bếp/nước/y tá/thợ xây thì không còn ai ra vườn, và cả
+    // nền kinh tế trồng trọt (kể cả 740 m² sân nhà) không có người làm.
     const want: [Role, number][] = [
-      ['farmer', farmArea ? Math.ceil((farmArea * TEND_H_PER_M2_DAY) / 6) : 0],
       ['guard', Math.max(1, Math.round(n * 0.15))],
+      ['farmer', farmArea ? Math.max(1, Math.ceil((farmArea * TEND_H_PER_M2_DAY) / 6)) : 0],
       ['cook', st.kitchen ? Math.max(1, Math.round(n / 8)) : 0],
       ['water', st.filter || st.kitchen || st.well ? Math.max(1, Math.round(n / 8)) : 0],
       ['medic', n >= 4 ? 1 + Math.floor(n / 14) : 0],
@@ -451,7 +454,7 @@ export function autoAssign(s: GameState, only?: Site): void {
       ['gatherer', lowMaterials ? 1 + Math.floor(n * 0.12) : 0],
       ['builder', paid ? Math.max(1, Math.round(n * 0.3)) : 0],
     ];
-    if (!field) want.push(want.shift()!); // farming comes first only on fields
+    if (field) want.unshift(want.splice(1, 1)[0]); // ruộng thì nông dân lên đầu
     const free = new Set(people);
     for (const [role, k] of want) {
       const sk = ROLES[role].skill;
