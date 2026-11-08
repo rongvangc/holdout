@@ -147,6 +147,7 @@ export function migrate(raw: unknown): GameState {
     centroid: [0, 0],
     interior: o.interior as Site['interior'],
     stock: normalizeStock(o.stock as Site['stock']),
+    condition: (o.condition as Site['condition']) ?? {},
     fuelBatches: (o.fuelBatches as Site['fuelBatches']) ?? [],
     projects: (o.projects as Site['projects']) ?? [],
     fortify: o.fortify as Site['fortify'],
@@ -287,6 +288,8 @@ export interface BaseStats {
   generator: boolean;
   garage: boolean;
   bookshelf: boolean;
+  /** Cellar level 0..3 — slowest rot at 3. */
+  cellar: number;
   defenseStatic: number;
 }
 
@@ -317,6 +320,7 @@ export function baseStats(s: GameState, site: Site): BaseStats {
     generator: count('generator') > 0,
     garage: count('garage') > 0,
     bookshelf: count('bookshelf') > 0,
+    cellar: roomsWith(it, 'cellar').reduce((n, r) => Math.max(n, r.moduleLevel ?? 1), count('cellar') ? 1 : 0),
     defenseStatic:
       site.fortify.level * FORTIFY_DEFENSE_PER_LEVEL * (site.fortify.hp / 100) +
       site.fence.level * FENCE_DEFENSE_PER_LEVEL * (site.fence.hp / 100) +

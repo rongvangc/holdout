@@ -12,6 +12,8 @@ import {
   maxStationLevel,
   moveProject,
   queueCraft,
+  queueRepair,
+  repairableWeapons,
   queueDefense,
   queueModule,
   stationLevel,
@@ -501,6 +503,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   const stationLevels: Partial<Record<string, number>> = {};
   for (const m of Object.keys(MODULES)) stationLevels[m] = stationLevel(site, m as ModuleId);
   const recipes = availableRecipes(stationLevels as never);
+  const worn = repairableWeapons(site);
   const st = baseStats(s, site);
   const workshop = hasWorkshop(s);
   const field = site.kind === 'field';
@@ -754,6 +757,22 @@ export function BaseView({ s, site, refresh }: ViewProps) {
         {craftOpen && (
           <div className="col" style={{ gap: 4 }}>
             {!recipes.length && <div className="faint">Chưa có trạm nào. Xây Lò rèn / Xưởng mộc / Lò nung / Xưởng may trước.</div>}
+            {worn.map((w) => (
+              <button
+                key={`repair-${w.id}`}
+                disabled={(stationLevels.forge ?? 0) < 2}
+                onClick={() => act(() => queueRepair(s, site, w.id))}
+                title={(stationLevels.forge ?? 0) < 2 ? 'Cần lò rèn cấp 2' : `Sửa ${ITEMS[w.id]?.label ?? w.id}`}
+              >
+                <Icon src={ITEM_ICONS[w.id] ?? MODULE_ICONS.forge} size={20} />
+                <span>
+                  Sửa {ITEMS[w.id]?.label ?? w.id}
+                  <br />
+                  <span className="amber">mòn {Math.round((1 - w.condition) * 100)}%</span>
+                </span>
+                <span className="dim">sửa</span>
+              </button>
+            ))}
             {recipes.map((r) => {
               const afford = canAfford(site, Object.fromEntries(r.in));
               const outKg = (ITEMS[r.out]?.kgPerUnit ?? 0) * r.qty;

@@ -6,6 +6,7 @@ import { dist } from '../world/geo';
 import { CROPS, HYGIENE_L_PER_DAY, TEND_H_PER_M2_DAY } from './data';
 import { armorMitigation, bestWeapon, describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { ITEMS } from '../data/items';
+import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
@@ -66,11 +67,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;
   site.stock.rawFood *= 1 - (st.storage ? 0.005 : 0.02) * hot;
-  // Catalogued food (MRE, tins, dried goods) rots per item; a locked store halves it.
-  const cellar = st.storage ? 0.5 : 1;
+  // Catalogued food (MRE, tins, dried goods) rots per item; a locked store halves it too.
+  const cellarMul = rotFactor(st.cellar, st.storage);
   for (const [id, def] of Object.entries(ITEMS)) {
     if (!(site.stock[id] > 0) || !def.rotPerDay) continue;
-    const rate = def.rotPerDay * (def.rotPerDay < 0.01 ? 1 : hot) * cellar;
+    const rate = def.rotPerDay * (def.rotPerDay < 0.01 ? 1 : hot) * cellarMul;
     site.stock[id] = Math.max(0, site.stock[id] * (1 - rate));
   }
   const staleBefore = site.fuelBatches.reduce((a, b) => a + b.liters, 0);
@@ -110,6 +111,13 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     }
     v.treatedToday = false;
   }
+  // Thiếu rau quả lâu ngày: scorbut (thiếu vitamin C) — HP tụt dần cho tới khi ăn rau.
+  const noVegDays = day - (site.lastVegDay ?? 1);
+  if (noVegDays > SCURVY_DAYS) {
+    for (const v of home) v.hp = Math.max(1, v.hp - SCURVY_HP);
+    if (noVegDays === SCURVY_DAYS + 1) alert(s, `${site.name}: cả điểm đã ${noVegDays} ngày không có rau quả — thiếu vitamin C, mọi người yếu dần.`, 'bad');
+  }
+
   updateMorale(s, site, home, st.beds, st.recRoom);
 
   // Máy phát điện: đốt 24 L (2 L/h × 12 h đêm) để đêm hôm đó không còn ×0.75 tăng thêm ở tasks.workMult.
@@ -202,6 +210,7 @@ function updateMorale(s: GameState, site: Site, home: Survivor[], beds: number, 
     (s.laws.curfew ? -3 : 0) +
     (s.laws.corpses === 'bury' ? 2 : -1);
   const bedOk = beds >= home.length;
+  const monotone = isMonotone(site.dietLog);
   for (const v of home) {
     let target =
       55 +
@@ -214,6 +223,7 @@ function updateMorale(s: GameState, site: Site, home: Survivor[], beds: number, 
       site.filth / 8 -
       s.recentDeaths * 4 +
       lawMood -
+      (monotone ? MONOTONY_MORALE : 0) -
       (v.sickDays > 0 ? 10 : 0);
     if (hasTrait(v, 'brave')) target = Math.max(target, 30);
     v.morale = Math.max(0, Math.min(100, v.morale + (target - v.morale) * 0.3));
@@ -248,8 +258,9 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   for (const g of guards) {
     defense += (8 + 2 * skill(g, 'melee') + wDef) * (1 - g.fatigue / 200) * (hasTrait(g, 'brave') ? 1.25 : 1) * (s.laws.curfew ? 1.2 : 1);
   }
-  if (weapon && guards.length && wearWeapon(s, site, weapon, 1)) {
-    log(s, `${site.name}: ${describeWeapon(weapon)} gãy trong đêm.`, 'warn');
+  if (weapon && guards.length) {
+    const w = wearWeapon(s, site, weapon, 1);
+    if (w.broke) log(s, `${site.name}: ${describeWeapon(weapon)} gãy trong đêm.`, 'warn');
   }
   defense += (home.length - guards.length) * 1.5;
   if (guards.length || st.watchtowers) defense *= 1.15;

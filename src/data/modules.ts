@@ -23,7 +23,8 @@ export type ModuleId =
   | 'kiln'
   | 'tailor'
   | 'smokehouse'
-  | 'crock';
+  | 'crock'
+  | 'cellar';
 
 export type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
 
@@ -311,6 +312,21 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     levels: [
       { cost: { brick: 12, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: hun nhanh hơn, đỡ tốn củi' },
       { cost: { brick: 24, plate: 1 }, workSec: 6 * H, note: 'Cấp 3: hun cả mẻ lớn mỗi ngày' },
+    ],
+  },
+  cellar: {
+    label: 'Hầm lạnh',
+    icon: '▤',
+    color: '#5a6a7a',
+    placement: 'ground',
+    minArea: 6,
+    maxPerSite: 1,
+    workSec: () => 6 * H,
+    cost: () => ({ brick: 16, lime: 6, wood: 8 }),
+    desc: 'Hầm đất dưới tầng trệt: mọi thức ăn hỏng chậm hơn một nửa.',
+    levels: [
+      { cost: { brick: 20, lime: 10 }, workSec: 8 * H, note: 'Cấp 2: hỏng chỉ còn 35% tốc độ thường' },
+      { cost: { brick: 30, plate: 2 }, workSec: 12 * H, note: 'Cấp 3: hầm sâu, 25% tốc độ thường' },
     ],
   },
   crock: {

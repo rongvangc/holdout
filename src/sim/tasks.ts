@@ -1,7 +1,7 @@
 import { push } from '../core/eventQueue';
 import { chance, pick } from '../core/rng';
-import { HOUR, isNight } from '../core/time';
-import { ITEMS, type ItemDef } from '../data/items';
+import { DAY, HOUR, isNight } from '../core/time';
+import { edibleStock, isVegetable, pushMeal } from './diet';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
 import { activeProject, applyBuildWork, projectSkill } from './build';
 import { releaseFromQuarantine } from './lifecycle';
@@ -200,19 +200,23 @@ export function interrupt(s: GameState, v: Survivor): void {
  * Every catalogued food item is edible, not just the four legacy ids. Best kcal/kg
  * first, so a party eats the heavy tins before they rot rather than hoarding them.
  */
-function takeAnyEdible(site: Site, want: number): number {
+function takeAnyEdible(site: Site, want: number): { kcal: number; kind: string; veg: boolean } {
   let got = 0;
-  const edibles: [string, ItemDef][] = (Object.entries(ITEMS) as [string, ItemDef][])
-    .filter(([id, d]) => (d.kcal ?? 0) > 0 && (d.mechanic === 'food' || d.mechanic === 'comfort') && (site.stock[id] ?? 0) > 0)
-    .sort((a, b) => (b[1].kcal ?? 0) / Math.max(0.01, b[1].kgPerUnit) - (a[1].kcal ?? 0) / Math.max(0.01, a[1].kgPerUnit));
-  for (const [id, def] of edibles) {
+  let kind = '';
+  let veg = false;
+  const edibles = edibleStock(site);
+  for (const { id, def } of edibles) {
     if (got >= want) break;
     const per = def.kcal ?? 0;
     const units = Math.min(site.stock[id] ?? 0, Math.ceil((want - got) / per));
     const used = take(site, id, units);
-    got += used * per;
+    if (used > 0) {
+      got += used * per;
+      kind ||= id;
+      if (isVegetable(def.label)) veg = true;
+    }
   }
-  return got;
+  return { kcal: got, kind, veg };
 }
 
 function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
@@ -220,8 +224,22 @@ function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
   if (s.laws.rations === 'reduced') portion = 750;
   if (s.laws.rations === 'work' && (v.role === 'idle' || v.task?.kind === 'leisure')) portion = 700;
   let got = take(site, 'meals', portion);
-  got += take(site, 'food', portion - got);
-  if (got < portion) got += takeAnyEdible(site, portion - got);
+  let mainKind: string = got > 0 ? 'meals' : '';
+  const dry = take(site, 'food', portion - got);
+  if (dry > 0) {
+    got += dry;
+    mainKind ||= 'food';
+  }
+  if (got < portion) {
+    const extra = takeAnyEdible(site, portion - got);
+    got += extra.kcal;
+    mainKind ||= extra.kind;
+    if (extra.veg) site.lastVegDay = Math.floor(s.t / DAY) + 1;
+  }
+  if (site.stock.rawFood > 0 && got < portion) mainKind ||= 'rawFood';
+  if (mainKind) pushMeal(site, mainKind);
+  // Rau muống/khoai từ vườn nằm trong rawFood, và cơm nấu từ đó — cả hai đều là nguồn vitamin C.
+  if (mainKind === 'meals' || mainKind === 'rawFood') site.lastVegDay = Math.floor(s.t / DAY) + 1;
   if (got < portion * 0.5 && site.stock.rawFood > 0) {
     // Raw rice/potato without a kitchen: half the energy, upset stomach risk.
     const raw = take(site, 'rawFood', (portion - got) * 2);

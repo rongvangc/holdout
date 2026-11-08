@@ -311,8 +311,9 @@ function resolveEncounters(s: GameState, world: World, e: Expedition, sec: numbe
       from.heat = Math.min(100, from.heat + weapon.noise);
       if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + weapon.noise);
     }
-    if (weapon && wearWeapon(s, from, weapon, 1)) {
-      log(s, `${from.name}: ${describeWeapon(weapon)} gãy sau trận.`, 'warn');
+    if (weapon) {
+      const w = wearWeapon(s, from, weapon, 1);
+      if (w.broke) log(s, `${from.name}: ${describeWeapon(weapon)} gãy sau trận.`, 'warn');
     }
     if (e.target.cell) s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + (z === 'screamer' ? 8 : 2));
     if (chance(s.rng, (def.bite * (weapon?.biteMult ?? 1)) / Math.sqrt(alive.length))) {

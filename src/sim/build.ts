@@ -5,6 +5,7 @@ import type { SkillId } from './data';
 import { dist } from '../world/geo';
 import { addStock, alert, baseStats, canAfford, log, newId, take } from './state';
 import { itemLabel as ITEMS_LABEL, type Stock } from '../data/items';
+import { conditionOf, repairCost, restoreWeapon } from './equipment';
 import type { GameState, Project, Site, StockDelta } from './types';
 
 // Parts are fabricated at a workshop and carried, so one anywhere unlocks tier 2.
@@ -171,8 +172,46 @@ export function queueCraft(s: GameState, site: Site, recipeId: string): string |
   return null;
 }
 
+/**
+ * Repair the site's worn weapons at the forge (level 2 unlocks the bench that can).
+ * Cost scales with how far the stack has worn down; done through the same queue.
+ */
+export function queueRepair(s: GameState, site: Site, weaponId: string): string | null {
+  if (stationLevel(site, 'forge') < 2) return 'Cần lò rèn cấp 2 để sửa vũ khí';
+  if ((site.stock[weaponId] ?? 0) < 1) return 'Không có món này trong kho';
+  const cond = conditionOf(site, weaponId);
+  if (cond >= 0.98) return 'Món này còn mới';
+  const cost = repairCost({ id: weaponId, mitigation: 0, biteMult: 1, durability: 60, noise: 0, isFirearm: false, ammo: null, condition: cond });
+  const delta = { scrap: cost.scrap, charcoal: cost.charcoal } as StockDelta;
+  if (!canAfford(site, delta)) return `Thiếu vật tư: ${fmtCostShort(delta)}`;
+  if (site.projects.some((p) => p.kind === 'repair' && p.recipe === weaponId)) return 'Đang sửa món này rồi';
+  site.projects.push({
+    id: newId(s, 'p'),
+    kind: 'repair',
+    recipe: weaponId,
+    label: `Sửa ${ITEMS_LABEL(weaponId)} (${Math.round((1 - cond) * 100)}% mòn)`,
+    workTotal: 1800,
+    progress: 0,
+    cost: delta,
+    paid: false,
+  });
+  return null;
+}
+
+/** Worn weapons the site could repair right now. */
+export function repairableWeapons(site: Site): { id: string; condition: number }[] {
+  const out: { id: string; condition: number }[] = [];
+  for (const [id, n] of Object.entries(site.stock)) {
+    if (!(n > 0)) continue;
+    const c = site.condition?.[id];
+    if (c !== undefined && c < 0.98) out.push({ id, condition: c });
+  }
+  return out.sort((a, b) => a.condition - b.condition);
+}
+
 /** Skill a worker applies to this project. */
 export function projectSkill(p: Project): SkillId {
+  if (p.kind === 'repair') return 'crafting';
   if (p.kind === 'craft') return RECIPE_BY_ID[p.recipe ?? '']?.skill ?? 'crafting';
   return 'construction';
 }
@@ -250,6 +289,10 @@ export function applyBuildWork(s: GameState, site: Site, p: Project, sec: number
   } else if (p.kind === 'partition') {
     const room = site.interior.rooms.find((r) => r.id === p.roomId);
     if (room) room.walled = true;
+  } else if (p.kind === 'repair') {
+    const id = p.recipe;
+    if (id) restoreWeapon(site, id);
+    log(s, `${site.name}: sửa xong ${ITEMS_LABEL(p.recipe ?? '')}.`, 'good');
   } else if (p.kind === 'structure') {
     site.interior.structures ??= {};
     for (const c of p.cells ?? []) site.interior.structures[c] = p.struct!;

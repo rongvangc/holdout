@@ -71,7 +71,7 @@ export interface Survivor {
   joinedDay: number;
 }
 
-export type ProjectKind = 'module' | 'fortify' | 'fence' | 'partition' | 'structure' | 'craft';
+export type ProjectKind = 'module' | 'fortify' | 'fence' | 'partition' | 'structure' | 'craft' | 'repair';
 
 /** Daily walk between where someone sleeps (home) and where they work. */
 export interface Commute {
@@ -179,6 +179,12 @@ export interface Site {
   fence: { level: number; hp: number };
   plots: Record<string, Plot>;
   salvageLeft: { wood: number; scrap: number };
+  /** Last few things eaten, newest last — drives monotony. */
+  dietLog?: string[];
+  /** Day a vegetable/fruit was last eaten; old value = scurvy risk. */
+  lastVegDay?: number;
+  /** Weapon/armour wear, 0..1 per item stack (absent = new). */
+  condition?: Record<ItemId, number>;
   heat: number;
   filth: number;
   corpses: number;
