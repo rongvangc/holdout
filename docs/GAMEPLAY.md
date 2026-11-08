@@ -865,27 +865,34 @@ Chuồng gà và ao cá chỉ là đạm quy mô nhỏ. **Trại chăn nuôi** m
 
 **Cân bằng**: nhờ gia súc + tăng năng suất cây, bot 120 ngày × 4 seed đều sống hết, thu hoạch 1,4–2,4 triệu kcal/ván (trước 0,1–0,6 triệu).
 
-### 12.15 Vật nuôi theo vùng (`sim/livestock.ts`)
+### 12.15 Vật nuôi theo vùng & vòng sinh sản (`sim/livestock.ts`)
 
-Trại/chuồng không cố định một loài — **loài do vùng bản đồ quyết định**, chọn một lần khi xây xong (`room.herd`) và giữ nguyên về sau.
+Trại/chuồng giữ một **bầy** (`room.herdState`), không phải một con số sản lượng. Loài chọn một lần khi xây xong, theo dữ liệu bản đồ:
 
 | Vùng (dữ liệu bản đồ) | Chuồng | Trại |
 |---|---|---|
 | Gần nước (<400 m) + đồng bằng rộng, miền Bắc (vĩ độ >16°) | **Vịt** | **Trâu** |
 | Gần nước + đồng bằng rộng, miền Nam | Vịt | **Bò** |
-| Có ruộng vừa (6.000–20.000 m²), không cần nước | Gà | **Lợn** |
+| Có ruộng vừa (6.000–20.000 m²) | Gà | **Lợn** |
 | Phố, không ruộng | **Gà** | **Dê** |
 
-| Loài | Trứng/ngày | Sữa/ngày | Thịt/lần mổ | Cám/ngày | Nước/ngày |
-|---|---|---|---|---|---|
-| Gà | 4,2 | — | 1,1 kg | 0,5 kg | 6 L |
-| Vịt | 5,4 | — | 1,6 kg | 0,6 kg | 22 L |
-| Dê | — | 3,2 L | 1,4 kg | 0,15 kg | 18 L |
-| Lợn | — | 0,4 L | 2,6 kg | 1,8 kg | 28 L |
-| Bò | — | 4,6 L | 3,2 kg | 2,2 kg | 34 L |
-| Trâu | — | 2,6 L | 4,0 kg | 2,4 kg | 40 L |
+**Nhịp sinh học lấy theo chăn nuôi thật:**
 
-- Cấp 2/3 nhân sản lượng **×1,25 / ×1,5** và tăng nhu cầu nước, cám.
-- Chăn thả ở điểm ruộng: đỡ **45% cám**, sản lượng ×(0,55+0,45×cỏ).
-- Thiếu nước/cám → sản lượng còn 30%, log cảnh báo theo tên loài.
-- Gia cầm **chỉ cho trứng**, không cho sữa; dê/bò sữa là chính; lợn thịt là chính.
+| Loài | Trứng | Sữa/con/ngày | Kỳ sữa | Động dục | Mang thai | Con/lứa | Trưởng thành | Nặng |
+|---|---|---|---|---|---|---|---|---|
+| Gà | 1 quả / **1,6 ngày** | — | — | 21 ngày | **21 ngày** (ấp) | 6 | **150 ngày** | 1,8 kg |
+| Vịt | 1 quả / **1,4 ngày** | — | — | 21 | 28 (ấp) | 8 | 180 | 2,5 kg |
+| Dê | — | 2,0 L | 240 ngày | 21 | **150** | 1,7 | 300 | 35 kg |
+| Lợn | — | 0,4 L | 45 ngày | 21 | **114** | 8 | 210 | 90 kg |
+| Bò | — | 8,0 L | 300 ngày | 21 | **283** | 1 | 540 | 350 kg |
+| Trâu | — | 2,2 L | 240 ngày | 21 | **330** | 1 | 600 | 400 kg |
+
+- **Trứng** tích theo nhịp (không phải mỗi ngày 1 quả): 6 gà mái → ~3,6 quả/ngày.
+- **Chỉ con cái đang trong kỳ sữa mới cho sữa**; đẻ xong mới có sữa, hết kỳ (240–300 ngày) thì phải phối lại.
+- **Sinh sản**: cần con đực; con cái động dục mỗi 21 ngày → mang thai theo loài → đẻ lứa (lợn 8, gà 6, bò 1). Trong một ván 120 ngày **bò/trâu không thể đẻ** (283/330 ngày) — đó là thực tế, không phải lỗi.
+- **Con non** lớn sau 150–600 ngày (tỷ lệ sống 65–85%) rồi mới vào đàn sinh sản.
+- **Mổ thịt**: mất 1 con trưởng thành, thịt = khối lượng × tỷ lệ thịt (lợn 90 kg × 72% ≈ 65 kg; bò 350 × 55% ≈ 190 kg); luôn giữ lại ≥2 con giống.
+- **Chăm sóc** (`care`) = đủ cám + đủ nước (nước bẩn trước, nước sạch chỉ khi người còn dư ≥3 ngày). care < 0,3 → bầy gầy, có thể mất con; care thấp cũng làm chậm động dục.
+- **Sức chứa**: gà 0,25 m²/con → bò 4 m²/con; vượt trần thì bầy tự loại bớt.
+- **Không có dịch bệnh** (theo yêu cầu): chỉ hao hụt do đói/khát/chật.
+- Kho hiển thị bầy: `Gà · 8 lớn · 2 non · chửa 1 (12 ngày) · sữa 3 (95 ngày) / 20`.

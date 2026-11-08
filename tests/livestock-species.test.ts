@@ -55,13 +55,14 @@ describe('species depend on the map', () => {
 describe('herd products', () => {
   const addRoom = (r: Room) => r;
 
-  it('poultry lays eggs, goats and cattle give milk, pigs give meat', () => {
-    expect(HERDS.ga.eggs).toBeGreaterThan(0);
-    expect(HERDS.vit.eggs).toBeGreaterThan(HERDS.ga.eggs);
-    expect(HERDS.de.milk).toBeGreaterThan(0);
-    expect(HERDS.bo.milk).toBeGreaterThan(HERDS.de.milk);
-    expect(HERDS.lon.meat).toBeGreaterThan(HERDS.ga.meat);
-    expect(HERDS.ga.milk).toBe(0);
+  it('poultry lays eggs, goats and cattle give milk, pigs are for meat', () => {
+    expect(HERDS.ga.eggEvery).toBeGreaterThan(0); // gà mái đẻ trứng
+    expect(HERDS.de.eggEvery).toBe(0); // dê không đẻ trứng
+    expect(HERDS.vit.eggEvery).toBeLessThan(HERDS.ga.eggEvery); // vịt đẻ dày hơn gà ta
+    expect(HERDS.de.milkPerDay).toBeGreaterThan(0);
+    expect(HERDS.bo.milkPerDay).toBeGreaterThan(HERDS.de.milkPerDay);
+    expect(HERDS.ga.milkPerDay).toBe(0);
+    expect(HERDS.lon.adultKg * HERDS.lon.dressing).toBeGreaterThan(HERDS.ga.adultKg * HERDS.ga.dressing);
   });
 
   it('a coop of ducks produces eggs day after day', () => {

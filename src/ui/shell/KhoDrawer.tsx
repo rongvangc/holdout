@@ -4,6 +4,7 @@ import { dayOf } from '../../core/time';
 import { ITEMS, stockWeight, type ItemId } from '../../data/items';
 import { baseStats, present } from '../../sim/state';
 import { GEAR_SLOTS } from '../../sim/gear';
+import { HERDS, herdCapacity } from '../../sim/livestock';
 import type { GameState, Site } from '../../sim/types';
 import { fmtNum } from '../Game';
 import { Icon, ITEM_ICONS } from '../icons';
@@ -104,6 +105,30 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
         </span>
         <span title="Gỗ sẵn trong toà nhà này — người kiếm củi lấy nhanh hơn; hết thì đi xa, chậm gấp đôi và ồn hơn">Củi sẵn trong nhà</span>
         <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết — phải đi xa'}</span>
+      </div>
+      <div className="dither" />
+      <div className="label">Chăn nuôi</div>
+      <div className="kv">
+        {site.interior.rooms.filter((r) => r.module === 'coop' || r.module === 'barn').length === 0 && (
+          <span className="faint">Chưa có chuồng/trại.</span>
+        )}
+        {site.interior.rooms
+          .filter((r) => r.module === 'coop' || r.module === 'barn')
+          .map((r) => {
+            const h = r.herdState;
+            const bio = r.herd ? HERDS[r.herd] : null;
+            const cap = r.herd ? herdCapacity(r.area * (1 + 0.25 * ((r.moduleLevel ?? 1) - 1)), r.herd) : 0;
+            if (!bio) return null;
+            const bits: string[] = [`${h?.adults ?? 0} lớn`];
+            if (h?.young) bits.push(`${h.young} non`);
+            if (h?.pregnant) bits.push(`chửa ${h.pregnant} (${h.dueIn} ngày)`);
+            if (h?.lactating) bits.push(`sữa ${h.lactating} (${h.lactationIn} ngày)`);
+            return (
+              <span key={r.id} title={bio.desc}>
+                {bio.label} · {bits.join(' · ')} / {cap}
+              </span>
+            );
+          })}
       </div>
       <div className="dither" />
       <div className="label">Điểm này</div>

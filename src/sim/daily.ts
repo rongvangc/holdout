@@ -14,7 +14,7 @@ import { chargeBatteries, planPower } from './power';
 /** Đêm phát tín hiệu liên tục cần để được cứu. */
 export const RESCUE_DAYS = 7;
 import { zombieType } from './zombies';
-import { HERDS, herdFor } from './livestock';
+import { HERDS, herdCapacity, herdFor, herdNeeds, startingHerd, tickHerd } from './livestock';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
@@ -74,44 +74,43 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (before < 1 && plot.growth >= 1) log(s, `${site.name}: ${CROPS[plot.crop].label} đã chín.`, 'good');
   }
 
-  // Chăn nuôi: mỗi vùng nuôi loài khác nhau (vịt gần nước, bò ở đồng bằng, gà trong phố).
-  // Loài quyết định sản phẩm: gia cầm cho trứng, dê/bò cho sữa, lợn/bò cho thịt.
+  // Chăn nuôi: mỗi chuồng/trại giữ một bầy có vòng sinh sản thật (xem sim/livestock.ts).
   for (const room of site.interior.rooms) {
     if (room.module !== 'coop' && room.module !== 'barn') continue;
     if (!room.herd) room.herd = herdFor(world, site, room.module);
-    const kind = room.herd;
-    const def = HERDS[kind];
-    const lvl = Math.max(1, room.moduleLevel ?? 1);
-    const graze = site.kind === 'field' ? 1 : 0.55;
+    const bio = HERDS[room.herd];
+    const cap = herdCapacity(room.area * (1 + 0.25 * ((room.moduleLevel ?? 1) - 1)), room.herd);
+    if (!room.herdState) room.herdState = startingHerd(room.herd, cap);
+    const h = room.herdState;
+
+    // Chăm = đủ ăn + đủ uống (nước bẩn trước, nước sạch chỉ khi người còn dư ≥3 ngày).
+    const need = herdNeeds(h);
     const pop = Math.max(1, home.length);
-
-    // Nước: bầy uống nước bẩn trước, nước sạch để dành cho người (≥3 ngày).
-    const need = def.water * (lvl >= 2 ? 1.15 : 1);
-    const fromDirty = take(site, 'dirtyWater', Math.min(need, site.stock.dirtyWater));
+    const fromDirty = take(site, 'dirtyWater', Math.min(need.water, site.stock.dirtyWater));
     const cleanReserve = site.stock.water - pop * 3.3 * 3;
-    const fromClean = take(site, 'water', Math.max(0, Math.min(need - fromDirty, cleanReserve)));
+    const fromClean = take(site, 'water', Math.max(0, Math.min(need.water - fromDirty, cleanReserve)));
     const drank = fromDirty + fromClean;
-    if (drank < need * 0.6) {
-      log(s, `${site.name}: ${def.label.toLowerCase()} thiếu nước uống, yếu đi.`, 'warn');
-      site.filth = Math.min(100, site.filth + 1.5);
-      continue;
-    }
+    const fed = Math.min(need.feed, site.stock.rawFood);
+    if (fed > 0) take(site, 'rawFood', fed);
+    // Chăn thả ở ruộng đỡ 45% cỏ/cám.
+    const graze = site.kind === 'field' ? 0.45 : 0.2;
+    const care = Math.max(
+      0,
+      Math.min(1, (0.55 * Math.min(1, fed / Math.max(0.01, need.feed * (1 - graze))) + 0.45 * Math.min(1, drank / Math.max(0.01, need.water))) * (1 + 0.1 * ((room.moduleLevel ?? 1) - 1))),
+    );
 
-    // Cám: gia cầm cần hạt; dê ăn cỏ nên gần như miễn phí; chăn thả ở ruộng đỡ 45%.
-    const feedNeed = def.feed * (lvl >= 2 ? 1.2 : 1) * (1 - 0.45 * graze);
-    const feed = Math.min(feedNeed, site.stock.rawFood);
-    if (feed > 0) take(site, 'rawFood', feed);
-    const starved = feedNeed - feed > feedNeed * 0.5;
-    const vigour = (starved ? 0.3 : 1) * (0.55 + 0.45 * graze) * (1 + 0.25 * (lvl - 1));
+    // Mổ thịt khi bầy vượt sức chứa hoặc khi kho lương thực cạn (giữ lại 2 con giống).
+    const crowded = h.adults + h.young > cap;
+    const hungryCamp = site.stock.rawFood + site.stock.food + site.stock.meals < pop * 2250 * 3;
+    const slaughter = crowded ? 1 : hungryCamp && h.adults > 2 ? 1 : 0;
 
-    if (def.eggs > 0) addStock(s, site, { trung: Math.round(def.eggs * vigour * 10) / 10 });
-    if (def.milk > 0) addStock(s, site, { sua: Math.round(def.milk * vigour * 10) / 10 });
-    if (chance(s.rng, def.slaughter * vigour)) {
-      addStock(s, site, { thit: Math.round(def.meat * (0.85 + 0.3 * graze) * 10) / 10 });
-      log(s, `${site.name}: mổ một con ${def.label.toLowerCase()}.`, 'good');
-    }
-    site.heat = Math.min(100, site.heat + def.heat);
-    if (starved) log(s, `${site.name}: ${def.label.toLowerCase()} thiếu cỏ/cám, gầy đi.`, 'warn');
+    const tick = tickHerd(h, cap, care, s.rng, slaughter);
+    if (tick.eggs) addStock(s, site, { trung: tick.eggs });
+    if (tick.milk) addStock(s, site, { sua: Math.round(tick.milk * 10) / 10 });
+    if (tick.meat) addStock(s, site, { thit: tick.meat });
+    site.heat = Math.min(100, site.heat + bio.heat * (h.adults + h.young));
+    for (const e of tick.events) log(s, `${site.name}: ${e}`, 'info');
+    if (care < 0.3) log(s, `${site.name}: ${bio.label.toLowerCase()} thiếu ăn/uống, bầy gầy đi.`, 'warn');
   }
   if (st.pond > 0) {
     const lvl = Math.max(1, st.pondLevel);

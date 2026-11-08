@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../src/data/items';
+import { herdCapacity } from '../src/sim/livestock';
 import { MODULES } from '../src/data/modules';
 import { baseStats, mainSite, newGame, addStock } from '../src/sim/state';
 import { dayEvent } from '../src/sim/daily';
@@ -43,24 +44,12 @@ describe('livestock', () => {
     site.stock.rawFood = 0;
     dayEvent(s, makeTestWorld());
     // Thông báo giờ theo loài (dê/lợn/bò/gà/vịt) chứ không phải nhãn module.
-    expect(s.log.some((l) => l.msg.includes('thiếu nước uống'))).toBe(true);
+    expect(s.log.some((l) => l.msg.includes('thiếu ăn/uống'))).toBe(true);
   });
 
-  it('higher levels give more milk per animal', () => {
-    const a = setup();
-    addBarn(a.site, 1);
-    const b = setup();
-    addBarn(b.site, 3);
-    for (const x of [a, b]) {
-      addStock(x.s, x.site, { water: 500, rawFood: 60000 });
-      x.site.stock.sua = 0;
-    }
-    const world = makeTestWorld();
-    for (let i = 0; i < 14; i++) {
-      dayEvent(a.s, world);
-      dayEvent(b.s, world);
-    }
-    expect((b.site.stock.sua ?? 0)).toBeGreaterThan((a.site.stock.sua ?? 0));
+  it('a bigger barn (higher level) holds more animals', () => {
+    expect(herdCapacity(40 * 1.25, 'de')).toBeGreaterThanOrEqual(herdCapacity(40, 'de'));
+    expect(herdCapacity(200, 'bo')).toBeLessThan(herdCapacity(200, 'de')); // bò cần nhiều chỗ hơn
   });
 
   it('milk is edible food', () => {

@@ -19,6 +19,8 @@ export interface Room {
   moduleLevel?: number;
   /** Loài gia súc/gia cầm của chuồng/trại này (chọn theo vùng bản đồ lúc xây). */
   herd?: import('../sim/livestock').HerdKind;
+  /** Bầy của chuồng/trại: số con, mang thai, kỳ sữa, con non. */
+  herdState?: import('../sim/livestock').HerdState;
   name?: string;
   walled?: boolean; // false while a player-drawn room is waiting for its partitions
 }
