@@ -662,7 +662,12 @@ export function BaseView({ s, site, refresh }: ViewProps) {
                 maxLength={32}
                 onChange={(e) => (renameRoom(site, room.id, e.target.value), refresh())}
               />
-              {room.module && <span className="tag">{MODULES[room.module].label}</span>}
+              {room.module && (
+                <span className="tag" title="Cấp của công trình — nâng cấp để tăng hiệu quả">
+                  {MODULES[room.module].label}
+                  {(MODULES[room.module].levels?.length ?? 0) > 0 ? ` · cấp ${room.moduleLevel ?? 1}/${maxStationLevel(room.module)}` : ''}
+                </span>
+              )}
             </div>
             <div className="dim">
               {room.outdoor ? 'Ngoài sân' : `Tầng ${room.floor + 1}`} · {Math.round(room.area)} m²

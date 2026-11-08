@@ -244,6 +244,9 @@ export function upgradeModule(s: GameState, site: Site, roomId: string): string 
     cost: next.cost,
     paid: false,
   });
+  // Trả vật tư ngay như queueModule/queueCraft: nếu không, nút "Nâng cấp" trông như
+  // không có tác dụng cho tới nhịp ngày sau, và thợ xây chỉ nhận việc đã trả tiền.
+  payProjects(s, site);
   return null;
 }
 

@@ -101,12 +101,12 @@ describe('crafting through the build queue', () => {
     expect(err).toBeNull();
     const p = site.projects.find((x) => x.level === 2)!;
     expect(p).toBeDefined();
-    expect(p.paid).toBe(false);
-
-    // Pay and finish it.
-    for (const [k, v] of Object.entries(p.cost)) site.stock[k] = Math.max(site.stock[k] ?? 0, v ?? 0);
-    p.paid = true;
-    for (const [k, v] of Object.entries(p.cost)) site.stock[k] -= v ?? 0;
+    // Nâng cấp trả vật tư ngay (giống queueModule/queueCraft), không chờ nhịp ngày.
+    if (!p.paid) {
+      for (const [k, v] of Object.entries(p.cost)) site.stock[k] = Math.max(site.stock[k] ?? 0, v ?? 0);
+      p.paid = true;
+      for (const [k, v] of Object.entries(p.cost)) site.stock[k] -= v ?? 0;
+    }
     applyBuildWork(s, site, p, p.workTotal + 1);
 
     expect(stationLevel(site, 'forge')).toBe(2);
