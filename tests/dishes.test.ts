@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DISHES, INGREDIENTS } from '../src/data/dishes';
 import { ITEMS } from '../src/data/items';
 import { RECIPES, recipesFor } from '../src/data/recipes';
-import { isMonotone } from '../src/sim/diet';
+import { applyFoodFx, foodFxLabel, FX_CAPS, isMonotone, type FxTarget } from '../src/sim/diet';
 import { newGame } from '../src/sim/state';
 import { makeTestWorld } from '../scripts/headless';
 
@@ -55,7 +55,7 @@ describe('cooking layer', () => {
   });
 
   it('eating a dish raises morale and stock falls', () => {
-    const { s, site } = setup();
+    const { site } = setup();
     site.stock.mon_thit_kho = 4;
     const before = site.stock.mon_thit_kho;
     // eat() lives behind the task loop; assert the data contract instead: the dish
@@ -63,5 +63,60 @@ describe('cooking layer', () => {
     expect(ITEMS.mon_thit_kho.morale).toBe(10);
     expect(ITEMS.mon_thit_kho.kcal).toBeGreaterThan(2000);
     expect(site.stock.mon_thit_kho).toBe(before);
+  });
+});
+
+describe('dishes do something', () => {
+  const fresh = (): FxTarget => ({ hp: 50, fatigue: 60, water: 1000, sickDays: 3, morale: 40 });
+
+  it('cháo puts a sick person back on their feet', () => {
+    const v = fresh();
+    applyFoodFx(v, DISHES.mon_chao.fx);
+    expect(v.hp).toBeGreaterThan(50);
+    expect(v.fatigue).toBeLessThan(60);
+    expect(v.water).toBeGreaterThan(1000);
+    expect(v.sickDays).toBeLessThan(3);
+  });
+
+  it('thịt kho restores the most HP, trứng chiên is the cheap healer', () => {
+    const a = fresh();
+    const b = fresh();
+    applyFoodFx(a, DISHES.mon_thit_kho.fx);
+    applyFoodFx(b, DISHES.mon_trung_chien.fx);
+    expect(a.hp).toBeGreaterThan(b.hp);
+    expect(b.hp).toBeGreaterThan(50);
+  });
+
+  it('canh rau counts as a drink', () => {
+    const v = fresh();
+    applyFoodFx(v, DISHES.mon_canh.fx);
+    expect(v.water).toBe(1400);
+  });
+
+  it('caps stop one meal from acting like a medkit', () => {
+    const v = fresh();
+    applyFoodFx(v, { heal: 999, fatigue: 999, water: 9999, cureDays: 99 });
+    expect(v.hp).toBe(50 + FX_CAPS.heal);
+    expect(v.fatigue).toBe(Math.max(0, 60 - FX_CAPS.fatigue));
+    expect(v.water).toBe(1000 + FX_CAPS.water);
+    expect(v.sickDays).toBe(3 - FX_CAPS.cureDays);
+  });
+
+  it('vegetables and pickles carry vitamin C, plain rice does not', () => {
+    expect(DISHES.mon_dua_muoi.fx?.vitamin).toBe(true);
+    expect(DISHES.mon_canh.fx?.vitamin).toBe(true);
+    expect(DISHES.mon_com.fx?.vitamin).toBeUndefined();
+    expect(DISHES.mon_rau_xao.fx?.vitamin).toBe(true);
+  });
+
+  it('only bread is marked as travel food', () => {
+    const travel = Object.entries(DISHES).filter(([, d]) => d.fx?.travel).map(([id]) => id);
+    expect(travel).toEqual(['mon_banh_mi']);
+  });
+
+  it('labels the effects for the player', () => {
+    expect(foodFxLabel(DISHES.mon_chao.fx)).toContain('hồi');
+    expect(foodFxLabel(DISHES.mon_chao.fx)).toContain('mau khỏi');
+    expect(foodFxLabel(DISHES.mon_com.fx)).not.toContain('vitamin');
   });
 });

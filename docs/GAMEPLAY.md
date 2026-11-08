@@ -587,3 +587,24 @@ Món ăn (kcal/phần · tinh thần khi ăn · trạm/cấp):
 - **Chuồng gà** (mới): ăn 2200 kcal/ngày mỗi chuồng, đẻ ~3 trứng/ngày (cấp 2: ~4.8), 4%/ngày có thêm thịt; heat +0.6/ngày. Không có gì cho ăn thì gà đói.
 - **Ao cá** (mới): 65%/ngày bắt được cá (ao bẩn > 55 thì còn 30% và cá chết dần); cấp 2/3 tăng sản lượng.
 - Vườn rau khi thu hoạch cho thêm **rau tươi** (60 m² ≈ 1 kg) — dư lượng nhỏ so với kcal nên không phá cân bằng.
+
+### 12.10 Món ăn có công dụng (`data/items.ts` → `FoodFx`, `sim/diet.ts`)
+
+Ngoài kcal và tinh thần, mỗi món còn **tác dụng lên người ăn**. Hiệu ứng cộng dồn theo số phần nhưng bị kẹp (`FX_CAPS`): hồi tối đa 15 HP, đỡ 20 mệt, +500 ml, giảm 1 ngày bệnh mỗi bữa.
+
+| Món | Hồi HP | Đỡ mệt | Nước | Bệnh | Vitamin | Ghi chú |
+|---|---|---|---|---|---|---|
+| Cơm trắng | +2 | — | — | — | — | món nền |
+| Cơm + rau | +4 | — | — | — | ✓ | |
+| **Cháo** | **+8** | **−15** | **+200 ml** | **−1 ngày** | — | món cho người bệnh |
+| Khoai luộc | +1 | — | — | — | — | rẻ, để lâu |
+| **Canh rau** | — | — | **+400 ml** | — | ✓ | ăn canh là uống nước |
+| Rau xào | +3 | — | — | — | ✓ | |
+| **Cá kho** | +6 | — | — | — | ✓ | |
+| **Thịt kho** | **+12** | −10 | — | — | — | hồi sức mạnh nhất |
+| **Trứng chiên** | **+10** | — | — | — | — | rẻ, tốt cho vết thương |
+| Đậu hũ | +5 | — | — | — | — | đạm rẻ |
+| **Bánh mì** | +1 | — | — | — | — | **`travel`**: nhẹ (0.4 kg), để 5 ngày, mang đi viễn chinh |
+| **Dưa muối** | — | — | — | **−1 ngày** | ✓ | hỏng 4%/ngày, đủ vitamin cả mùa |
+
+Nhờ vậy món ăn trở thành **công cụ y tế rẻ**: không có thuốc thì cháo và dưa muối là cách chữa bệnh, thịt kho/trứng là cách hồi máu sau trận tập kích. Tooltip trong panel Chế tạo hiện đủ các hiệu ứng này.

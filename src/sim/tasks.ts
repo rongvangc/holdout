@@ -1,8 +1,8 @@
 import { push } from '../core/eventQueue';
 import { chance, pick } from '../core/rng';
 import { DAY, HOUR, isNight } from '../core/time';
-import { ITEMS as ITEMS_LIB } from '../data/items';
-import { edibleStock, isVegetable, pushMeal } from './diet';
+import { ITEMS as ITEMS_LIB, type FoodFx, type ItemDef } from '../data/items';
+import { applyFoodFx, edibleStock, isVegetable, pushMeal } from './diet';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
 import { activeProject, applyBuildWork, projectSkill } from './build';
 import { releaseFromQuarantine } from './lifecycle';
@@ -210,25 +210,37 @@ const VEG_DISHES = new Set(['mon_com_rau', 'mon_canh', 'mon_rau_xao', 'mon_dua_m
  * The tastiest dish in the store: morale first, calories as the tie-break.
  * A community that cooked thịt kho will eat it before the plain rice.
  */
-function takeDish(s: GameState, site: Site, want: number): { kcal: number; kind: string; morale: number } {
+function takeDish(s: GameState, site: Site, want: number): { kcal: number; kind: string; morale: number; fx: FoodFx; units: number } {
   let kcal = 0;
   let kind = '';
   let morale = 0;
+  let units = 0;
+  const fx: FoodFx = {};
   const dishes = (Object.entries(ITEMS_LIB) as [string, { kcal?: number; morale?: number; label: string }][])
     .filter(([id, d]) => (d.morale ?? 0) > 0 && (site.stock[id] ?? 0) > 0)
     .sort((a, b) => (b[1].morale ?? 0) - (a[1].morale ?? 0) || (b[1].kcal ?? 0) - (a[1].kcal ?? 0));
   for (const [id, def] of dishes) {
     if (kcal >= want) break;
     const per = def.kcal ?? 0;
-    const units = Math.min(site.stock[id] ?? 0, Math.ceil((want - kcal) / Math.max(1, per)));
-    const used = take(site, id, units);
+    const wantUnits = Math.min(site.stock[id] ?? 0, Math.ceil((want - kcal) / Math.max(1, per)));
+    const used = take(site, id, wantUnits);
     if (used <= 0) continue;
     kcal += used * per;
     morale += used * (def.morale ?? 0);
+    units += used;
     kind ||= id;
-    if (VEG_DISHES.has(id)) site.lastVegDay = Math.floor(s.t / DAY) + 1;
+    const f = (def as ItemDef).fx;
+    if (f) {
+      fx.heal = (fx.heal ?? 0) + (f.heal ?? 0) * used;
+      fx.fatigue = (fx.fatigue ?? 0) + (f.fatigue ?? 0) * used;
+      fx.water = (fx.water ?? 0) + (f.water ?? 0) * used;
+      fx.cureDays = (fx.cureDays ?? 0) + (f.cureDays ?? 0) * used;
+      if (f.vitamin) fx.vitamin = true;
+      if (f.travel) fx.travel = true;
+    }
+    if (VEG_DISHES.has(id) || f?.vitamin) site.lastVegDay = Math.floor(s.t / DAY) + 1;
   }
-  return { kcal, kind, morale: Math.min(12, morale) };
+  return { kcal, kind, morale: Math.min(12, morale), fx, units };
 }
 
 function takeAnyEdible(site: Site, want: number): { kcal: number; kind: string; veg: boolean } {
@@ -293,6 +305,9 @@ function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
   if (got <= 0) return false;
   v.kcal = Math.min(KCAL_MAX, v.kcal + got);
   if (moraleGain) v.morale = Math.max(0, Math.min(100, v.morale + moraleGain));
+  // Công dụng của món: hồi máu, đỡ mệt, thêm nước, mau khỏi bệnh — kẹp lại để
+  // không biến một bữa ăn thành lọ thuốc.
+  applyFoodFx(v, dish.fx, WATER_MAX);
   start(s, v, 'eat', 'rest', 900);
   return true;
 }

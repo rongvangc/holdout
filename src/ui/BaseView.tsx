@@ -5,6 +5,7 @@ import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
 import { availableRecipes } from '../data/recipes';
+import { foodFxLabel } from '../sim/diet';
 import {
   cancelProject,
   demolish,
@@ -781,7 +782,13 @@ export function BaseView({ s, site, refresh }: ViewProps) {
                   key={r.id}
                   disabled={!afford}
                   onClick={() => act(() => queueCraft(s, site, r.id))}
-                  title={`${MODULES[r.station].label} cấp ${r.level} · ${fmtDuration(r.workSec)}`}
+                  title={[
+                    `${MODULES[r.station].label} cấp ${r.level} · ${fmtDuration(r.workSec)}`,
+                    ITEMS[r.out]?.morale ? `+${ITEMS[r.out].morale} tinh thần` : '',
+                    foodFxLabel(ITEMS[r.out]?.fx),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 >
                   <Icon src={ITEM_ICONS[r.out] ?? MODULE_ICONS[r.station]} size={20} />
                   <span>

@@ -9,6 +9,25 @@ import { MATERIALS } from './materials';
  */
 export type ItemId = string;
 
+/**
+ * Effects a dish has on the person eating it. Everything is per portion and
+ * capped when several portions are eaten in one meal.
+ */
+export interface FoodFx {
+  /** HP restored (broth, protein). */
+  heal?: number;
+  /** Fatigue removed (a hot meal before sleeping). */
+  fatigue?: number;
+  /** Water gained, in ml — soup counts as drinking. */
+  water?: number;
+  /** Days of illness shaken off. */
+  cureDays?: number;
+  /** Counts as vegetables for scurvy. */
+  vitamin?: boolean;
+  /** Light and shelf-stable: the only food worth carrying on an expedition. */
+  travel?: boolean;
+}
+
 export interface ItemDef {
   label: string;
   unit: string;
@@ -35,6 +54,8 @@ export interface ItemDef {
   kcal?: number;
   /** Morale a survivor gains when eating this (dishes only). */
   morale?: number;
+  /** What eating this actually does beyond calories. */
+  fx?: FoodFx;
   rotPerDay?: number;
   heal?: number;
   cures?: boolean;

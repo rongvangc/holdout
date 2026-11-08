@@ -1,4 +1,4 @@
-import { ITEMS, type ItemId } from '../data/items';
+import { ITEMS, type FoodFx, type ItemId } from '../data/items';
 import type { Site } from './types';
 
 /**
@@ -49,3 +49,39 @@ export function edibleStock(site: Site): { id: ItemId; def: (typeof ITEMS)[strin
 export const pushMeal = (site: Site, kind: string): void => {
   site.dietLog = [...(site.dietLog ?? []), kind].slice(-12);
 };
+
+/** Caps keep a single meal from acting like a medkit. */
+export const FX_CAPS = { heal: 15, fatigue: 20, water: 500, cureDays: 1 };
+
+export interface FxTarget {
+  hp: number;
+  fatigue: number;
+  water: number;
+  sickDays: number;
+  morale: number;
+}
+
+/**
+ * Apply a dish's effects to whoever ate it. Pure, so the rules are testable and
+ * the same numbers are used wherever food is eaten (home or on the road).
+ */
+export function applyFoodFx(target: FxTarget, fx: FoodFx | undefined, maxWater = 3200): void {
+  if (!fx) return;
+  if (fx.heal) target.hp = Math.min(100, target.hp + Math.min(FX_CAPS.heal, fx.heal));
+  if (fx.fatigue) target.fatigue = Math.max(0, target.fatigue - Math.min(FX_CAPS.fatigue, fx.fatigue));
+  if (fx.water) target.water = Math.min(maxWater, target.water + Math.min(FX_CAPS.water, fx.water));
+  if (fx.cureDays && target.sickDays > 0) target.sickDays = Math.max(0, target.sickDays - Math.min(FX_CAPS.cureDays, fx.cureDays));
+}
+
+/** "hồi 8 HP · đỡ 15 mệt · +200 ml · mau khỏi" — for tooltips. */
+export function foodFxLabel(fx: FoodFx | undefined): string {
+  if (!fx) return '';
+  const bits: string[] = [];
+  if (fx.heal) bits.push(`hồi ${fx.heal} HP`);
+  if (fx.fatigue) bits.push(`đỡ ${fx.fatigue} mệt`);
+  if (fx.water) bits.push(`+${fx.water} ml nước`);
+  if (fx.cureDays) bits.push(`mau khỏi ${fx.cureDays} ngày`);
+  if (fx.vitamin) bits.push('đủ vitamin C');
+  if (fx.travel) bits.push('mang đi viễn chinh được');
+  return bits.join(' · ');
+}
