@@ -14,6 +14,8 @@
 > `docs/GAMEPLAY.md` §9 / §12 / §13 / §14 / §18. Bằng chứng: `docs/ux/UI-AUDIT.md`
 > (số đo thật) và `docs/ux/ui-proposal.html` (prototype bấm được).
 > Giá trị mặc định do người dùng chốt: collaborative · standard · balanced.
+> **Spec liên quan**: `design/ux/hud.md` — dải Z1 của màn này chính là HUD H1 (5 ô),
+> nên hai file phải khớp. Đã cross-check ngày 2026-11-08.
 > Người dùng đã duyệt A, B, B2, B3, và yêu cầu viết nốt phần còn lại để review sau —
 > các mục từ Section C trở đi là **draft chưa được duyệt từng section**.
 
@@ -197,7 +199,7 @@ Ba cách xếp đã cân nhắc:
 
 | Zone | Nội dung | Hiển thị |
 |---|---|---|
-| **Z1 Dải trạng thái** | 6 ô: ăn / uống / giường / tinh thần / phòng thủ / điện | luôn hiện, mọi tab |
+| **Z1 Dải trạng thái** | 5 ô (định nghĩa ở `design/ux/hud.md` H1): lương · nước · người · phòng thủ · ngày giờ. Giường / tinh thần / điện là **On Demand** (bấm ô để xem) | luôn hiện, mọi tab |
 | **Z2 Thanh thời gian** | ngày, giờ, thời tiết, tốc độ, lưu | luôn hiện |
 | **Z3 Cần quyết định** | tối đa 3 cảnh báo sống còn, mỗi cái 1 nút | luôn hiện — thay sidebar 2.125 px |
 | **Z4 Ngăn nghề** | segmented: Mặt bằng · Chế tạo · Bếp · Trang bị · Điện | một ngăn mở tại một thời điểm |
@@ -393,7 +395,7 @@ Các điểm khác:
 |---|---|---|
 | Tên nghề trong segmented (`Mặt bằng`, `Chế tạo`, `Trang bị`) | tiếng Việt đã dài; dịch sang tiếng khác có thể +40% | **CAO** — strip cuộn ngang, đừng cố nhồi 5 mục vào 390 px |
 | Tên món ăn + công dụng trong một dòng | câu công dụng dài nhất: "hồi 8 HP · đỡ 15 mệt · +200 ml nước · mau khỏi 1 ngày" | **CAO** — phải cho xuống 2 dòng |
-| Nhãn ô trạng thái (`ăn`, `uống`, `giường`, `thủ`, `điện`) | đã viết tắt cho vừa 6 ô; dịch ra không ngắn được như vậy | **CAO** — cần cho phép giãn hoặc dùng icon |
+| Nhãn ô trạng thái (`LƯƠNG`, `NƯỚC`, `NGƯỜI`, `THỦ`, `NGÀY`) | đã viết tắt cho vừa 5 ô; dịch ra không ngắn được như vậy | **CAO** — cần cho phép giãn hoặc dùng icon |
 | Số liệu | `toLocaleString('vi')` đã dùng ở log; phải giữ cho mọi số | Trung bình |
 | Chữ trong nút (`Nấu`, `Sửa`, `Xử lý`) | ngắn, an toàn | Thấp |
 
