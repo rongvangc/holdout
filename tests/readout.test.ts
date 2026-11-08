@@ -147,6 +147,18 @@ describe('siteChips', () => {
     expect(c2[2].tone).toBe('ok');
     expect(c2[2].hint).toBe('Xác chưa xử lý 0');
   });
+
+  it('xét ngưỡng trên giá trị gốc, chỉ làm tròn khi hiển thị', () => {
+    const { s, site } = setup();
+    site.heat = 45.4;
+    site.filth = 40.4;
+    site.corpses = 0;
+    const chips = siteChips(s, site);
+    expect(chips[0].text).toBe('45');
+    expect(chips[0].tone).toBe('bad');
+    expect(chips[1].text).toBe('40');
+    expect(chips[1].tone).toBe('bad');
+  });
 });
 
 describe('facilityChips', () => {

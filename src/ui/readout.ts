@@ -100,13 +100,14 @@ export function readouts(s: GameState, site: Site): Readout[] {
 }
 
 export function siteChips(_s: GameState, site: Site): Chip[] {
-  const heat = Math.round(site.heat);
-  const filth = Math.round(site.filth);
-  const corpses = Math.round(site.corpses);
+  // Xét ngưỡng trên giá trị gốc; chỉ làm tròn khi hiển thị.
+  const heat = site.heat;
+  const filth = site.filth;
+  const corpses = site.corpses;
   return [
-    { id: 'heat', icon: 'heat', text: String(heat), tone: heat > HEAT_BAD ? 'bad' : 'ok', hint: `Độ ồn ${heat}/100` },
-    { id: 'filth', icon: 'filth', text: String(filth), tone: filth > FILTH_BAD ? 'bad' : 'ok', hint: `Độ bẩn ${filth}/100` },
-    { id: 'corpses', icon: 'corpses', text: String(corpses), tone: corpses > 0 ? 'bad' : 'ok', hint: `Xác chưa xử lý ${corpses}` },
+    { id: 'heat', icon: 'heat', text: String(Math.round(heat)), tone: heat > HEAT_BAD ? 'bad' : 'ok', hint: `Độ ồn ${Math.round(heat)}/100` },
+    { id: 'filth', icon: 'filth', text: String(Math.round(filth)), tone: filth > FILTH_BAD ? 'bad' : 'ok', hint: `Độ bẩn ${Math.round(filth)}/100` },
+    { id: 'corpses', icon: 'corpses', text: String(Math.round(corpses)), tone: corpses > 0 ? 'bad' : 'ok', hint: `Xác chưa xử lý ${Math.round(corpses)}` },
   ];
 }
 

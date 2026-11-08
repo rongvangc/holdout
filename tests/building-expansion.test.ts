@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { advanceTo } from '../src/sim/engine';
+import { queueModule } from '../src/sim/build';
 import { addStock, baseStats, mainSite, newGame } from '../src/sim/state';
 import { planExpedition } from '../src/sim/expedition';
 import { applyReadResult, workMult } from '../src/sim/tasks';
@@ -23,6 +24,13 @@ function addModule(site: Site, id: string, module: NonNullable<Room['module']>, 
     site.plots[room.id] = { roomId: room.id, crop: null, growth: 0, tendedToday: 0, plantedDay: 0 } satisfies Plot;
   }
   return room;
+}
+
+/** An empty room with no module yet (waits to receive one). */
+function addEmpty(site: ReturnType<typeof mainSite>, id: string, area: number, outdoor: boolean): string {
+  const room: Room = { id, floor: outdoor ? 0 : 0, outdoor, cells: [2], area, walled: true };
+  site.interior.rooms.push(room);
+  return id;
 }
 
 const DAY = 86400;
@@ -123,6 +131,35 @@ describe('bookshelf study routing', () => {
     const totalBefore = Object.values(v.xp).reduce((a, b) => a + b, 0);
     applyReadResult(s, v, 1);
     expect(Object.values(v.xp).reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(totalBefore + 25);
+  });
+});
+
+describe('module caps (maxPerSite)', () => {
+  it('caps watchtower stacking at 2 per site, counting queued projects too', () => {
+    const { s } = setup();
+    const base = mainSite(s);
+    addModule(base, 'w1', 'workshop', 8, false);
+    addModule(base, 'wt1', 'watchtower', 4, true);
+    addModule(base, 'wt2', 'watchtower', 4, true);
+    expect(queueModule(s, base, addEmpty(base, 'wt3', 4, true), 'watchtower')).toBe('Tối đa 2 tháp canh mỗi điểm');
+  });
+
+  it('counts pending (unpaid) projects toward the cap', () => {
+    const { s } = setup();
+    const base = mainSite(s);
+    addModule(base, 'w2', 'workshop', 8, false);
+    expect(queueModule(s, base, addEmpty(base, 'wtA', 4, true), 'watchtower')).toBeNull();
+    // built(0) + queued(1) = 1 < 2 → the second queue is still allowed...
+    expect(queueModule(s, base, addEmpty(base, 'wtB', 4, true), 'watchtower')).toBeNull();
+    // ...and the third is not (built 0 + queued 2 = 2 = cap).
+    expect(queueModule(s, base, addEmpty(base, 'wtC', 4, true), 'watchtower')).toBe('Tối đa 2 tháp canh mỗi điểm');
+  });
+
+  it('caps boolean-effect modules at 1 (kitchen)', () => {
+    const { s } = setup();
+    const base = mainSite(s);
+    addModule(base, 'k1', 'kitchen', 6, false);
+    expect(queueModule(s, base, addEmpty(base, 'k2', 6, false), 'kitchen')).toBe('Tối đa 1 bếp củi mỗi điểm');
   });
 });
 

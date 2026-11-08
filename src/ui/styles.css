@@ -462,6 +462,18 @@ hr.thick {
   gap: 6px;
   color: var(--fg);
 }
+.gauge .rstack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.gauge .rlabel {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
 .gauge .rtext {
   font-family: var(--sans);
   font-weight: 800;
@@ -482,10 +494,10 @@ hr.thick {
 .tone-bad {
   color: var(--red);
 }
-.tone-warn .fill {
+.gauge.tone-warn .bar .fill {
   background: var(--amber);
 }
-.tone-bad .fill {
+.gauge.tone-bad .bar .fill {
   background: var(--red);
 }
 .badge {
@@ -513,9 +525,11 @@ hr.thick {
   color: var(--fg);
 }
 .chip.tone-warn {
+  color: var(--amber);
   border-color: var(--amber);
 }
 .chip.tone-bad {
+  color: var(--red);
   border-color: var(--red);
 }
 .sitesbar {

@@ -9,7 +9,10 @@ export function ReadoutBar({ s, site }: { s: GameState; site: Site }) {
       {readouts(s, site).map((r) => (
         <div key={r.id} className={`gauge tone-${r.tone}`} title={r.hint}>
           <StatusIcon name={r.icon} size={18} />
-          <span className="rtext">{r.text}</span>
+          <div className="rstack">
+            <span className="rlabel">{r.label}</span>
+            <span className="rtext">{r.text}</span>
+          </div>
           {r.ratio !== null && (
             <div className="bar">
               <div className="fill" style={{ width: `${Math.round(r.ratio * 100)}%` }} />

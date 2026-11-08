@@ -27,6 +27,8 @@ export interface ModuleDef {
   color: string;
   placement: Placement;
   minArea: number;
+  /** Giới hạn số công trình mỗi điểm (đếm cả project đang chờ). Không đặt = xếp chồng tự do. */
+  maxPerSite?: number;
   needsWorkshop?: boolean;
   workSec: (area: number) => number;
   cost: (area: number) => Partial<Stock>;
@@ -52,6 +54,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#c0703a',
     placement: 'any',
     minArea: 6,
+    maxPerSite: 1,
     workSec: () => 1.5 * H,
     cost: () => ({ wood: 10, scrap: 6 }),
     desc: 'Nấu gạo/khoai thành bữa ăn, đun sôi nước bẩn (tốn củi). Không có bếp, đồ sống chỉ ăn được một nửa năng lượng.',
@@ -62,6 +65,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#8a7a50',
     placement: 'indoor',
     minArea: 6,
+    maxPerSite: 1,
     workSec: () => 2 * H,
     cost: () => ({ wood: 8, scrap: 10 }),
     desc: 'Giảm chuột/ẩm làm hao gạo, giảm vật tư mất khi bị tập kích.',
@@ -72,6 +76,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#9a8a7a',
     placement: 'indoor',
     minArea: 8,
+    maxPerSite: 1,
     workSec: () => 3 * H,
     cost: () => ({ wood: 20, scrap: 15, tools: 1 }),
     desc: 'Cổng công nghệ: cần để làm bộ lọc nước, giếng, tháp canh, gia cố cấp 2+.',
@@ -82,6 +87,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#4fa77a',
     placement: 'indoor',
     minArea: 8,
+    maxPerSite: 1,
     workSec: () => 2.5 * H,
     cost: () => ({ wood: 10, cloth: 10 }),
     desc: 'Người bệnh/bị thương hồi nhanh hơn. Dùng để cách ly người bị cắn.',
@@ -112,6 +118,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#5aa0d0',
     placement: 'ground',
     minArea: 4,
+    maxPerSite: 1,
     needsWorkshop: true,
     workSec: () => 2 * H,
     cost: () => ({ scrap: 8, cloth: 6, wood: 4 }),
@@ -143,6 +150,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#2f6fa0',
     placement: 'outdoor',
     minArea: 4,
+    maxPerSite: 1,
     needsWorkshop: true,
     workSec: () => 8 * H,
     cost: () => ({ scrap: 12, wood: 10, tools: 1 }),
@@ -154,6 +162,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#a05a5a',
     placement: 'top_or_outdoor',
     minArea: 4,
+    maxPerSite: 2,
     needsWorkshop: true,
     workSec: () => 4 * H,
     cost: () => ({ wood: 25, scrap: 10 }),
@@ -175,6 +184,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#b09060',
     placement: 'indoor',
     minArea: 4,
+    maxPerSite: 1,
     workSec: () => 1 * H,
     cost: () => ({ wood: 4, cloth: 2 }),
     desc: 'Mở "Tự học" trong tab Người: người được gán kỹ năng sẽ đọc dẫn đúng cập kỹ năng đó thay vì ngẫu nhiên.',
@@ -185,6 +195,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#8a8a80',
     placement: 'outdoor',
     minArea: 12,
+    maxPerSite: 2,
     workSec: () => 4 * H,
     cost: () => ({ wood: 10, scrap: 20, parts: 1 }),
     desc: 'Xe xuất phát từ điểm có chòi: tốn 0.08 L/km (thay vì 0.1) và thêm 80 kg sức chở.',
@@ -195,6 +206,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     color: '#c0a83a',
     placement: 'ground',
     minArea: 2,
+    maxPerSite: 1,
     needsWorkshop: true,
     workSec: () => 3 * H,
     cost: () => ({ scrap: 15, parts: 2, wood: 4 }),

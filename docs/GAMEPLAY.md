@@ -422,6 +422,8 @@ Kéo chuột chọn vùng → xem trước chi phí → **Áp dụng**. Bắt đ
 | █ ▚ ⋀ ▥ ⌂ | Xây công trình theo từng ô ngoài sân/ruộng. Chế độ **Viền** chỉ xây mép vùng chọn, **Kín** lấp đầy |
 | ✕ Dỡ | Tháo công trình (hoàn 40%) hoặc huỷ phần đang chờ xây |
 
+**Cap số lượng** (mỗi điểm, đếm cả hạng mục đang chờ): Bếp củi/K kho/Giếng/Bàn thợ/Phòng y tế/Trạm lọc/Kệ sách/Máy phát tối đa **1**; Tháp canh và Chòi xe tối đa **2**; Cổng 6, Chòi gác 4 (theo ô). Vườn/giường/bể nước/khoảnh sân xếp chồng theo diện tích có sẵn.
+
 **Công trình ngoài trời** (tính mỗi ô):
 
 | | Công | Chi phí | Phòng thủ | Ghi chú |

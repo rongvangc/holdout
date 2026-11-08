@@ -49,6 +49,11 @@ export function queueModule(s: GameState, site: Site, roomId: string, module: Mo
     }
   }
   if (def.needsWorkshop && !hasWorkshop(s)) return 'Cần Bàn thợ (ở bất kỳ điểm nào) trước';
+  if (def.maxPerSite) {
+    const built = site.interior.rooms.filter((r) => r.module === module).length;
+    const queued = site.projects.filter((p) => p.kind === 'module' && p.module === module).length;
+    if (built + queued >= def.maxPerSite) return `Tối đa ${def.maxPerSite} ${def.label.toLowerCase()} mỗi điểm`;
+  }
   site.projects.push({
     id: newId(s, 'p'),
     kind: 'module',
