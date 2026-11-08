@@ -173,5 +173,40 @@
     "row": 4,
     "col": 4,
     "file": "public/icons/pixel/struct_tower.png"
+  },
+  {
+    "name": "tab_base",
+    "sheet": "sheet-03.png",
+    "row": 0,
+    "col": 0,
+    "file": "public/icons/pixel/tab_base.png"
+  },
+  {
+    "name": "tab_people",
+    "sheet": "sheet-03.png",
+    "row": 0,
+    "col": 1,
+    "file": "public/icons/pixel/tab_people.png"
+  },
+  {
+    "name": "tab_map",
+    "sheet": "sheet-03.png",
+    "row": 0,
+    "col": 2,
+    "file": "public/icons/pixel/tab_map.png"
+  },
+  {
+    "name": "tab_laws",
+    "sheet": "sheet-03.png",
+    "row": 0,
+    "col": 3,
+    "file": "public/icons/pixel/tab_laws.png"
+  },
+  {
+    "name": "tab_log",
+    "sheet": "sheet-03.png",
+    "row": 0,
+    "col": 4,
+    "file": "public/icons/pixel/tab_log.png"
   }
 ]

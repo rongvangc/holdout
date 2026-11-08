@@ -59,6 +59,15 @@ export const STRUCT_IMG: Record<string, string> = {
   tower: '/icons/pixel/struct_tower.png',
 };
 
+
+export const TAB_IMG: Record<string, string> = {
+  base: '/icons/pixel/tab_base.png',
+  people: '/icons/pixel/tab_people.png',
+  map: '/icons/pixel/tab_map.png',
+  laws: '/icons/pixel/tab_laws.png',
+  log: '/icons/pixel/tab_log.png',
+};
+
 /** Decoded-image cache so the base-plan canvas can draw icons synchronously. */
 const cache = new Map<string, HTMLImageElement>();
 

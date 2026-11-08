@@ -7,7 +7,7 @@ import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
-import { Icon, ITEM_ICONS, SITE_IMG } from './icons';
+import { Icon, ITEM_ICONS, SITE_IMG, TAB_IMG } from './icons';
 import { LawsView } from './LawsView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
@@ -282,6 +282,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
             ] as [Tab, string][]
           ).map(([k, l]) => (
             <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
+              <Icon src={TAB_IMG[k]} size={14} />
               {l}
             </button>
           ))}
