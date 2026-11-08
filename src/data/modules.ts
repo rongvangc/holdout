@@ -24,7 +24,9 @@ export type ModuleId =
   | 'tailor'
   | 'smokehouse'
   | 'crock'
-  | 'cellar';
+  | 'cellar'
+  | 'coop'
+  | 'pond';
 
 export type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
 
@@ -312,6 +314,36 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     levels: [
       { cost: { brick: 12, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: hun nhanh hơn, đỡ tốn củi' },
       { cost: { brick: 24, plate: 1 }, workSec: 6 * H, note: 'Cấp 3: hun cả mẻ lớn mỗi ngày' },
+    ],
+  },
+  coop: {
+    label: 'Chuồng gà',
+    icon: '⌂',
+    color: '#c0a060',
+    placement: 'outdoor',
+    minArea: 6,
+    maxPerSite: 2,
+    workSec: () => 3 * H,
+    cost: () => ({ wood: 12, cloth: 3, rope: 2 }),
+    desc: 'Nuôi gà: mỗi ngày đẻ trứng, thỉnh thoảng có thịt. Cần cho ăn bằng gạo/ngô. Ồn — heat +0.6/ngày.',
+    levels: [
+      { cost: { wood: 20, plank: 6, rope: 4 }, workSec: 5 * H, note: 'Cấp 2: nhiều gà hơn, trứng ×1.6' },
+      { cost: { plank: 12, hinge: 4, gear: 1 }, workSec: 8 * H, note: 'Cấp 3: chuồng kín, gà không bị mất ban đêm' },
+    ],
+  },
+  pond: {
+    label: 'Ao cá',
+    icon: '≈',
+    color: '#4a7a8a',
+    placement: 'outdoor',
+    minArea: 12,
+    maxPerSite: 2,
+    workSec: () => 6 * H,
+    cost: () => ({ wood: 8, rope: 4, lime: 4 }),
+    desc: 'Ao thả cá: bắt được cá mỗi vài ngày. Cần nước, cá chết nếu ao bẩn quá.',
+    levels: [
+      { cost: { lime: 8, wood: 12 }, workSec: 6 * H, note: 'Cấp 2: vớt được nhiều hơn' },
+      { cost: { lime: 16, brick: 12 }, workSec: 10 * H, note: 'Cấp 3: ao sạch quanh năm, sản lượng ×1.5' },
     ],
   },
   cellar: {

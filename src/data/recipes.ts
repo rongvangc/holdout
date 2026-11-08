@@ -50,6 +50,22 @@ const FOOD_RECIPES: Recipe[] = [
   { id: 'r_pickle_meat', out: 'food', qty: 3000, station: 'crock', level: 2, in: [['rawFood', 3000], ['salt', 2], ['oil', 0.5]], workSec: 8 * HOUR, skill: 'cooking', note: 'Chum cấp 2: ủ mặn' },
 ];
 
+/** Cooking: rawFood is the bulk, one fresh ingredient is what makes it a meal. */
+const DISH_RECIPES: Recipe[] = [
+  { id: 'rd_com', out: 'mon_com', qty: 4, station: 'kitchen', level: 1, in: [['rawFood', 1200], ['water', 2]], workSec: 20 * MIN, skill: 'cooking' },
+  { id: 'rd_com_rau', out: 'mon_com_rau', qty: 4, station: 'kitchen', level: 1, in: [['rawFood', 1000], ['rau', 0.6], ['water', 2]], workSec: 25 * MIN, skill: 'cooking' },
+  { id: 'rd_chao', out: 'mon_chao', qty: 4, station: 'kitchen', level: 1, in: [['rawFood', 800], ['water', 5]], workSec: 20 * MIN, skill: 'cooking' },
+  { id: 'rd_khoai', out: 'mon_khoai', qty: 4, station: 'kitchen', level: 1, in: [['rawFood', 2200], ['water', 2]], workSec: 15 * MIN, skill: 'cooking' },
+  { id: 'rd_canh', out: 'mon_canh', qty: 4, station: 'kitchen', level: 1, in: [['rau', 1], ['water', 4], ['salt', 0.2]], workSec: 15 * MIN, skill: 'cooking' },
+  { id: 'rd_rau_xao', out: 'mon_rau_xao', qty: 3, station: 'kitchen', level: 1, in: [['rau', 1], ['oil', 0.2]], workSec: 15 * MIN, skill: 'cooking' },
+  { id: 'rd_trung', out: 'mon_trung_chien', qty: 3, station: 'kitchen', level: 1, in: [['trung', 6], ['oil', 0.1]], workSec: 10 * MIN, skill: 'cooking' },
+  { id: 'rd_dau_hu', out: 'mon_dau_hu', qty: 3, station: 'kitchen', level: 1, in: [['dau', 1], ['water', 3], ['salt', 0.1]], workSec: 40 * MIN, skill: 'cooking' },
+  { id: 'rd_ca_kho', out: 'mon_ca_kho', qty: 3, station: 'kitchen', level: 2, in: [['ca', 1.5], ['rawFood', 600], ['salt', 0.3]], workSec: 90 * MIN, skill: 'cooking', note: 'Kho lâu, cần bếp cấp 2' },
+  { id: 'rd_thit_kho', out: 'mon_thit_kho', qty: 3, station: 'kitchen', level: 2, in: [['thit', 1.5], ['rawFood', 600], ['salt', 0.4]], workSec: 2 * HOUR, skill: 'cooking', note: 'Món đám cưới. Cần bếp cấp 2' },
+  { id: 'rd_banh_mi', out: 'mon_banh_mi', qty: 6, station: 'kiln', level: 2, in: [['bot', 1], ['water', 2]], workSec: 2 * HOUR, skill: 'cooking', note: 'Cần lò nung cấp 2' },
+  { id: 'rd_dua_muoi', out: 'mon_dua_muoi', qty: 6, station: 'crock', level: 1, in: [['rau', 2], ['salt', 0.5], ['dirtyWater', 2]], workSec: 4 * HOUR, skill: 'cooking', note: 'Ủ chua: để được hàng tháng, có vitamin' },
+];
+
 /** Form → bill of materials. This is the rule set that scales to every weapon in the catalog. */
 const WEAPON_RULES: Record<string, { in: [ItemId, number][]; station: ModuleId; level: number; workSec: number }> = {
   short_blade: { in: [['blade', 1], ['handle', 1], ['nail', 2]], station: 'forge', level: 1, workSec: HOUR },
@@ -150,7 +166,7 @@ function upgradeRecipes(): Recipe[] {
   }));
 }
 
-export const RECIPES: Recipe[] = [...MATERIAL_RECIPES, ...FOOD_RECIPES, ...upgradeRecipes(), ...derivedRecipes()];
+export const RECIPES: Recipe[] = [...MATERIAL_RECIPES, ...FOOD_RECIPES, ...DISH_RECIPES, ...upgradeRecipes(), ...derivedRecipes()];
 
 export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 

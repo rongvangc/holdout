@@ -63,6 +63,29 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (before < 1 && plot.growth >= 1) log(s, `${site.name}: ${CROPS[plot.crop].label} đã chín.`, 'good');
   }
 
+  // Chuồng gà và ao cá: nguồn đạm tái tạo, đổi lại tốn lương và sinh ồn.
+  if (st.coop > 0) {
+    const lvl = Math.max(1, st.coopLevel);
+    const feed = Math.min(site.stock.rawFood > 0 ? 0.6 * st.coop : 0, site.stock.rawFood);
+    if (feed > 0) {
+      take(site, 'rawFood', feed * 2200);
+      const eggs = st.coop * (lvl >= 2 ? 4.8 : 3) * (chance(s.rng, 0.35) ? 1.3 : 1);
+      addStock(s, site, { trung: eggs });
+      // Thỉnh thoảng làm thịt một con: đạm nhưng mất trứng về sau.
+      if (chance(s.rng, 0.04)) addStock(s, site, { thit: 1.2 });
+      site.heat = Math.min(100, site.heat + 0.6 * st.coop);
+    } else {
+      log(s, `${site.name}: chuồng gà không có gì cho ăn, gà đói.`, 'warn');
+    }
+  }
+  if (st.pond > 0) {
+    const lvl = Math.max(1, st.pondLevel);
+    const murky = site.filth > 55;
+    const bite = st.pond * (lvl >= 3 ? 1.5 : lvl === 2 ? 1.2 : 1) * (murky ? 0.4 : 1);
+    if (chance(s.rng, murky ? 0.3 : 0.65)) addStock(s, site, { ca: Math.round(bite * 10) / 10 });
+    if (murky) log(s, `${site.name}: ao cá bẩn, cá chết dần.`, 'warn');
+  }
+
   // Spoilage. Heat speeds everything up.
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;

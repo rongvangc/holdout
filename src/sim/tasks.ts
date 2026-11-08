@@ -1,6 +1,7 @@
 import { push } from '../core/eventQueue';
 import { chance, pick } from '../core/rng';
 import { DAY, HOUR, isNight } from '../core/time';
+import { ITEMS as ITEMS_LIB } from '../data/items';
 import { edibleStock, isVegetable, pushMeal } from './diet';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
 import { activeProject, applyBuildWork, projectSkill } from './build';
@@ -113,7 +114,9 @@ export function finishTask(s: GameState, v: Survivor): void {
         } else {
           const kcal = CROPS[plot.crop].kcalPerM2 * area;
           const seeds = Math.max(1, Math.round(area / 100));
-          addStock(s, site, { rawFood: kcal, seeds });
+          // Rau muống/khoai còn cho rau tươi: nguyên liệu cho món ăn và nguồn vitamin.
+          const veg = plot.crop === 'rau' ? Math.round((area / 60) * 10) / 10 : Math.round((area / 200) * 10) / 10;
+          addStock(s, site, { rawFood: kcal, seeds, rau: veg });
           s.stats.harvestedKcal += kcal;
           log(s, `${site.name}: thu hoạch ${CROPS[plot.crop].label} +${Math.round(kcal).toLocaleString('vi')} kcal (giữ lại ngọn/dây để trồng tiếp).`, 'good', {
             rawFood: kcal,
@@ -200,6 +203,34 @@ export function interrupt(s: GameState, v: Survivor): void {
  * Every catalogued food item is edible, not just the four legacy ids. Best kcal/kg
  * first, so a party eats the heavy tins before they rot rather than hoarding them.
  */
+/** Rau/quả trong món ăn cũng tính là vitamin C. */
+const VEG_DISHES = new Set(['mon_com_rau', 'mon_canh', 'mon_rau_xao', 'mon_dua_muoi', 'mon_ca_kho', 'mon_thit_kho']);
+
+/**
+ * The tastiest dish in the store: morale first, calories as the tie-break.
+ * A community that cooked thịt kho will eat it before the plain rice.
+ */
+function takeDish(s: GameState, site: Site, want: number): { kcal: number; kind: string; morale: number } {
+  let kcal = 0;
+  let kind = '';
+  let morale = 0;
+  const dishes = (Object.entries(ITEMS_LIB) as [string, { kcal?: number; morale?: number; label: string }][])
+    .filter(([id, d]) => (d.morale ?? 0) > 0 && (site.stock[id] ?? 0) > 0)
+    .sort((a, b) => (b[1].morale ?? 0) - (a[1].morale ?? 0) || (b[1].kcal ?? 0) - (a[1].kcal ?? 0));
+  for (const [id, def] of dishes) {
+    if (kcal >= want) break;
+    const per = def.kcal ?? 0;
+    const units = Math.min(site.stock[id] ?? 0, Math.ceil((want - kcal) / Math.max(1, per)));
+    const used = take(site, id, units);
+    if (used <= 0) continue;
+    kcal += used * per;
+    morale += used * (def.morale ?? 0);
+    kind ||= id;
+    if (VEG_DISHES.has(id)) site.lastVegDay = Math.floor(s.t / DAY) + 1;
+  }
+  return { kcal, kind, morale: Math.min(12, morale) };
+}
+
 function takeAnyEdible(site: Site, want: number): { kcal: number; kind: string; veg: boolean } {
   let got = 0;
   let kind = '';
@@ -223,9 +254,22 @@ function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
   let portion = 1000;
   if (s.laws.rations === 'reduced') portion = 750;
   if (s.laws.rations === 'work' && (v.role === 'idle' || v.task?.kind === 'leisure')) portion = 700;
-  let got = take(site, 'meals', portion);
-  let mainKind: string = got > 0 ? 'meals' : '';
-  const dry = take(site, 'food', portion - got);
+  // Món nấu trước: vừa nhiều kcal vừa có tinh thần. Cơm nguội/đồ khô là phương án dự phòng.
+  let got = 0;
+  let mainKind = '';
+  let moraleGain = 0;
+  const dish = takeDish(s, site, portion);
+  if (dish.kcal > 0) {
+    got += dish.kcal;
+    mainKind = dish.kind;
+    moraleGain = dish.morale;
+  }
+  const plain = take(site, 'meals', portion - got);
+  if (plain > 0) {
+    got += plain;
+    mainKind ||= 'meals';
+  }
+  const dry = take(site, 'food', Math.max(0, portion - got));
   if (dry > 0) {
     got += dry;
     mainKind ||= 'food';
@@ -248,6 +292,7 @@ function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
   }
   if (got <= 0) return false;
   v.kcal = Math.min(KCAL_MAX, v.kcal + got);
+  if (moraleGain) v.morale = Math.max(0, Math.min(100, v.morale + moraleGain));
   start(s, v, 'eat', 'rest', 900);
   return true;
 }

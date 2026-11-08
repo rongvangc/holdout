@@ -551,3 +551,39 @@ Trang bị **tự cấp từ kho của điểm** (game quản lý cộng đồng
 - **Nhàm món**: 9 bữa liên tiếp cùng một món → mục tiêu tinh thần −3/ngày cho tới khi đổi món. Nhật ký bữa ăn giữ 12 mục gần nhất.
 - **Thiếu vitamin C**: 25 ngày không có rau/quả → scorbut, mỗi người −0.25 HP/ngày. `rawFood` (rau muống/khoai từ vườn) và `meals` nấu từ đó đều tính là có rau; chỉ ăn đồ khô nhặt được thì mới bị.
 - **Hầm lạnh**: module mới, 3 cấp. Tốc độ hỏng thức ăn: cấp 1 = 50%, cấp 2 = 35%, cấp 3 = 25%. Không có hầm thì Kho có khoá cho 50%.
+
+### 12.9 Nguyên liệu và món ăn (`data/dishes.ts`)
+
+Bữa ăn không còn là một cục `meals`. Có **6 nguyên liệu tươi** và **12 món**:
+
+| Nguyên liệu | kcal/kg | Hỏng/ngày | Nguồn |
+|---|---|---|---|
+| Rau tươi | 200 | 35% | vườn rau (thu hoạch), chợ |
+| Thịt tươi | 1900 | 50% | chợ, quán ăn, chuồng gà (thỉnh thoảng) |
+| Cá tươi | 1300 | 55% | chợ, ao cá |
+| Trứng | 1300 | 1% | chuồng gà |
+| Đậu hạt | 1450 | 1% | chợ |
+| Bột mì/gạo | 3500 | 2% | chợ |
+
+Món ăn (kcal/phần · tinh thần khi ăn · trạm/cấp):
+
+| Món | kcal | Tinh thần | Trạm |
+|---|---|---|---|
+| Cơm trắng | 2600 | 0 | bếp 1 |
+| Cơm + rau | 2800 | +4 | bếp 1 |
+| Cháo | 1500 | +6 | bếp 1 |
+| Khoai luộc | 1900 | 0 | bếp 1 |
+| Canh rau | 700 | +3 | bếp 1 |
+| Rau xào | 950 | +4 | bếp 1 |
+| Trứng chiên | 800 | +6 | bếp 1 |
+| Đậu hũ | 950 | +3 | bếp 1 |
+| Cá kho | 2100 | **+8** | bếp **2** |
+| Thịt kho | 2600 | **+10** | bếp **2** |
+| Bánh mì | 1300 | +2 | lò nung 2 |
+| Dưa muối | 400 | +3 | chum ủ 1 (hỏng 4%/ngày) |
+
+- **Chọn món trước**: người sống sót ăn món có tinh thần cao nhất đang có, rồi mới tới cơm/đồ khô. Tinh thần cộng thêm tối đa +12/bữa.
+- Vì mỗi món là một item riêng, **nhàm món trở thành cơ chế thật**: ăn mãi thịt kho cũng chán như ăn mãi cơm.
+- **Chuồng gà** (mới): ăn 2200 kcal/ngày mỗi chuồng, đẻ ~3 trứng/ngày (cấp 2: ~4.8), 4%/ngày có thêm thịt; heat +0.6/ngày. Không có gì cho ăn thì gà đói.
+- **Ao cá** (mới): 65%/ngày bắt được cá (ao bẩn > 55 thì còn 30% và cá chết dần); cấp 2/3 tăng sản lượng.
+- Vườn rau khi thu hoạch cho thêm **rau tươi** (60 m² ≈ 1 kg) — dư lượng nhỏ so với kcal nên không phá cân bằng.
