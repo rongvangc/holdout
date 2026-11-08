@@ -1088,3 +1088,15 @@ table.grid tr.sel td {
     border-right: 1px solid var(--line-strong);
   }
 }
+
+/* Mặt bằng: kéo để di chuyển khi đã zoom. */
+.baseview .canvaswrap.panspace canvas {
+  cursor: grab;
+}
+.baseview .canvaswrap.panning canvas,
+.baseview .canvaswrap.panning {
+  cursor: grabbing;
+}
+.baseview .canvaswrap.panning {
+  user-select: none;
+}

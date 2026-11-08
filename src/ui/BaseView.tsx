@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { fmtDuration, isNight } from '../core/time';
 import { canPlace, CELL_FLOOR, CELL_YARD, type Room } from '../base/interior';
 import { ITEMS, type ItemId, type Stock } from '../data/items';
@@ -89,16 +89,91 @@ export function BaseView({ s, site, refresh }: ViewProps) {
     const availW = Math.max(160, (box.w || 720) - 28);
     const availH = Math.max(160, (box.h || 720) - 104);
     const fitBoth = Math.floor(Math.min(availW / it.w, availH / it.h));
-    const readable = Math.floor(Math.min(availW / it.w, 32));
+    const readable = Math.floor(Math.min(availW / it.w, 40));
     return Math.max(6, Math.min(56, Math.max(fitBoth, readable)));
   }, [box.w, box.h, it.w, it.h]);
-  const px = Math.max(4, Math.min(128, Math.round(fitPx * zoom)));
-  const zoomBy = (factor: number) => setZoom((z) => Math.max(0.5, Math.min(4, +(z * factor).toFixed(3))));
+  const px = Math.max(4, Math.min(160, Math.round(fitPx * zoom)));
+  const zoomBy = (factor: number) => setZoom((z) => Math.max(0.5, Math.min(5, +(z * factor).toFixed(3))));
 
-  const onWheelZoom = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (!e.shiftKey) return;
+  const pxRef = useRef(px);
+  pxRef.current = px;
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  // Giữ đúng ô nằm dưới con trỏ khi zoom.
+  const zoomAnchor = useRef<{ cx: number; cy: number; sx: number; sy: number; px: number } | null>(null);
+
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const zoomAt = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      zoomAnchor.current = { cx: sx + el.scrollLeft, cy: sy + el.scrollTop, sx, sy, px: pxRef.current };
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      setZoom((z) => Math.max(0.5, Math.min(5, +(z * factor).toFixed(3))));
+    };
+    el.addEventListener('wheel', zoomAt, { passive: false });
+    return () => el.removeEventListener('wheel', zoomAt);
+  }, []);
+
+  useLayoutEffect(() => {
+    const anchor = zoomAnchor.current;
+    const el = wrap.current;
+    if (!anchor || !el) return;
+    zoomAnchor.current = null;
+    const k = px / anchor.px;
+    el.scrollLeft = anchor.cx * k - anchor.sx;
+    el.scrollTop = anchor.cy * k - anchor.sy;
+  }, [px]);
+
+  // Giữ phím Space để kéo mặt bằng (giống các trình vẽ); Alt + kéo cũng được.
+  const [spaceDown, setSpaceDown] = useState(false);
+  useEffect(() => {
+    const isTyping = (target: EventTarget | null) => {
+      const el = target as HTMLElement | null;
+      return !!el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+    };
+    const down = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isTyping(e.target)) setSpaceDown(true);
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code === 'Space') setSpaceDown(false);
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, []);
+
+  const panRef = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
+  const [panning, setPanning] = useState(false);
+  const wantsPan = (e: React.MouseEvent) => e.button === 1 || (e.button === 0 && (e.altKey || spaceDown));
+
+  const onWrapMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = wrap.current;
+    if (!el || !wantsPan(e)) return;
     e.preventDefault();
-    zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12);
+    panRef.current = { x: e.clientX, y: e.clientY, sl: el.scrollLeft, st: el.scrollTop };
+    setPanning(true);
+  };
+
+  const onWrapMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = wrap.current;
+    const panning = panRef.current;
+    if (!el || !panning) return;
+    el.scrollLeft = panning.sl - (e.clientX - panning.x);
+    el.scrollTop = panning.st - (e.clientY - panning.y);
+  };
+
+  const endPan = () => {
+    if (!panRef.current) return;
+    panRef.current = null;
+    setPanning(false);
   };
   const isStruct = tool in STRUCTS;
   const roomTool = tool === 'room' || tool === 'erase';
@@ -377,6 +452,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   };
 
   const onDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (e.button !== 0 || e.altKey || spaceDown) return; // đang kéo mặt bằng
     const c = cellAt(e);
     setErr('');
     if (tool === 'select') {
@@ -437,7 +513,14 @@ export function BaseView({ s, site, refresh }: ViewProps) {
 
   return (
     <div className="baseview">
-      <div className="canvaswrap" ref={wrap} onWheel={onWheelZoom}>
+      <div
+        className={`canvaswrap${panning ? ' panning' : ''}${spaceDown ? ' panspace' : ''}`}
+        ref={wrap}
+        onMouseDown={onWrapMouseDown}
+        onMouseMove={onWrapMouseMove}
+        onMouseUp={endPan}
+        onMouseLeave={endPan}
+      >
         <div className="row" style={{ marginBottom: 6 }}>
           {Array.from({ length: it.floors }, (_, f) => (
             <button key={f} className={f === floor ? 'on' : ''} onClick={() => setFloor(f)}>
@@ -450,13 +533,13 @@ export function BaseView({ s, site, refresh }: ViewProps) {
               : `Ô = ${it.cellSize} m · mặt bằng ${it.footprintArea} m² · sân ${it.yardArea} m² · chu vi ${it.perimeter} m`}
           </span>
           <span className="grow" />
-          <button onClick={() => zoomBy(1 / 1.25)} title="Thu nhỏ (Shift + lăn chuột)" aria-label="Thu nhỏ">
+          <button onClick={() => zoomBy(1 / 1.25)} title="Thu nhỏ (lăn chuột xuống)" aria-label="Thu nhỏ">
             −
           </button>
           <span className="dim" style={{ minWidth: 46, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
             {Math.round(px)}px/ô
           </span>
-          <button onClick={() => zoomBy(1.25)} title="Phóng to (Shift + lăn chuột)" aria-label="Phóng to">
+          <button onClick={() => zoomBy(1.25)} title="Phóng to (lăn chuột lên)" aria-label="Phóng to">
             +
           </button>
           <button onClick={() => setZoom(1)} title="Vừa khung" disabled={zoom === 1}>
@@ -517,7 +600,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
             <i style={{ background: '#e0a030' }} />Bệnh
           </span>
           <span className="faint">
-            Phía trên = hướng Bắc · Kéo chuột để chọn vùng{roomTool && ' · Bắt đầu trong nhà = sửa phòng; ngoài sân = sửa khoảnh đất'}
+            Phía trên = hướng Bắc · Kéo chuột để chọn vùng{roomTool && ' · Bắt đầu trong nhà = sửa phòng; ngoài sân = sửa khoảnh đất'} · Lăn chuột = zoom · Giữ Space (hoặc Alt) + kéo, hay kéo chuột giữa = di chuyển
           </span>
         </div>
       </div>
