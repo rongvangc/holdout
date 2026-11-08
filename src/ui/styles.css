@@ -1173,3 +1173,20 @@ table.grid tr.sel td {
     padding: 10px 12px;
   }
 }
+
+/* Bảng 13 cột (Người) + lưới Luật: không tràn ngang mobile */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 720px) {
+  table.grid {
+    width: max-content;
+    min-width: 100%;
+    font-size: 11px;
+  }
+  .laws {
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+    padding: 12px;
+  }
+}

@@ -95,6 +95,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
           </span>
         ))}
       </div>
+      <div className="table-scroll">
       <table className="grid">
         <thead>
           <tr>
@@ -214,6 +215,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
           ))}
         </tbody>
       </table>
+      </div>
 
       {v && (
         <div className="card col">
