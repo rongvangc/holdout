@@ -4,13 +4,25 @@ import { canPlace, CELL_FLOOR, CELL_YARD, type Room } from '../base/interior';
 import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
-import { cancelProject, demolish, hasWorkshop, moveProject, queueDefense, queueModule } from '../sim/build';
+import { availableRecipes } from '../data/recipes';
+import {
+  cancelProject,
+  demolish,
+  hasWorkshop,
+  maxStationLevel,
+  moveProject,
+  queueCraft,
+  queueDefense,
+  queueModule,
+  stationLevel,
+  upgradeModule,
+} from '../sim/build';
 import { CROPS, TEND_H_PER_M2_DAY } from '../sim/data';
 import { clearCells, mergeRooms, paintRoom, placeStructures, removeStructures, renameRoom, roomName, structCapacity, type Layer } from '../sim/design';
 import { baseStats, canAfford, present } from '../sim/state';
 import type { Survivor } from '../sim/types';
 import type { ViewProps } from './Game';
-import { Icon, MODULE_ICONS, STRUCT_IMG, iconImage } from './icons';
+import { Icon, ITEM_ICONS, MODULE_ICONS, STRUCT_IMG, iconImage } from './icons';
 
 const strHash = (s: string) => {
   let h = 0;
@@ -48,10 +60,46 @@ export function BaseView({ s, site, refresh }: ViewProps) {
   };
   const [pending, setPending] = useState<number[] | null>(null);
   const [name, setName] = useState('');
+  const [craftOpen, setCraftOpen] = useState(false);
   const [err, setErr] = useState('');
   const [, setTick] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const px = Math.max(8, Math.min(22, Math.floor(620 / Math.max(it.w, it.h))));
+  const wrap = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  // 1 = vừa khung; lăn chuột (giữ Shift) hoặc nút ± để phóng thêm, canvas cuộn được khi lớn hơn khung.
+  const [zoom, setZoom] = useState(1);
+
+  // Mặt bằng phải chiếm hết vùng trống: đo khung chứa rồi chia ô cho vừa.
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      setBox((prev) => (Math.abs(prev.w - rect.width) < 1 && Math.abs(prev.h - rect.height) < 1 ? prev : { w: rect.width, h: rect.height }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Cỡ ô mặc định: vừa cả khung, nhưng ít nhất 32px/ô khi bề ngang còn chỗ — mặt bằng dọc
+  // (nhà + sân kéo dài) nhờ vậy vẫn đọc được, phần dư thì cuộn dọc.
+  const fitPx = useMemo(() => {
+    const availW = Math.max(160, (box.w || 720) - 28);
+    const availH = Math.max(160, (box.h || 720) - 104);
+    const fitBoth = Math.floor(Math.min(availW / it.w, availH / it.h));
+    const readable = Math.floor(Math.min(availW / it.w, 32));
+    return Math.max(6, Math.min(56, Math.max(fitBoth, readable)));
+  }, [box.w, box.h, it.w, it.h]);
+  const px = Math.max(4, Math.min(128, Math.round(fitPx * zoom)));
+  const zoomBy = (factor: number) => setZoom((z) => Math.max(0.5, Math.min(4, +(z * factor).toFixed(3))));
+
+  const onWheelZoom = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!e.shiftKey) return;
+    e.preventDefault();
+    zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12);
+  };
   const isStruct = tool in STRUCTS;
   const roomTool = tool === 'room' || tool === 'erase';
 
@@ -374,6 +422,9 @@ export function BaseView({ s, site, refresh }: ViewProps) {
     setPending(null);
   };
 
+  const stationLevels: Partial<Record<string, number>> = {};
+  for (const m of Object.keys(MODULES)) stationLevels[m] = stationLevel(site, m as ModuleId);
+  const recipes = availableRecipes(stationLevels as never);
   const st = baseStats(s, site);
   const workshop = hasWorkshop(s);
   const field = site.kind === 'field';
@@ -386,7 +437,7 @@ export function BaseView({ s, site, refresh }: ViewProps) {
 
   return (
     <div className="baseview">
-      <div className="canvaswrap">
+      <div className="canvaswrap" ref={wrap} onWheel={onWheelZoom}>
         <div className="row" style={{ marginBottom: 6 }}>
           {Array.from({ length: it.floors }, (_, f) => (
             <button key={f} className={f === floor ? 'on' : ''} onClick={() => setFloor(f)}>
@@ -398,6 +449,19 @@ export function BaseView({ s, site, refresh }: ViewProps) {
               ? `Ô = ${it.cellSize} m · đất ${it.yardArea} m² · chu vi ${it.yardPerimeter} m`
               : `Ô = ${it.cellSize} m · mặt bằng ${it.footprintArea} m² · sân ${it.yardArea} m² · chu vi ${it.perimeter} m`}
           </span>
+          <span className="grow" />
+          <button onClick={() => zoomBy(1 / 1.25)} title="Thu nhỏ (Shift + lăn chuột)" aria-label="Thu nhỏ">
+            −
+          </button>
+          <span className="dim" style={{ minWidth: 46, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+            {Math.round(px)}px/ô
+          </span>
+          <button onClick={() => zoomBy(1.25)} title="Phóng to (Shift + lăn chuột)" aria-label="Phóng to">
+            +
+          </button>
+          <button onClick={() => setZoom(1)} title="Vừa khung" disabled={zoom === 1}>
+            Vừa
+          </button>
         </div>
         <div className="row toolbar" style={{ marginBottom: 6, gap: 4 }}>
           {TOOLS.map(([t, l, d]) => (
@@ -519,6 +583,20 @@ export function BaseView({ s, site, refresh }: ViewProps) {
                 </span>
               </div>
             )}
+            {room.module && (() => {
+              const def = MODULES[room.module];
+              const lvl = room.moduleLevel ?? 1;
+              const max = maxStationLevel(room.module);
+              if (!def.levels?.length) return null;
+              if (lvl >= max) return <div className="faint">{def.label} đã ở cấp tối đa ({max}).</div>;
+              const next = def.levels[lvl - 1];
+              const afford = canAfford(site, next.cost);
+              return (
+                <button className={afford ? 'primary' : ''} title={next.note} onClick={() => act(() => upgradeModule(s, site, room.id))}>
+                  Nâng cấp lên cấp {lvl + 1} · {fmtCost(next.cost)} · {fmtDuration(next.workSec)}
+                </button>
+              );
+            })()}
             {room.module && <button onClick={() => act(() => (demolish(s, site, room.id), null))}>Tháo dỡ (hoàn 40%)</button>}
             {!room.module && !building.has(room.id) && room.walled !== false && (
               <div className="modlist col" style={{ gap: 4 }}>
@@ -586,6 +664,35 @@ export function BaseView({ s, site, refresh }: ViewProps) {
             </div>
           </div>
         ))}
+
+        <div className="label" style={{ cursor: 'pointer' }} onClick={() => setCraftOpen((v) => !v)}>
+          Chế tạo ({recipes.length}) {craftOpen ? '▾' : '▸'}
+        </div>
+        {craftOpen && (
+          <div className="col" style={{ gap: 4 }}>
+            {!recipes.length && <div className="faint">Chưa có trạm nào. Xây Lò rèn / Xưởng mộc / Lò nung / Xưởng may trước.</div>}
+            {recipes.map((r) => {
+              const afford = canAfford(site, Object.fromEntries(r.in));
+              const outKg = (ITEMS[r.out]?.kgPerUnit ?? 0) * r.qty;
+              return (
+                <button
+                  key={r.id}
+                  disabled={!afford}
+                  onClick={() => act(() => queueCraft(s, site, r.id))}
+                  title={`${MODULES[r.station].label} cấp ${r.level} · ${fmtDuration(r.workSec)}`}
+                >
+                  <Icon src={ITEM_ICONS[r.out] ?? MODULE_ICONS[r.station]} size={20} />
+                  <span>
+                    {ITEMS[r.out]?.label ?? r.out} ×{r.qty}
+                    <br />
+                    <span className={afford ? 'faint' : 'amber'}>{fmtCost(Object.fromEntries(r.in))}</span>
+                  </span>
+                  <span className="dim">{outKg ? `${outKg.toFixed(1)} kg` : ''}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="label" title="Tổng quan thiết bị khả dụng của điểm này">Chỉ số</div>
         <div className="kv">
