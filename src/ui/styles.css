@@ -916,3 +916,158 @@ table.grid tr.sel td {
     padding: 6px 8px;
   }
 }
+
+/* ---------- Overlay shell ---------- */
+
+.game {
+  display: block;
+  height: 100%;
+}
+.overlay-shell {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  position: relative;
+}
+.topstrip {
+  position: relative;
+  z-index: 20;
+  border-top: 2px solid var(--red);
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--panel);
+}
+.topstrip-main,
+.topstrip-nav {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  overflow-x: auto;
+}
+.topstrip-main > * {
+  flex: none;
+  padding: 6px 10px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.topstrip-main .stat {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.topstrip-main .topstrip-resource .v {
+  gap: 10px;
+}
+.topstrip-actions {
+  justify-content: flex-end;
+}
+.topstrip-nav {
+  border-top: 1px solid var(--line);
+}
+.topstrip .sitesbar,
+.tabbar {
+  display: flex;
+  flex: none;
+  overflow: visible;
+  border-bottom: 0;
+}
+.topstrip .sitesbar button,
+.tabbar button,
+.kho-toggle {
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  padding: 8px 11px;
+  white-space: nowrap;
+}
+.topstrip .sitesbar button.on {
+  background: var(--red);
+  color: #fff;
+}
+.tabbar button {
+  color: var(--dim);
+}
+.tabbar button.on {
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 600;
+}
+.kho-toggle {
+  border-left: 1px solid var(--line-strong);
+  color: var(--fg);
+}
+.overlay-stage {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  position: relative;
+}
+.sheet {
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: min(78vh, 680px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-top: 2px solid var(--red);
+}
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+}
+.sheet-body {
+  min-height: 0;
+  overflow: auto;
+}
+.khodrawer {
+  padding: 12px;
+}
+.khodrawer table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.khodrawer td {
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--line);
+  font-size: 12px;
+}
+.khodrawer td .ico {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+.khodrawer td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 901px) {
+  .topstrip-main {
+    overflow: visible;
+  }
+  .topstrip-nav {
+    overflow: visible;
+  }
+  .tabbar {
+    flex: 1;
+  }
+  .sheet {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    width: min(380px, 36vw);
+    max-height: none;
+    border-top-width: 1px;
+    border-left: 2px solid var(--red);
+  }
+}

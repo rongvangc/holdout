@@ -1,23 +1,21 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { dayOf, fmtClock } from '../core/time';
-import { ITEMS, STOCK_ORDER } from '../data/items';
+import { dayOf } from '../core/time';
 import { advanceTo } from '../sim/engine';
-import { baseStats, log, present, rebindWorld, siteById } from '../sim/state';
+import { log, rebindWorld, siteById } from '../sim/state';
 import type { GameState, LogEntry, Site } from '../sim/types';
 import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
-import { Icon, ITEM_ICONS, SITE_IMG, TAB_IMG } from './icons';
 import { LawsView } from './LawsView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
 import { saveGame } from './save';
+import { OverlayShell } from './shell/OverlayShell';
+import type { TabId } from './shell/TopStrip';
 
-// Game seconds per real second.
 const SPEEDS = [0, 60, 600, 3600, 4 * 3600];
-const SPEED_LABEL = ['❚❚', '1×', '10×', '60×', '240×'];
-type Tab = 'base' | 'people' | 'map' | 'laws' | 'log';
+type Tab = TabId;
 
 export interface ViewProps {
   s: GameState;
@@ -30,8 +28,6 @@ export interface ViewProps {
 
 const EXPAND_STEP = 800;
 export const MAX_RADIUS = 3200;
-
-
 
 export function fmtNum(v: number): string {
   if (v >= 10000) return `${(v / 1000).toFixed(0)}k`;
@@ -106,9 +102,6 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   }, []);
 
   const site = siteById(s, siteId);
-  const st = baseStats(s, site);
-  const here = present(s, site).length;
-  const alive = s.survivors.filter((v) => v.status === 'alive');
   const refresh = () => bump();
   const expandWorld = async (onProgress: (msg: string) => void): Promise<string | null> => {
     if (s.expeditions.length) return 'Chờ mọi đội về hết rồi mới mở rộng được';
@@ -133,169 +126,30 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
     setTimeout(() => setSaved(''), 1500);
   };
   const props: ViewProps = { s, world, site, setSite: setSiteId, refresh, expandWorld };
-  const pop = Math.max(1, st.population);
-  const stock = site.stock;
 
   return (
     <div className="game">
-      <div className="topbar">
-        <div className="stat">
-          <span className="label">Ngày</span>
-          <div className="row" style={{ gap: 10 }}>
-            <span className="clock">{dayOf(s.t)}</span>
-            <span className="clock dim">{fmtClock(s.t)}</span>
-          </div>
-        </div>
-        <div className="speed">
-          {SPEED_LABEL.map((l, i) => (
-            <button key={l} className={speed === i ? 'on' : ''} onClick={() => setSpeed(i)} title="Space / 1-4">
-              {l}
-            </button>
-          ))}
-        </div>
-        <div className="stat">
-          <span className="label">Thời tiết</span>
-          <span className="v">
-            {s.weather.label} · {s.weather.tempC}°C{s.weather.rainMm ? ` · ${s.weather.rainMm} mm` : ''}
-          </span>
-          <span style={{ fontSize: 11 }}>{dayOf(s.t) <= s.hordeUntilDay ? <span className="red">■ Bầy zombie đi qua</span> : <span className="faint">□ Không có bầy</span>}</span>
-        </div>
-        <div className="stat">
-          <span className="label">Nhân lực</span>
-          <span className="v">
-            <b>{alive.length}</b> người
-            <span className="faint">/</span>
-            <b>{here}</b> ở đây
-            <span className="faint">/</span>
-            <b className={st.beds < here ? 'amber' : ''}>{st.beds}</b> giường
-          </span>
-        </div>
-        <div className="stat" title="Tình trạng điểm này: độ ồn, độ bẩn, xác chưa dọn">
-          <span className="label">Tình trạng điểm</span>
-          <span className="v">
-            <span className={site.heat > 45 ? 'red' : ''} title="Độ ồn — công việc ồn tăng nó lên; càng cao, đám zombie càng dễ chú ý tới điểm này">Ồn {Math.round(site.heat)}</span>
-            <span className="faint">/</span>
-            <span className={site.filth > 40 ? 'red' : ''} title="Độ bẩn — tăng nguy cơ bệnh cho người ở đây">Độ bẩn {Math.round(site.filth)}</span>
-            <span className="faint">/</span>
-            <span title="Xác người chết chưa xử lý — mỗi xác làm độ bẩn tăng mỗi ngày; worker làm Vệ sinh sẽ đốt (tốn gỗ) hoặc chôn">Xác chết {Math.round(site.corpses)}</span>
-          </span>
-        </div>
-        <div className="stat" title="Điểm phòng thủ của điểm này khi tập kích đêm: gia cố + rào + tháp canh + công trình">
-          <span className="label">Điểm phòng thủ</span>
-          <span className="v">{Math.round(st.defenseStatic)}</span>
-        </div>
-        <div className="grow" style={{ justifyContent: 'flex-end' }}>
-          <span className="ok">{saved}</span>
-          <button onClick={doSave}>Lưu</button>
-          <button
-            onClick={() => {
-              saveGame(s).finally(onExit);
-            }}
-          >
-            Thoát
-          </button>
-        </div>
-      </div>
-
-      <div className="stockpanel">
-        <div className="label">Kho · {site.name}</div>
-        <table>
-          <tbody>
-            {STOCK_ORDER.map((k) => (
-              <tr key={k}>
-                <td className={stock[k] < 0.5 ? 'faint' : ''}>
-                  <Icon src={ITEM_ICONS[k]} size={20} /> {ITEMS[k].label}
-                </td>
-                <td>
-                  {fmtNum(stock[k])} <span className="faint">{ITEMS[k].unit}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="dither" />
-        <div className="label" title={"Số ngày trụ được với mức tiêu thụ của " + here + " người ở đây"}>Trụ được bao lâu ({here} người)</div>
-        <div className="kv">
-          <span title="Đồ hộp + bữa nấu chín + gạo/khoai sống, tính theo kcal">Đồ ăn</span>
-          <span className={(stock.food + stock.meals + stock.rawFood) / (pop * 2250) < 3 ? 'red' : ''}>
-            {((stock.food + stock.meals + stock.rawFood) / (pop * 2250)).toFixed(1)} ngày
-          </span>
-          <span title="Nước sạch trong kho, 3.3 L/người/ngày">Nước uống</span>
-          <span className={stock.water / (pop * 3.3) < 2 ? 'red' : ''}>{(stock.water / (pop * 3.3)).toFixed(1)} ngày</span>
-          <span title="Nước bẩn/mưa thu được — cần đun sôi hoặc lọc mới uống được">Nước bẩn</span>
-          <span>
-            {Math.round(stock.dirtyWater)}/{st.waterCapacity} L
-          </span>
-          <span title="Gỗ sẵn trong toà nhà này — người kiếm củi lấy nhanh hơn; hết thì đi xa, chậm gấp đôi và ồn hơn">Củi sẵn trong nhà</span>
-          <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết — phải đi xa'}</span>
-        </div>
-        <div className="dither" />
-        <div className="label">Điểm này</div>
-        <div className="kv">
-          <span>Nhà vệ sinh</span>
-          <span className={st.latrines * 20 < st.population ? 'amber' : ''}>
-            {st.latrines} ({st.latrines * 20} người)
-          </span>
-          <span>Gia cố</span>
-          <span>
-            cấp {site.fortify.level} · {Math.round(site.fortify.hp)}%
-          </span>
-          <span>Rào</span>
-          <span>
-            cấp {site.fence.level} · {Math.round(site.fence.hp)}%
-          </span>
-          <span>Viễn chinh</span>
-          <span>{s.expeditions.length} đội</span>
-        </div>
-        {s.gameOver && (
-          <>
-            <div className="dither" />
-            <div className="red">
-              <b>KẾT THÚC.</b> Cộng đồng tồn tại {dayOf(s.t)} ngày. {s.stats.recruited} người đã gia nhập, {s.stats.deaths} người chết.
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="center">
-        <div className="sitesbar">
-          {s.sites.map((x) => {
-            const n = present(s, x).length;
-            const xs = x.stock;
-            const days = Math.min((xs.food + xs.meals + xs.rawFood) / (Math.max(1, n) * 2250), xs.water / (Math.max(1, n) * 3.3));
-            return (
-              <button key={x.id} className={x.id === site.id ? 'on' : ''} onClick={() => setSiteId(x.id)}>
-                <Icon src={SITE_IMG[x.kind]} size={14} /> {x.name} · {n}
-                {n > 0 && days < 2 && <span className="red"> !</span>}
-              </button>
-            );
-          })}
-        </div>
-        <div className="tabs">
-          {(
-            [
-              ['base', 'Căn cứ'],
-              ['people', `Người (${alive.length})`],
-              ['map', 'Bản đồ & viễn chinh'],
-              ['laws', 'Luật'],
-              ['log', 'Nhật ký'],
-            ] as [Tab, string][]
-          ).map(([k, l]) => (
-            <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
-              <Icon src={TAB_IMG[k]} size={14} />
-              {l}
-            </button>
-          ))}
-        </div>
-        <div className="content">
-          {tab === 'base' && <BaseView key={site.id} {...props} />}
-          {tab === 'people' && <PeopleView {...props} />}
-          {tab === 'map' && <MapView key={world.key} {...props} />}
-          {tab === 'laws' && <LawsView {...props} />}
-          {tab === 'log' && <LogView {...props} />}
-        </div>
-      </div>
-
+      <OverlayShell
+        s={s}
+        world={world}
+        site={site}
+        setSite={setSiteId}
+        tab={tab}
+        setTab={setTab}
+        speed={speed}
+        setSpeed={setSpeed}
+        saved={saved}
+        onSave={doSave}
+        onExit={() => {
+          saveGame(s).finally(onExit);
+        }}
+      >
+        {tab === 'base' && <BaseView key={site.id} {...props} />}
+        {tab === 'people' && <PeopleView {...props} />}
+        {tab === 'map' && <MapView key={world.key} {...props} />}
+        {tab === 'laws' && <LawsView {...props} />}
+        {tab === 'log' && <LogView {...props} />}
+      </OverlayShell>
       {toast && (
         <div className="toast" onClick={() => setToast(null)}>
           {toast.msg}
