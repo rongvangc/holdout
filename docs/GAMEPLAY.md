@@ -834,9 +834,11 @@ Lạnh đã có cơ chế từ trước (dưới 18 °C thì tăng mệt, dướ
 - Máy sưởi điện là thiết bị thứ 8 trong danh sách cắt tải điện (ưu tiên cuối — ấm là tiện nghi, hàng rào mới là sống còn).
 - Hai nguồn cộng dồn nhưng **kẹp ở 95%**: không có chuyện miễn nhiễm rét.
 
-## 17. Điều kiện thắng: gọi cứu hộ
+## 17. Điều kiện thắng: gọi cứu hộ — **TẠM TẮT**
 
-Game không còn vô tận tuyệt đối. Radio **cấp 3** khi có điện sẽ phát tín hiệu cầu cứu:
+> Cờ `FEATURES.rescue` trong `src/sim/config.ts` đang là **false**. Code vẫn còn, test vẫn phủ, nhưng game chạy như vô tận. Bật lại bằng cách đổi cờ thành `true`.
+
+Radio **cấp 3** khi có điện sẽ phát tín hiệu cầu cứu:
 
 - Mỗi đêm radio cấp 3 được cấp điện **và điểm có ít nhất 4 người** → `rescueDays` +1
 - Đêm mất điện → `rescueDays` −1 (tín hiệu gián đoạn thì mất uy tín)

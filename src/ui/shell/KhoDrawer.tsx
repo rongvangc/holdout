@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FEATURES } from '../../sim/config';
 import { dayOf } from '../../core/time';
 import { ITEMS, stockWeight, type ItemId } from '../../data/items';
 import { baseStats, present } from '../../sim/state';
@@ -137,7 +138,7 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
           )}
         </>
       )}
-      {!s.gameOver && (s.rescueDays ?? 0) > 0 && (
+      {FEATURES.rescue && !s.gameOver && (s.rescueDays ?? 0) > 0 && (
         <div className="ok">
           Tín hiệu cầu cứu: {s.rescueDays}/7 đêm
         </div>

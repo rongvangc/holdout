@@ -8,6 +8,7 @@ import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { armourAgainst, killShare } from './combat';
 import { survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
+import { FEATURES } from './config';
 import { chargeBatteries, planPower } from './power';
 
 /** Đêm phát tín hiệu liên tục cần để được cứu. */
@@ -240,8 +241,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     site.warmthActive = false;
   }
 
-  // Radio cấp 3 phát tín hiệu cứu hộ: mỗi đêm có điện là một ngày được tính.
-  if (st.rescueSignal && (st.population ?? 0) >= 4) {
+  // Radio cấp 3 phát tín hiệu cứu hộ — tạm tắt bằng cờ FEATURES.rescue.
+  if (!FEATURES.rescue) {
+    s.rescueDays = 0;
+    s.won = false;
+  } else if (st.rescueSignal && (st.population ?? 0) >= 4) {
     s.rescueDays = (s.rescueDays ?? 0) + 1;
     if (s.rescueDays === 1) alert(s, `${site.name}: radio cấp 3 bắt đầu phát tín hiệu cầu cứu.`, 'good');
     if (s.rescueDays >= RESCUE_DAYS && !s.won) {

@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ModuleId } from '../src/data/modules';
+import { FEATURES } from '../src/sim/config';
 import { RESCUE_DAYS } from '../src/sim/daily';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { advanceTo } from '../src/sim/engine';
 import { planPower } from '../src/sim/power';
 import { addStock, baseStats, newGame } from '../src/sim/state';
@@ -101,6 +105,14 @@ describe('rescue by radio', () => {
 });
 
 describe('the rescue runs end to end', () => {
+  // The feature ships switched off; these tests exercise the implementation itself.
+  beforeEach(() => {
+    FEATURES.rescue = true;
+  });
+  afterEach(() => {
+    FEATURES.rescue = false;
+  });
+
   it('seven powered nights of radio-3 win the game', () => {
     const { s, site } = setup();
     put(site, 'radio', 3);
@@ -136,5 +148,13 @@ describe('the rescue runs end to end', () => {
       if (s.gameOver) break;
     }
     expect(s.won ?? false).toBe(false);
+  });
+});
+
+describe('the win switch', () => {
+  it('is off in the shipped build', () => {
+    // Guard rail: flipping this on by accident changes the whole game's shape.
+    const shipped = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../src/sim/config.ts'), 'utf8');
+    expect(/rescue:\s*false/.test(shipped)).toBe(true);
   });
 });
