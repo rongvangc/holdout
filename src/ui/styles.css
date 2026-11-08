@@ -917,3 +917,28 @@ table.grid tr.sel td {
     padding: 6px 8px;
   }
 }
+
+/* ============================================================
+   Icon wiring — mono-line tactical (custom SVG)
+   ============================================================ */
+.tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.speed button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+}
+.sitesbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+td select + .ico,
+td .ico {
+  vertical-align: middle;
+  margin-right: 3px;
+}

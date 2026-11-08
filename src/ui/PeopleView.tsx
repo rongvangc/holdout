@@ -4,6 +4,7 @@ import { ROLES, SKILLS, TRAITS, type Role, type SkillId } from '../sim/data';
 import { setRole, setStudy } from '../sim/engine';
 import { setCommute } from '../sim/commute';
 import { autoAssign, baseStats } from '../sim/state';
+import { Icon, ROLE_ICONS, SKILL_ICONS } from './icons';
 import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
 import type { ViewProps } from './Game';
@@ -158,6 +159,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                 </select>
               </td>
               <td>
+                <Icon src={ROLE_ICONS[p.role]} size={14} />
                 <select
                   value={p.role}
                   disabled={p.location !== 'base'}
@@ -195,7 +197,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
               <td>
                 {topSkills(p).map(([k, l]) => (
                   <span key={k} className="tag">
-                    {SKILLS[k]} {l}
+                    <Icon src={SKILL_ICONS[k]} size={12} /> {SKILLS[k]} {l}
                   </span>
                 ))}
               </td>
@@ -225,8 +227,8 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
           </div>
           <div className="row">
             {(Object.keys(SKILLS) as SkillId[]).map((k) => (
-              <span key={k} className="tag">
-                {SKILLS[k]} {skill(v, k)}
+              <span key={k} className="tag" title={`${SKILLS[k]} cấp ${skill(v, k)}`}>
+                <Icon src={SKILL_ICONS[k]} size={12} /> {skill(v, k)}
               </span>
             ))}
           </div>

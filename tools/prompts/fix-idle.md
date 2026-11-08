@@ -1,0 +1,1 @@
+Rewrite `public/icons/custom/roles/idle.svg` (person lounging at 45°) so `node tools/validate_icons.mjs public/icons/custom/roles/idle.svg` passes. Rules: tools/icons-spec.md. Keep 2 elements max: a 45°/axis-only polygon or paths, stroke 2, fill none, integer coords, viewBox 24, color #eaeae6. Do not touch anything else. Never weaken the validator.
