@@ -49,6 +49,23 @@ function consolidateField(s: GameState, site: Site): boolean {
   return !paintRoom(s, site, { floor: 0, outdoor: true }, cells, 'Khoảnh lớn');
 }
 
+
+/**
+ * Sân căn cứ: gom khoảnh trống thành MỘT khoảnh lớn (tới 800 m²) để trồng vườn nhà.
+ * Đây là mắt xích khởi động: vườn nhà nuôi 1-2 người ngay từ đầu, khỏi phải chờ ruộng.
+ */
+function consolidateYard(s: GameState, base: Site): boolean {
+  const it = base.interior;
+  const freeYard = it.rooms.filter((r) => !r.module && r.outdoor && r.walled !== false);
+  if (freeYard.length <= 1) return false;
+  if (freeYard.some((r) => r.area >= 300)) return false;
+  const perCell = it.cellSize * it.cellSize;
+  const maxCells = Math.floor(DESIGN_LIMITS.maxRoomOutdoor / perCell);
+  const cells = freeYard.flatMap((r) => r.cells).slice(0, maxCells);
+  if (cells.length < 2) return false;
+  return !paintRoom(s, base, { floor: 0, outdoor: true }, cells, 'Sân trồng rau');
+}
+
 function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
   // Ruộng: hạng mục vườn không bị chặn bởi một hạng mục khác đang chờ thợ.
   if (site.projects.length && site.kind !== 'field') return;
@@ -343,6 +360,8 @@ export function botDay(s: GameState, world: World): void {
     }
   }
   buildStations(s, base);
+  // Vườn nhà trước: gom sân thành khoảnh lớn rồi trồng rau — nguồn ăn khởi động.
+  if (baseStats(s, base).gardenArea < 200) consolidateYard(s, base);
   buildNext(s, base, WANT_BASE);
   for (const f of s.sites.filter((x) => x.kind === 'field')) {
     // Ruộng: chưa có vườn thì gom khoảnh lớn trước, rồi mới đặt vườn lên đó.

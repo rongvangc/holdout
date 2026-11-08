@@ -22,7 +22,7 @@ const HOME: LootEntry[] = [
   ['bandage', 4, 1, 2],
   ['tools', 2, 1, 1],
   ['books', 3, 1, 2],
-  ['seeds', 1, 1, 2],
+  ['seeds', 6, 1, 4],
   ['rope', 8, 1, 3],
   ['oil', 6, 0.3, 1],
   ['salt', 3, 0.2, 1],

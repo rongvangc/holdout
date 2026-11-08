@@ -115,7 +115,7 @@ export function finishTask(s: GameState, v: Survivor): void {
         } else {
           const kcal = CROPS[plot.crop].kcalPerM2 * area * baseStats(s, site).gardenYield;
           // Giống thu lại = 1 gói / 150 m², gieo tốn 1 gói/plot → vụ sau dư giống để mở rộng.
-          const seeds = Math.max(1, Math.round(area / 150));
+          const seeds = Math.max(1, Math.round(area / 100));
           // Rau muống/khoai còn cho rau tươi: nguyên liệu cho món ăn và nguồn vitamin.
           const veg = plot.crop === 'rau' ? Math.round((area / 60) * 10) / 10 : Math.round((area / 200) * 10) / 10;
           addStock(s, site, { rawFood: kcal, seeds, rau: veg });

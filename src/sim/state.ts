@@ -116,7 +116,7 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
     cloth: 14,
     medicine: 6,
     bandage: 10,
-    seeds: 4,
+    seeds: 12,
     tools: 2,
     books: 2,
   } satisfies StockDelta);
