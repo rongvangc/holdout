@@ -858,3 +858,33 @@ Ba thay đổi cuối để mức năng suất thật vận hành được:
 3. **Nhóm nhỏ không bị tập kích** (`daily.ts raidEvent`): điểm có **dưới 3 người** không thành mục tiêu đáng tập kích. Với năng suất thực tế, cộng đồng thường chỉ 2–4 người; đợt tập kích dành cho 10 người sẽ quét sạch họ trong vài đêm.
 
 **Kết quả 120 ngày × 5 seed:** 4/5 sống hết (một seed chết đúng ngày 120), dân 2–7, thu hoạch **66.000–200.000 kcal/ván** (560–1.660 kcal/ngày), chết 18–28 người chủ yếu do tập kích. Đây là chế độ **sinh tồn khắc nghiệt**: dân số bị chặn bởi lương thực và thương vong, không phải bởi thiếu mô phỏng.
+
+## 13. Trợ giúp người chơi (tự động hoá & cảnh báo)
+
+### 13.1 Ba công tắc tự động (`sim/automation.ts`, mặc định TẮT)
+
+Bật ở tab **Người**, cạnh "mỗi nửa đêm":
+
+| Công tắc | Máy làm gì | Vì sao cần |
+|---|---|---|
+| **tự chế vật tư** | Mỗi ngày tự xếp hàng đợi chế **một** vật tư lõi còn thiếu (ván, đinh, chỉ, dây, cán, lưỡi, đầu dụng cụ, bản lề, tấm thép) nếu có trạm và đủ vật liệu | Người chơi hay quên, thiếu ván/đinh là không xây/nâng cấp được gì |
+| **tự đi lục soát** | Có ≥2 người rảnh khoẻ, còn nhà chưa vét trong bán kính, nguy cơ bị cắn <25% → tự lập đội 2–4 người đi bộ | Đây là nguồn ăn chính; quên lập đội là chết đói |
+| **tự mở vườn** | Kho lương <20 ngày và còn khoảnh trống hợp lệ → tự xếp một vườn mới | Để nền trồng trọt tự mở rộng theo dân số |
+
+Cả ba dùng chung logic với bot, chạy ở nhịp ngày (`runAuto`) nên người chơi và bot không lệch nhau.
+
+### 13.2 "Cần quyết định" bắt thêm lỗi im lặng (`ui/alerts.ts`)
+
+Thêm 2 dòng cảnh báo vào danh sách (tối đa 3 dòng, ưu tiên việc chết nhanh):
+- **Vườn X m² nhưng không có nông dân** → bấm "Xem người".
+- **Có trạm nước nhưng không ai phụ trách nước** → bấm "Xem người".
+
+Đây đúng là hai lỗi từng làm nền trồng trọt chết mà người chơi không thấy.
+
+### 13.3 Bảng công trình (tab **Căn cứ → Công trình**)
+
+Mỗi module một dòng: số lượng, cấp hiện tại / cấp tối đa, **hiệu quả thật** (vườn bao nhiêu m² đang trồng, chuồng có mấy con giống loài gì, kho lạnh giảm hỏng bao nhiêu, trạm chế tạo cấp mấy…), và trạng thái "đang xây / chờ vật tư". Hạng mục **chưa xây xong cũng hiện**. Bấm một dòng để nhảy về phòng đó trên mặt bằng.
+
+### 13.4 Bảng trang bị toàn đội (tab **Người**)
+
+Mỗi người một dòng: vũ khí / giáp / mũ / ba lô / quần áo, **% giảm sát thương**, **tải thêm (kg)**, **% giữ ấm**. Người tay không được tô đỏ, kèm danh sách trang bị còn trong kho chưa cấp.

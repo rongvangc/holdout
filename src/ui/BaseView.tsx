@@ -6,6 +6,7 @@ import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
 import { availableRecipes } from '../data/recipes';
 import { KitchenPanel } from './KitchenPanel';
+import { ModulesPanel } from './ModulesPanel';
 import { GearPanel } from './GearPanel';
 import { APPLIANCES } from '../sim/power';
 import { foodFxLabel } from '../sim/diet';
@@ -56,6 +57,19 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   const it = site.interior;
   const [floor, setFloor] = useState(0);
   const [sel, setSel] = useState<string | null>(null);
+
+  // Bảng công trình (tab "Công trình") bấm một dòng sẽ nhảy về phòng đó trên mặt bằng.
+  useEffect(() => {
+    const jump = (e: Event) => {
+      const d = (e as CustomEvent<{ roomId: string; floor: number }>).detail;
+      if (!d) return;
+      setFloor(d.floor ?? 0);
+      setSel(d.roomId);
+      setSection('plan');
+    };
+    window.addEventListener('holdout:select-room', jump as EventListener);
+    return () => window.removeEventListener('holdout:select-room', jump as EventListener);
+  }, []);
   const [tool, setTool] = useState<Tool>('select');
   const [shape, setShape] = useState<Shape>('outline');
   const [drag, setDragState] = useState<{ a: number; b: number } | null>(null);
@@ -66,9 +80,8 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   };
   const [pending, setPending] = useState<number[] | null>(null);
   const [name, setName] = useState('');
-  const [craftOpen, setCraftOpen] = useState(false);
-  const [kitchenOpen, setKitchenOpen] = useState(false);
-  const [gearOpen, setGearOpen] = useState(false);
+  // One section visible at a time: the sidebar used to stack seven jobs at once.
+  const [section, setSection] = useState<'plan' | 'modules' | 'craft' | 'kitchen' | 'gear' | 'power'>('plan');
   const [err, setErr] = useState('');
   const [, setTick] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -513,9 +526,10 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
   // R1: a decision row can ask for a specific section; open it once.
   useEffect(() => {
     if (!focusPanel) return;
-    if (focusPanel === 'kitchen') setKitchenOpen(true);
-    if (focusPanel === 'gear') setGearOpen(true);
-    if (focusPanel === 'craft') setCraftOpen(true);
+    if (focusPanel === 'kitchen') setSection('kitchen');
+    else if (focusPanel === 'gear') setSection('gear');
+    else if (focusPanel === 'craft' || focusPanel === 'defence') setSection('craft');
+    else if (focusPanel === 'power') setSection('power');
   }, [focusPanel]);
   // Điện: nguồn nào đang cấp, thiết bị nào được bật, thiết bị nào bị cắt.
   const onSet = new Set(st.powerOn);
@@ -627,6 +641,22 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
         </div>
       </div>
       <div className="side-panel">
+        <div className="seg" role="tablist" aria-label="Ngăn của căn cứ">
+          {([
+            ['plan', 'Mặt bằng'],
+            ['modules', 'Công trình'],
+            ['craft', 'Chế tạo'],
+            ['kitchen', 'Bếp'],
+            ['gear', 'Trang bị'],
+            ['power', 'Điện'],
+          ] as const).map(([id, label]) => (
+            <button key={id} role="tab" aria-selected={section === id} className={section === id ? 'on' : ''} onClick={() => setSection(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {section === 'plan' && (
+          <>
         {pending && pendingCells > 0 && (
           <div className="card col">
             <b>
@@ -775,10 +805,12 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
           </div>
         ))}
 
-        <div className="label" style={{ cursor: 'pointer' }} onClick={() => setCraftOpen((v) => !v)}>
-          Chế tạo ({recipes.length}) {craftOpen ? '▾' : '▸'}
-        </div>
-        {craftOpen && (
+          </>
+        )}
+        {section === 'craft' && (
+          <>
+            <div className="label">Chế tạo ({recipes.length})</div>
+            {true && (
           <div className="col" style={{ gap: 4 }}>
             {!recipes.length && <div className="faint">Chưa có trạm nào. Xây Lò rèn / Xưởng mộc / Lò nung / Xưởng may trước.</div>}
             {worn.map((w) => (
@@ -826,16 +858,14 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
           </div>
         )}
 
-        <div className="label" style={{ cursor: 'pointer' }} onClick={() => setKitchenOpen((v) => !v)}>
-          Bếp &amp; món ăn {kitchenOpen ? '▾' : '▸'}
-        </div>
-        {kitchenOpen && <KitchenPanel s={s} site={site} refresh={refresh} />}
+          </>
+        )}
+        {section === 'modules' && <ModulesPanel s={s} site={site} refresh={refresh} />}
+        {section === 'kitchen' && <KitchenPanel s={s} site={site} refresh={refresh} />}
 
-        <div className="label" style={{ cursor: 'pointer' }} onClick={() => setGearOpen((v) => !v)}>
-          Trang bị {gearOpen ? '▾' : '▸'}
-        </div>
-        {gearOpen && <GearPanel s={s} site={site} refresh={refresh} />}
+        {section === 'gear' && <GearPanel s={s} site={site} refresh={refresh} />}
 
+        {section === 'power' && (<>
         <div className="label">Điện &amp; sưởi</div>
         <div className="kv">
           <span title="Tổng công suất các thiết bị đã xây">Cần</span>
@@ -875,6 +905,10 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
           </div>
         )}
 
+          </>
+        )}
+
+        {section === 'plan' && (<>
         <div className="label" title="Tổng quan thiết bị khả dụng của điểm này">Chỉ số</div>
         <div className="kv">
           <span title="Số giường ngủ — thiếu giường, người ngủ sàn, hồi mệt chậm hơn">Giường</span>
@@ -894,6 +928,8 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
             {st.workshop ? '✓' : '✗'} / {st.infirmary ? '✓' : '✗'} / {st.storage ? '✓' : '✗'}
           </span>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

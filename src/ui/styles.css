@@ -1288,3 +1288,55 @@ table.grid tr.sel td {
   .topstrip .stat .label { font-size: 8.5px; }
   .topstrip .stat .v { font-size: 12px; }
 }
+
+/* Touch targets: anything a finger must hit gets both dimensions on mobile.
+   Spec target: 44x44 (design/ux/hud.md, Platform Adaptation). */
+@media (max-width: 720px) {
+  .speed button,
+  .canvaswrap .row.toolbar button,
+  .sitesbar button,
+  .tabbar button {
+    min-height: 44px;
+  }
+  .speed button {
+    min-width: 44px;
+    padding: 6px 10px;
+  }
+  /* Zoom −/+ and anything else in a plain row. */
+  .canvaswrap .row button { min-width: 44px; min-height: 44px; }
+  .tabbar button { min-width: 64px; }
+  .sitesbar button { min-width: 44px; }
+}
+
+/* Sidebar segmented control (design/ux/base.md Z4): one job per section,
+   so the whole menu never stacks at once. */
+.side-panel .seg {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 1px;
+  background: var(--line);
+  margin: 0 0 6px;
+  padding: 0;
+}
+.side-panel .seg button {
+  flex: 1 1 auto;
+  min-width: 58px;
+  border: 0;
+  background: var(--panel);
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  padding: 8px 7px;
+  min-height: 34px;
+  white-space: nowrap;
+}
+.side-panel .seg button.on {
+  color: var(--fg);
+  background: var(--panel-2);
+  box-shadow: inset 0 -2px 0 var(--red);
+}
+@media (max-width: 720px) {
+  .side-panel .seg button { min-height: 44px; font-size: 11px; }
+}

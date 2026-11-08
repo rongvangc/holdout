@@ -242,6 +242,8 @@ export interface GameState {
   queue: EventQueue<GameEvent>;
   nextId: number;
   autoRoles: boolean;
+  /** Ba công tắc tự động cho người chơi (mặc định tắt). */
+  auto?: { craftCore: boolean; loot: boolean; garden: boolean };
   gameOver: boolean;
   /** Set when the radio has called rescue out: the run is won. */
   won?: boolean;

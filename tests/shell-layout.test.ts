@@ -18,7 +18,8 @@ describe('overlay shell layout', () => {
   it('overlay-main stacks strip and stage in a grid', () => {
     const main = rule('.overlay-main');
     expect(main).toMatch(/display:\s*grid/);
-    expect(main).toMatch(/grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)/);
+    // Hiện có 3 hàng: TopStrip · dải "Cần quyết định" · stage. Chỉ cần hàng cuối co giãn.
+    expect(main).toMatch(/grid-template-rows:\s*(auto\s+)+minmax\(0,\s*1fr\)/);
     expect(main).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/);
   });
 

@@ -17,8 +17,11 @@ function render() {
 describe('people table', () => {
   it('header and body rows carry the same number of cells', () => {
     const html = render();
-    const thead = html.match(/<thead>([\s\S]*?)<\/thead>/)?.[1] ?? '';
-    const body = html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+    // Bảng người là bảng CUỐI (phía trên có bảng trang bị toàn đội).
+    const tables = [...html.matchAll(/<table[^>]*>([\s\S]*?)<\/table>/g)].map((m) => m[1]);
+    const table = tables[tables.length - 1] ?? '';
+    const thead = table.match(/<thead>([\s\S]*?)<\/thead>/)?.[1] ?? '';
+    const body = table.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
     const ths = [...thead.matchAll(/<th[^>]*>/g)].length;
     const firstRow = body.match(/<tr[^>]*>([\s\S]*?)<\/tr>/)?.[1] ?? '';
     const tds = [...firstRow.matchAll(/<td[^>]*>/g)].length;

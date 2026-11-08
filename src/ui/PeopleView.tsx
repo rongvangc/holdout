@@ -8,7 +8,7 @@ import { planTreatment, treatNow } from '../sim/medical';
 import { skill } from '../sim/survivors';
 import type { Survivor, TaskKind } from '../sim/types';
 import { ITEMS } from '../data/items';
-import { GEAR_SLOTS, SLOT_LABEL, availableGear, equip, gearLabel, packCapacity, survivorArmor, survivorWeapon } from '../sim/gear';
+import { GEAR_SLOTS, SLOT_LABEL, availableGear, equip, gearLabel, insulation, packCapacity, survivorArmor, survivorWeapon } from '../sim/gear';
 import type { ViewProps } from './Game';
 
 const TASK_LABEL: Record<TaskKind, string> = {
@@ -92,6 +92,39 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
           />
           mỗi nửa đêm
         </label>
+        <label className="row" style={{ gap: 4 }} title="Tự chế vật tư lõi (ván, đinh, chỉ, than…) khi thiếu">
+          <input
+            type="checkbox"
+            checked={!!s.auto?.craftCore}
+            onChange={(e) => {
+              s.auto = { ...(s.auto ?? { craftCore: false, loot: false, garden: false }), craftCore: e.target.checked };
+              refresh();
+            }}
+          />
+          tự chế vật tư
+        </label>
+        <label className="row" style={{ gap: 4 }} title="Tự lập đội đi lục soát khi có người rảnh và còn nhà chưa vét">
+          <input
+            type="checkbox"
+            checked={!!s.auto?.loot}
+            onChange={(e) => {
+              s.auto = { ...(s.auto ?? { craftCore: false, loot: false, garden: false }), loot: e.target.checked };
+              refresh();
+            }}
+          />
+          tự đi lục soát
+        </label>
+        <label className="row" style={{ gap: 4 }} title="Tự mở thêm vườn khi kho lương thực dưới 20 ngày">
+          <input
+            type="checkbox"
+            checked={!!s.auto?.garden}
+            onChange={(e) => {
+              s.auto = { ...(s.auto ?? { craftCore: false, loot: false, garden: false }), garden: e.target.checked };
+              refresh();
+            }}
+          />
+          tự mở vườn
+        </label>
         <label className="row" style={{ gap: 4 }}>
           <input type="checkbox" checked={onlyHere} onChange={(e) => setOnlyHere(e.target.checked)} />
           chỉ {site.name}
@@ -103,6 +136,59 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
         ))}
       </div>
       <div className="table-scroll">
+      {(() => {
+        const staff = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id);
+        const bare = staff.filter((v) => !v.gear?.weapon);
+        const spare = Object.entries(site.stock)
+          .filter(([id, n]) => (n ?? 0) >= 1 && ['weapon_blade', 'weapon_blunt', 'firearm', 'armor_soft', 'armor_plate', 'helmet', 'vest', 'backpack'].includes(ITEMS[id]?.mechanic ?? ''))
+          .map(([id, n]) => `${ITEMS[id]?.label}×${Math.floor(n)}`);
+        return (
+          <details className="card">
+            <summary className="label" style={{ cursor: 'pointer' }}>
+              Trang bị toàn đội · {staff.length - bare.length}/{staff.length} người có vũ khí
+              {spare.length > 0 && <span className="faint"> · trong kho: {spare.slice(0, 6).join(', ')}</span>}
+            </summary>
+            <table className="grid">
+              <thead>
+                <tr>
+                  <th>Người</th>
+                  <th>Vũ khí</th>
+                  <th>Giáp</th>
+                  <th>Mũ</th>
+                  <th>Ba lô</th>
+                  <th>Quần áo</th>
+                  <th title="Giáp thân + mũ, kẹp 45%">Giảm dmg</th>
+                  <th title="Sức chở thêm khi đi viễn chinh">Tải</th>
+                  <th title="Cách nhiệt khi trời rét">Giữ ấm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {staff.map((v) => {
+                  const cell = (slot: 'weapon' | 'body' | 'head' | 'pack' | 'outfit') => {
+                    const id = v.gear?.[slot];
+                    if (!id) return <span className="faint">—</span>;
+                    return <span title={gearLabel(id)}>{ITEMS[id]?.label ?? id}</span>;
+                  };
+                  return (
+                    <tr key={v.id}>
+                      <td>{v.name}</td>
+                      <td className={v.gear?.weapon ? '' : 'red'}>{cell('weapon')}</td>
+                      <td>{cell('body')}</td>
+                      <td>{cell('head')}</td>
+                      <td>{cell('pack')}</td>
+                      <td>{cell('outfit')}</td>
+                      <td>{Math.round(survivorArmor(v) * 100)}%</td>
+                      <td>+{packCapacity(v)} kg</td>
+                      <td>{Math.round(insulation(v) * 100)}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </details>
+        );
+      })()}
+
       <table className="grid">
         <thead>
           <tr>

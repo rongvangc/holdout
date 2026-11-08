@@ -10,6 +10,7 @@ import { dist } from '../world/geo';
 import type { World } from '../world/types';
 import { PEOPLE_PER_LATRINE, ROLES, TEND_H_PER_M2_DAY, type Role } from './data';
 import { issueGear } from './gear';
+import { DEFAULT_AUTO } from './automation';
 import { isActive, makeSurvivor, skill } from './survivors';
 import type { GameState, LogEntry, Site, StockDelta, Survivor } from './types';
 
@@ -102,6 +103,7 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
     queue: makeQueue(),
     nextId: 1,
     autoRoles: true,
+    auto: { ...DEFAULT_AUTO },
     gameOver: false,
   };
   const home = makeSite(s, world, 'base', baseId);
@@ -167,6 +169,7 @@ export function migrate(raw: unknown): GameState {
   o.sites = [site];
   o.version = 2;
   o.autoRoles ??= true;
+  o.auto ??= { ...DEFAULT_AUTO };
   for (const v of o.survivors) v.siteId ??= site.id;
   for (const e of o.expeditions) {
     e.kind ??= e.target.type === 'water' ? 'water' : 'loot';

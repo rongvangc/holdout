@@ -9,6 +9,7 @@ import { killSurvivor, turnSurvivor } from './lifecycle';
 import { BLEED_HP_PER_HOUR, bleedOf } from './medical';
 import { insulation } from './gear';
 import { autoAssign, baseStats, log } from './state';
+import { runAuto } from './automation';
 import { hasTrait } from './survivors';
 import { chooseTask, finishTask, interrupt, sleepRate } from './tasks';
 import type { GameEvent, GameState } from './types';
@@ -97,6 +98,7 @@ function dispatch(s: GameState, world: World, ev: GameEvent, t: number): void {
       dayEvent(s, world);
       for (const site of s.sites) payProjects(s, site);
       if (s.autoRoles) autoAssign(s);
+      runAuto(s, world);
       return;
     case 'raid':
       raidEvent(s, world, ev.site);

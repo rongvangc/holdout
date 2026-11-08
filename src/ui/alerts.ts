@@ -159,6 +159,30 @@ export function decide(s: GameState, site: Site): Decision[] {
     }
   }
 
+  // Việc bị bỏ trống mà người chơi khó thấy: vườn không có nông dân, có trạm nước
+  // mà không ai phụ trách. Đây là các lỗi "im lặng" từng làm cả nền trồng trọt chết.
+  const staff = here.filter((v) => v.location === 'base' && !v.commute);
+  const noFarmer = st.gardenArea > 0 && !staff.some((v) => v.role === 'farmer');
+  if (noFarmer) {
+    out.push({
+      id: 'no-farmer',
+      level: 'bad',
+      text: `Vườn ${Math.round(st.gardenArea)} m² nhưng không có nông dân`,
+      action: 'Xem người',
+      tab: 'people',
+    });
+  }
+  const noWaterRole = (st.filter || st.well) && !staff.some((v) => v.role === 'water');
+  if (noWaterRole) {
+    out.push({
+      id: 'no-water-role',
+      level: 'bad',
+      text: 'Có trạm nước nhưng không ai phụ trách nước',
+      action: 'Xem người',
+      tab: 'people',
+    });
+  }
+
   // Stable order: bad before warn, then insertion order (which is severity order).
   out.sort((a, b) => (a.level === b.level ? 0 : a.level === 'bad' ? -1 : 1));
   return out.slice(0, MAX_DECISIONS);
