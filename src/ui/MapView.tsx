@@ -4,13 +4,14 @@ import { dayOf, fmtClock, fmtDuration } from '../core/time';
 import { CATS } from '../data/categories';
 import { ITEMS, STOCK_ORDER, stockWeight, type ItemId } from '../data/items';
 import { expeditionEta, kindFor, launchExpedition, planExpedition, type Mode, type TargetRef } from '../sim/expedition';
+import { startDecoy } from '../sim/daily';
 import { log, newId, siteOfSource } from '../sim/state';
 import { skill } from '../sim/survivors';
 import type { StockDelta } from '../sim/types';
 import { unproject } from '../world/geo';
 import { fmtNum, MAX_RADIUS, type ViewProps } from './Game';
 import { Icon, ITEM_ICONS } from './icons';
-import { buildingsGeoJSON, cellsGeoJSON, greensGeoJSON, waterGeoJSON } from './mapData';
+import { buildingsGeoJSON, cellsGeoJSON, greensGeoJSON, mapDataCellPos, waterGeoJSON } from './mapData';
 import { setGeo, useMap } from './useMap';
 
 const MODES: [Mode, string, string][] = [
@@ -141,11 +142,15 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
         const pos = b?.centroid ?? g?.centroid ?? w?.pos ?? site?.centroid ?? from.centroid;
         return mk(pos, 'map-marker exp', e.target.name);
       }),
+      ...(s.hordes ?? []).map((h) => {
+        const pos = mapDataCellPos(world, h.cell);
+        return mk(pos, 'map-marker horde', `Bầy ~${h.size} zombie`);
+      }),
     ];
     for (const m of markers.current.slice(0, s.sites.length)) {
       m.getElement().textContent = m.getElement().title;
     }
-  }, [map, s.expeditions.length, s.sites.length, s.expeditions, s.sites, from, world]);
+  }, [map, s.expeditions.length, s.sites.length, s.expeditions, s.sites, from, world, s.hordes]);
 
   const available = s.survivors.filter((v) => v.status === 'alive' && v.location === 'base' && v.siteId === from.id && v.task?.kind !== 'commute');
   const validTeam = team.filter((id) => available.some((v) => v.id === id));
@@ -303,6 +308,21 @@ export function MapView({ s, world, site: from, setSite, refresh, expandWorld }:
                   </button>
                   <button className={action === 'patrol' ? 'on' : ''} onClick={() => setAction('patrol')}>
                     Đi tuần
+                  </button>
+                </div>
+                <div className="row">
+                  <button
+                    disabled={from.stock.fuel < 2}
+                    title={from.stock.fuel < 2 ? 'Cần 2L xăng' : 'Phát ồn ở khu này 6 giờ — bầy zombie lân cận sẽ trườn về đây thay vì các điểm của bạn (tốn 2L xăng từ điểm xuất phát)'}
+                    onClick={() => {
+                      if (target?.type === 'water') return;
+                      const cell = tb?.cell ?? tg?.cell ?? '';
+                      if (!cell) return;
+                      setErr(startDecoy(s, from.id, cell) ?? '');
+                      refresh();
+                    }}
+                  >
+                    Phát ồn 6h (2L xăng)
                   </button>
                 </div>
               </>

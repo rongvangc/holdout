@@ -82,3 +82,10 @@ export function cellsGeoJSON(world: World, heat: Record<string, number>, clear: 
     })),
   };
 }
+
+/** Tâm của một ô H3 (lấy boundary đầu) — dùng cho marker bầy zombie. */
+export function mapDataCellPos(world: World, cell: string): [number, number] {
+  const poly = cellToBoundary(cell, true);
+  const c = poly.reduce((a, p) => [a[0] + p[0] / poly.length, a[1] + p[1] / poly.length], [0, 0]);
+  return unproject(world.center, [c[1], c[0]] as [number, number]);
+}
