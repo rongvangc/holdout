@@ -102,6 +102,9 @@ export function TopStrip({
         </div>
       </div>
       <div className="topstrip-nav">
+        <button className="kho-toggle" onClick={onKho} aria-label="Mở kho của điểm đang chọn">
+          Kho
+        </button>
         <div className="sitesbar">
           {s.sites.map((candidate) => {
             const people = present(s, candidate).length;
@@ -118,7 +121,6 @@ export function TopStrip({
             );
           })}
         </div>
-        <button className="kho-toggle" onClick={onKho}>Kho</button>
         <nav className="tabbar" aria-label="Khu vực chính">
           {TABS.map(([id, label]) => (
             <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>

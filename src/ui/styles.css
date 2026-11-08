@@ -996,8 +996,13 @@ table.grid tr.sel td {
   font-weight: 600;
 }
 .kho-toggle {
-  border-left: 1px solid var(--line-strong);
+  border-right: 1px solid var(--line-strong);
+  border-left: 1px solid var(--line);
   color: var(--fg);
+  font-weight: 600;
+}
+.kho-toggle:hover {
+  background: var(--btn-hover);
 }
 .overlay-stage {
   min-height: 0;
@@ -1064,10 +1069,12 @@ table.grid tr.sel td {
   .sheet {
     top: 0;
     bottom: 0;
-    left: auto;
+    left: 0;
+    right: auto;
     width: min(380px, 36vw);
     max-height: none;
     border-top-width: 1px;
     border-left: 2px solid var(--red);
+    border-right: 1px solid var(--line-strong);
   }
 }
