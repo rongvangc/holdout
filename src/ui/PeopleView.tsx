@@ -95,7 +95,7 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
       </div>
       <table className="grid">
         <thead>
-          <tr className="label">
+          <tr>
             <th>Tên</th>
             <th>Điểm</th>
             <th title="Ngủ ở nhà, ban ngày đi bộ sang điểm khác làm việc">Đi làm ở</th>

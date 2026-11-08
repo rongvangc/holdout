@@ -111,6 +111,12 @@ body::after {
 .dim {
   color: var(--dim);
 }
+/* Hàng tiêu đề bảng không được nhận .label::before: nội dung ::before trong <tr>
+   bị trình duyệt biến thành một ô ảo, đẩy toàn bộ tiêu đề lệch một cột. */
+table tr.label::before,
+table thead tr::before {
+  content: none;
+}
 .faint {
   color: var(--faint);
 }
