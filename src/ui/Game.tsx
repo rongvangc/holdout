@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { dayOf } from '../core/time';
+import { HOUR, dayOf } from '../core/time';
 import { advanceTo } from '../sim/engine';
 import { log, rebindWorld, siteById } from '../sim/state';
 import type { GameState, LogEntry, Site } from '../sim/types';
@@ -54,6 +54,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   const [focusPanel, setFocusPanel] = useState<string | null>(null);
   const lastDay = useRef(dayOf(s.t));
   const lastLog = useRef(s.log.length);
+  const lastSave = useRef(Math.floor(s.t / (6 * HOUR)));
 
   useEffect(() => {
     let raf = 0;
@@ -87,9 +88,13 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           }
           lastLog.current = s.log.length;
         }
+        // Tự lưu mỗi 6 giờ game — trước đây chỉ lưu khi sang ngày mới, nên sập
+        // trình duyệt lúc 21:00 là mất gần trọn một ngày.
         const d = dayOf(s.t);
-        if (d !== lastDay.current) {
+        const sixHour = Math.floor(s.t / (6 * HOUR));
+        if (d !== lastDay.current || sixHour !== lastSave.current) {
           lastDay.current = d;
+          lastSave.current = sixHour;
           saveGame(s).catch(() => undefined);
         }
       }
@@ -186,7 +191,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         {tab === 'log' && <LogView {...props} />}
       </OverlayShell>
       {toast && (
-        <div className="toast" onClick={() => setToast(null)}>
+        <div className="toast" role="status" aria-live="polite" onClick={() => setToast(null)}>
           {toast.msg}
         </div>
       )}

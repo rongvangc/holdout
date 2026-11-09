@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;600;800;900&family=Silkscreen:wght@400;700&display=swap');
+/* Fonts are loaded from index.html with preconnect: an @import here blocks the
+   first paint behind a second round trip to fonts.googleapis.com. */
 
 /* ============================================================
    HOLDOUT — Tactical Telemetry UI
@@ -16,7 +17,7 @@
   --line-strong: #3c3c38;
   --fg: #eaeae6;
   --dim: #8f8f88;
-  --faint: #5a5a52;
+  --faint: #82827a;
   --red: #ff2a2a;
   --red-deep: #c41f1f;
   --amber: #e0a030;
@@ -181,6 +182,13 @@ button.on {
   background: var(--fg);
   border-color: var(--fg);
   color: var(--bg);
+}
+/* A selected control is light, so the faint tone has to invert with it —
+   #82827a on #eaeae6 is 3.2:1 and unreadable where it matters most. */
+button.on .faint,
+button.on .dim,
+button.on small {
+  color: #4f4f49;
 }
 select {
   padding: 3px 6px;
@@ -470,7 +478,7 @@ hr.thick {
   white-space: nowrap;
 }
 .sitesbar button.on {
-  background: var(--red);
+  background: var(--red-deep);
   color: #fff;
 }
 .tabs {
@@ -678,6 +686,12 @@ table.grid tr.sel td {
   border: 1px solid var(--line-strong);
   background: rgba(10, 10, 10, 0.85);
 }
+.map-layer-ctrl button.on {
+  /* button.on sets color: var(--bg); on the map the chip background is dark,
+     so the selected layer used to render 1:1 — invisible. */
+  background: var(--fg);
+  color: var(--bg);
+}
 .map-layer-ctrl button {
   border: 0;
   border-right: 1px solid var(--line);
@@ -698,8 +712,9 @@ table.grid tr.sel td {
   white-space: nowrap;
 }
 .map-marker.on {
-  background: var(--red);
-  border-color: var(--red);
+  /* white on --red is 3.7:1; the deep red keeps the marker shouty and readable */
+  background: var(--red-deep);
+  border-color: var(--red-deep);
   color: #fff;
 }
 .map-marker.exp {
@@ -990,7 +1005,7 @@ table.grid tr.sel td {
   white-space: nowrap;
 }
 .topstrip .sitesbar button.on {
-  background: var(--red);
+  background: var(--red-deep);
   color: #fff;
 }
 .tabbar button {
@@ -1430,4 +1445,24 @@ table.grid tr.sel td {
   .herd-line { font-size: 12px; }
   .herd-key { width: 58px; }
   .herd-val { min-width: 66px; }
+}
+
+/* Notched phones: keep the HUD and the bottom drawer off the cutouts. */
+@supports (padding: env(safe-area-inset-top)) {
+  .topstrip { padding-top: env(safe-area-inset-top); }
+  .kho-sidebar { padding-bottom: env(safe-area-inset-bottom); }
+  .toast { bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .sheet { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Respect the system setting; the game has no decorative animation to lose. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

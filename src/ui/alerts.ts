@@ -188,7 +188,9 @@ export function decide(s: GameState, site: Site): Decision[] {
   // Vượt sức chứa của lãnh thổ: thêm người mà không thêm đất thì chỉ ăn mòn dự trữ.
   const herds = site.interior.rooms.filter((r) => r.herdState).map((r) => ({ state: r.herdState!, graze: site.kind === 'field' ? 1 : 0.4 }));
   const cap = siteCapacity(site, herds);
-  if (pop > cap.ceiling + 0.5) {
+  // Chưa có vườn thì "nuôi 0 người" là chuyện đương nhiên, không phải sự cố: bảng
+  // Cần quyết định chỉ được 3 dòng, đừng đốt một dòng vào điều hiển nhiên ngày 1.
+  if (cap.gardenM2 >= 20 && pop > cap.ceiling + 0.5) {
     out.push({
       id: 'over-capacity',
       level: 'warn',

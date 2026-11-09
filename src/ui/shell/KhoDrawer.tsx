@@ -248,8 +248,8 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
               <span title="Chỉ bầy không lỗ calo mới cộng phần đạm">Đạm từ chăn nuôi</span>
               <span>{cap.fromHerds.toFixed(1)} người</span>
               <span>Tổng</span>
-              <span className={over ? 'red' : 'ok'}>
-                {here}/{cap.ceiling.toFixed(1)} người{over ? ' — quá tải' : ''}
+              <span className={over ? 'red' : cap.gardenM2 < 20 ? 'dim' : 'ok'}>
+                {cap.gardenM2 < 20 ? 'chưa canh tác — trồng vườn trước' : `${here}/${cap.ceiling.toFixed(0)} người${over ? ' — quá tải' : ''}`}
               </span>
             </div>
           </>
