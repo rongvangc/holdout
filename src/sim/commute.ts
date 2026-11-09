@@ -3,6 +3,9 @@ import { dayOf, HOUR, isNight, MIN, timeOfDay } from '../core/time';
 import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
+import { killShare } from './combat';
+import { MITIGATION_CAP, armorMitigation, describeWeapon, wearWeapon } from './equipment';
+import { survivorWeapon } from './gear';
 import { killSurvivor, noteBite } from './lifecycle';
 import { log, siteById } from './state';
 import { gainXp, hasTrait, skill } from './survivors';
@@ -77,7 +80,24 @@ export function arrive(s: GameState, v: Survivor, dest: string, sec: number): vo
       continue;
     }
     const z = ZOMBIES[zombieType(s.rng, day, night)];
-    v.hp -= z.dmg * range(s.rng, 0.5, 1.5) * (1 - 0.04 * skill(v, 'melee'));
+    // Người đi làm cũng có vũ khí và áo giáp như khi đi viễn chinh. Trước đây họ
+    // đi tay không: một người được cấp súng vẫn chết y như người không có gì, nên
+    // cái chết trên đường đi làm không phải hậu quả của quyết định nào.
+    const home = siteById(s, c.home);
+    const weapon = survivorWeapon(home, v);
+    const share = killShare(home, [v], zombieType(s.rng, day, night));
+    gainXp(v, 'melee', 3);
+    if (weapon) {
+      const w = wearWeapon(s, home, weapon, 1);
+      if (w.broke) log(s, `${v.name}: ${describeWeapon(weapon)} gãy trên đường đi làm.`, 'warn');
+    }
+    if (chance(s.rng, share)) {
+      // Hạ được trước khi nó chạm tới.
+      gainXp(v, 'melee', 5);
+      continue;
+    }
+    const armour = Math.min(MITIGATION_CAP, armorMitigation(home));
+    v.hp -= z.dmg * range(s.rng, 0.5, 1.5) * (1 - armour) * (1 - 0.04 * skill(v, 'melee'));
     gainXp(v, 'melee', 6);
     if (chance(s.rng, z.bite)) noteBite(s, v, chance(s.rng, 0.5));
     if (v.hp <= 0) killSurvivor(s, v, `bị ${z.label} giết trên đường đi làm`);
