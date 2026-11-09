@@ -11,6 +11,7 @@ import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
 import { saveGame } from './save';
+import { play, stopRain } from './audio';
 import { OverlayShell } from './shell/OverlayShell';
 import type { TabId } from './shell/TopStrip';
 
@@ -51,6 +52,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   // R1: a decision row jumps to the tab *and* the section that can fix it.
   const [focusPanel, setFocusPanel] = useState<string | null>(null);
   const lastDay = useRef(dayOf(s.t));
+  const lastLog = useRef(s.log.length);
 
   useEffect(() => {
     let raf = 0;
@@ -66,7 +68,23 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
           const bad = s.alerts.find((a) => a.level === 'bad');
           setToast(s.alerts[s.alerts.length - 1]);
           if (bad) setSpeed(0);
+          // Raid / death / build cues come from the alerts themselves.
+          for (const a of s.alerts) {
+            if (a.level === 'bad' && /tập kích|zombie/.test(a.msg)) play('raid');
+            else if (a.level === 'bad') play('death');
+            else if (/hoàn thành|xong/.test(a.msg)) play('build');
+            else play('alert');
+          }
           s.alerts = [];
+        }
+        // Log lines carry the fine-grained events the sim does not surface.
+        if (s.log.length !== lastLog.current) {
+          for (const e of s.log.slice(lastLog.current)) {
+            if (/bắn|súng|gãy/.test(e.msg)) play('gunshot');
+            else if (/hoàn thành/.test(e.msg)) play('build');
+            else if (/đã chết/.test(e.msg)) play('death');
+          }
+          lastLog.current = s.log.length;
         }
         const d = dayOf(s.t);
         if (d !== lastDay.current) {
@@ -84,6 +102,12 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [speed, s, world]);
+
+  // Rain is the only continuous sound; it follows the weather, not the player.
+  useEffect(() => {
+    if (s.weather.rainMm > 0 && !s.weather.storm) play('rain');
+    else stopRain();
+  }, [s.weather.rainMm, s.weather.storm]);
 
   useEffect(() => {
     if (!toast) return;

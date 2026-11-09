@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { dayOf, fmtClock } from '../../core/time';
 import { stapleKcal } from '../../data/staples';
 import { baseStats, present } from '../../sim/state';
 import type { GameState, Site } from '../../sim/types';
 import { Icon, SITE_IMG, TAB_IMG } from '../icons';
 import { toggleHints, useHints } from '../hints';
+import { soundEnabled, toggleSound } from '../audio';
 
 export type TabId = 'base' | 'people' | 'map' | 'laws' | 'log';
 
@@ -43,6 +45,7 @@ export function TopStrip({
   onExit?: () => void;
 }) {
   const hintsOn = useHints();
+  const [, forceSound] = useState(0);
   const st = baseStats(s, site);
   const here = present(s, site).length;
   const alive = s.survivors.filter((v) => v.status === 'alive');
@@ -95,6 +98,17 @@ export function TopStrip({
         </div>
         <div className="grow topstrip-actions">
           <span className="ok">{saved}</span>
+          <button
+            className={soundEnabled() ? 'on' : ''}
+            aria-pressed={soundEnabled()}
+            title="Bật/tắt âm thanh (tổng hợp tại chỗ, không tải file)"
+            onClick={() => {
+              toggleSound();
+              forceSound((n) => n + 1);
+            }}
+          >
+            {soundEnabled() ? '♪ Âm' : '♪ Tắt'}
+          </button>
           <button
             className={hintsOn ? 'on' : ''}
             aria-pressed={hintsOn}

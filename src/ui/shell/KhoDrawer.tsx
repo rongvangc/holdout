@@ -5,6 +5,7 @@ import { ITEMS, stockWeight, type ItemId } from '../../data/items';
 import { stapleKcal } from '../../data/staples';
 import { ammoFor } from '../../sim/equipment';
 import { queueRepair, repairableWeapons, stationLevel } from '../../sim/build';
+import { canRepair, refuel, repairVehicle, syncVehicleStock } from '../../sim/vehicles';
 import { baseStats, present } from '../../sim/state';
 import { GEAR_SLOTS } from '../../sim/gear';
 import { HERDS, herdCapacity, herdBudget, type HerdState } from '../../sim/livestock';
@@ -45,6 +46,8 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
   const pop = Math.max(1, st.population);
   const stock = site.stock;
   const [group, setGroup] = useState<string>('all');
+  const [, bump] = useState(0);
+  const vehicles = site.vehicles ?? [];
 
   // Mọi thứ đang thực sự có trong kho, kể cả 647 món catalog (trước đây bị ẩn).
   const held = Object.entries(stock)
@@ -144,6 +147,51 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
           </>
         );
       })()}
+
+      {/* Xe là vật thể: mỗi chiếc có bình xăng và độ mòn riêng, nên phải hiện ra
+          đúng như vậy thay vì một con số trong kho. */}
+      {vehicles.length > 0 && (
+        <>
+          <div className="dither" />
+          <div className="label">Xe trong sân</div>
+          <div className="col" style={{ gap: 4 }}>
+            {vehicles.map((v) => (
+              <div key={v.id} className="col" style={{ gap: 2 }}>
+                <div className="row" style={{ gap: 6 }}>
+                  <span className="grow">{v.label}</span>
+                  <span className={v.condition < 35 ? 'red' : 'amber'}>máy {Math.round(v.condition)}%</span>
+                  <span className="dim">
+                    {v.fuelL.toFixed(0)}/{v.tankL} L
+                  </span>
+                </div>
+                <div className="row" style={{ gap: 6 }}>
+                  <button
+                    disabled={stock.fuel < 1 || v.fuelL >= v.tankL}
+                    title={stock.fuel < 1 ? 'Kho không còn xăng' : `Đổ từ kho (còn ${Math.round(stock.fuel)} L)`}
+                    onClick={() => {
+                      refuel(site, v, Math.min(20, v.tankL - v.fuelL));
+                      syncVehicleStock(site);
+                      bump((n) => n + 1);
+                    }}
+                  >
+                    Đổ 20 L
+                  </button>
+                  <button
+                    disabled={!canRepair(site, v)}
+                    title={canRepair(site, v) ? 'Sửa: 4 sắt + 2 linh kiện, hồi 35%' : 'Cần 4 sắt + 2 linh kiện'}
+                    onClick={() => {
+                      repairVehicle(site, v);
+                      bump((n) => n + 1);
+                    }}
+                  >
+                    Sửa xe
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="dither" />
       <div className="label" title={'Số ngày trụ được với mức tiêu thụ của ' + here + ' người ở đây'}>

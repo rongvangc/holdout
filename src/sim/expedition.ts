@@ -20,6 +20,8 @@ import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
 import { interrupt } from './tasks';
 import type { Expedition, GameState, Site, StockDelta, Survivor } from './types';
 import { densityMult, effectiveDanger, encounterRate, lootFactor, meanBite, poisson, zombieType } from './zombies';
+import { burnFuel, fuelFor, makeVehicle, pickVehicle, syncVehicleStock, vehicleCargo } from './vehicles';
+import type { Vehicle } from './types';
 
 export type Mode = Expedition['mode'];
 
@@ -62,6 +64,10 @@ export interface ExpeditionPlan {
   remaining: number;
   capacityKg: number;
   cargoKg: number;
+  /** Xe được chọn cho chuyến đi (nếu đi bằng xe). */
+  vehicleId?: string;
+  /** Hệ số đồ lục được: 0,6 khi đi đêm mà không mang đèn. */
+  nightLoot: number;
   expectedEncounters: number;
   expectedFights: number;
   biteRisk: number;
@@ -97,6 +103,12 @@ function resolveTarget(s: GameState, world: World, ref: TargetRef): Expedition['
   const w = world.waterPoints.find((x) => x.id === ref.id);
   if (!w) return null;
   return { type: 'water', id: w.id, name: w.name ?? 'Sông/hồ', cell: '', node: w.node, danger: 2 };
+}
+
+/** Ban đêm phải mang theo nguồn sáng, nếu không thì lục soát gần như mò. */
+const LIGHT_RE = /flashlight|headlamp|lantern|torch|candle|glowstick|flare/i;
+export function hasLight(cargo: Partial<Stock>): boolean {
+  return Object.entries(cargo).some(([id, n]) => (n ?? 0) > 0 && LIGHT_RE.test(ITEMS[id]?.label ?? ''));
 }
 
 const avoidChance = (members: Survivor[], mode: Mode) =>
@@ -140,6 +152,7 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
     remaining: 0,
     capacityKg: 0,
     cargoKg: 0,
+    nightLoot: 1,
     expectedEncounters: 0,
     expectedFights: 0,
     biteRisk: 0,
@@ -163,7 +176,7 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
   const nCont = kind === 'loot' ? Math.max(0, Math.min(o.containers ?? 0, remaining)) : 0;
   const searchSec =
     kind === 'loot'
-      ? (nCont * CONTAINER_SEC * (1 - 0.04 * bestScav) * (night ? 1.35 : 1)) / members.length
+      ? (nCont * CONTAINER_SEC * (1 - 0.04 * bestScav) * (night ? 1.6 : 1)) / members.length
       : kind === 'water'
         ? 10 * MIN + members.length * 2 * MIN
         : kind === 'claim'
@@ -171,15 +184,22 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
           : kind === 'patrol'
             ? PATROL_SEC
             : 10 * MIN;
+  // Trong tối, không có đèn thì lục được 60%: bỏ qua chỗ khuất, không đọc được nhãn.
+  const litAtNight = !night || hasLight(o.cargo ?? {});
+  const nightLoot = night && !litAtNight ? 0.6 : 1;
   const oneWay = kind === 'claim' || (kind === 'convoy' && !!o.relocate);
   const legs = oneWay ? 1 : 2;
   const fromStats = baseStats(s, from);
-  const garageAtFrom = fromStats.garage;
-  const fuelPerKm = o.mode === 'car' && garageAtFrom ? fromStats.garageFuel : FUEL_L_PER_KM;
-  const fuelL = o.mode === 'car' ? ((pathLen * legs) / 1000) * fuelPerKm : 0;
+  const km = (pathLen * legs) / 1000;
+  // Xe là vật thể: chọn đúng chiếc, xăng lấy từ bình của nó chứ không từ kho chung.
+  // Ga-ra không đổi xe, nó làm chiếc xe đó ăn ít xăng hơn — vẫn là con số cũ (×0,8).
+  const eff = fromStats.garage ? fromStats.garageFuel / FUEL_L_PER_KM : 1;
+  const picked = o.mode === 'car' ? pickVehicle(from, km, eff) : { vehicle: null as Vehicle | null };
+  const car = picked.vehicle;
+  const fuelL = car ? fuelFor(car, km, eff) : o.mode === 'car' ? km * FUEL_L_PER_KM : 0;
   const capacityKg =
     members.reduce((a, m) => a + 22 + 2 * skill(m, 'fitness') + packCapacity(m), 0) +
-    (o.mode === 'car' ? (garageAtFrom ? 250 + fromStats.garageCargo : 250) : 0);
+    (car ? vehicleCargo(car, fromStats.garage ? fromStats.garageCargo : 0) : 0);
   const cargoKg = stockWeight(o.cargo ?? {});
 
   const day = dayOf(s.t);
@@ -212,8 +232,8 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
   let reason: string | undefined;
   if (s.weather.storm) reason = 'Đang có bão — không thể ra ngoài';
   else if (s.laws.curfew && night) reason = 'Luật giới nghiêm cấm đi đêm';
-  else if (o.mode === 'car' && from.stock.vehicle < 1) reason = `Không có xe ở ${from.name}`;
-  else if (o.mode === 'car' && from.stock.fuel < fuelL) reason = `Thiếu xăng (cần ${fuelL.toFixed(1)} L)`;
+  else if (o.mode === 'car' && !car) reason = picked.why ?? `Không có xe ở ${from.name}`;
+  else if (o.mode === 'car' && car && car.fuelL < fuelL) reason = `Xe thiếu xăng (cần ${fuelL.toFixed(1)} L, bình còn ${car.fuelL.toFixed(1)} L)`;
   else if (kind === 'loot' && nCont === 0) reason = 'Toà nhà đã bị vét sạch';
   else if (cargoKg > capacityKg) reason = `Quá tải: ${Math.round(cargoKg)}/${Math.round(capacityKg)} kg`;
   else if (Object.entries(o.cargo ?? {}).some(([k, v]) => from.stock[k as ItemId] + 1e-6 < (v ?? 0))) reason = 'Kho không đủ hàng';
@@ -234,6 +254,8 @@ export function planExpedition(s: GameState, world: World, o: ExpeditionOrder): 
     remaining,
     capacityKg,
     cargoKg,
+    nightLoot,
+    vehicleId: car?.id,
     expectedEncounters,
     expectedFights,
     biteRisk,
@@ -334,7 +356,16 @@ export function launchExpedition(s: GameState, world: World, o: ExpeditionOrder)
   const plan = planExpedition(s, world, o);
   if (!plan.ok || !plan.target || !plan.kind) return plan.reason ?? 'Không thể khởi hành';
   const from = siteById(s, o.fromSite);
-  if (o.mode === 'car') take(from, 'fuel', plan.fuelL);
+  if (o.mode === 'car' && plan.vehicleId) {
+    // Đốt xăng trong bình xe và làm mòn xe theo số km thật.
+    const v = (from.vehicles ?? []).find((x) => x.id === plan.vehicleId);
+    if (v) {
+      const fst = baseStats(s, from);
+      const eff = fst.garage ? fst.garageFuel / FUEL_L_PER_KM : 1;
+      burnFuel(v, (plan.pathLen * (plan.oneWay ? 1 : 2)) / 1000, eff);
+      syncVehicleStock(from);
+    }
+  }
   const carried: StockDelta = {};
   for (const [k, v] of Object.entries(o.cargo ?? {})) if (v) carried[k as ItemId] = take(from, k as ItemId, v);
   // Khẩu phần: tự đóng gói từ kho, đủ cho cả chuyến (đi + lục + về) và thêm dự phòng.
@@ -500,7 +531,7 @@ function fightContact(s: GameState, e: Expedition, from: Site, alive: Survivor[]
 
 
 /** Roll loot for n containers of a building. `capKg` limits what fits in bags. */
-function rollContainers(s: GameState, world: World, buildingId: string, n: number, scav: number, out: StockDelta, capKg: number): { searched: number; full: boolean; vehicle: boolean } {
+function rollContainers(s: GameState, world: World, buildingId: string, n: number, scav: number, out: StockDelta, capKg: number, yieldMult = 1): { searched: number; full: boolean; vehicle: boolean } {
   const b = world.buildings.find((x) => x.id === buildingId)!;
   const lf = lootFactor(dayOf(s.t));
   let searched = 0;
@@ -529,7 +560,7 @@ function rollContainers(s: GameState, world: World, buildingId: string, n: numbe
         if (chance(s.rng, 0.5)) vehicle = true;
         continue;
       }
-      let amount = range(s.rng, lo, hi) * (0.5 + 0.5 * lf);
+      let amount = range(s.rng, lo, hi) * (0.5 + 0.5 * lf) * yieldMult;
       // Lương thực thô trong bảng loot là kcal; đổi sang lương thực của vùng này
       // (gạo/lúa mì/khoai/sắn) để mỗi ván ăn đúng thứ mọc ở đó.
       let rolledItem: ItemId = item as ItemId;
@@ -559,10 +590,20 @@ function searchBuilding(s: GameState, world: World, e: Expedition): void {
   const team = members(s, e);
   const remaining = Math.max(0, b.containers - (s.looted[b.id] ?? 0));
   const scav = Math.max(0, ...team.map((m) => skill(m, 'scavenging')));
-  const r = rollContainers(s, world, b.id, Math.min(e.plannedContainers, remaining), scav, e.carried, e.capacityKg);
-  if (r.vehicle && siteById(s, e.fromSite).stock.vehicle < 1) {
-    addStock(s, siteById(s, e.fromSite), { vehicle: 1 });
-    e.report.push('Tìm được một chiếc xe còn nổ máy!');
+  // Ban đêm không có đèn thì lục được 60%.
+  const lightOnHand = hasLight(e.rations ?? {}) || hasLight(e.carried);
+  const nightYield = isNight(s.t) && !lightOnHand ? 0.6 : 1;
+  const r = rollContainers(s, world, b.id, Math.min(e.plannedContainers, remaining), scav, e.carried, e.capacityKg, nightYield);
+  // Tìm được xe: thêm một chiếc cụ thể vào sân, không chỉ tăng một con số.
+  if (r.vehicle) {
+    const home = siteById(s, e.fromSite);
+    const kind = (['car', 'van', 'pickup', 'truck'] as const)[Math.floor(range(s.rng, 0, 4))];
+    const v = makeVehicle(kind, home.id, newId(s, 'v'));
+    v.condition = Math.floor(range(s.rng, 45, 85));
+    v.fuelL = v.tankL * range(s.rng, 0.1, 0.35);
+    home.vehicles = [...(home.vehicles ?? []), v];
+    syncVehicleStock(home);
+    e.report.push(`Tìm được một chiếc ${v.label.toLowerCase()} còn nổ máy (${Math.round(v.condition)}%).`);
   }
   s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + r.searched * 0.15 * (e.mode === 'sneak' ? 0.5 : 1));
   for (const m of team) gainXp(m, 'scavenging', (8 * r.searched) / team.length);

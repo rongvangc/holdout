@@ -4,6 +4,7 @@ import type { World } from '../../world/types';
 import { decide, type Decision } from '../alerts';
 import { Sheet } from '../sheet/Sheet';
 import { KhoDrawer } from './KhoDrawer';
+import { OnboardingPanel } from './OnboardingPanel';
 import { TopStrip, type TabId } from './TopStrip';
 import { useOverlay } from './useOverlay';
 
@@ -59,6 +60,7 @@ export function OverlayShell({
           onSave={onSave}
           onExit={onExit}
         />
+        <OnboardingPanel s={s} site={site} />
         {decisions.length > 0 && (
           <div className="decisions" role="status" aria-live="polite">
             <span className="decisions-label">Cần quyết định</span>
