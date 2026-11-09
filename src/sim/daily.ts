@@ -91,7 +91,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     ) ? 1 : 0.3;
     const need = herdNeeds(h, pasture);
     const pop = Math.max(1, home.length);
-    const fromDirty = take(site, 'dirtyWater', Math.min(need.water, site.stock.dirtyWater));
+    // Giữ lại nước bẩn cho trạm lọc (3 ngày/người) — bầy không được uống hết phần đó,
+    // nếu không trạm lọc không có gì để lọc và cả nhóm chết khát (đã xảy ra ở test 60 ngày).
+    const dirtyReserve = pop * 3 * 3;
+    const dirtyAvailable = Math.max(0, site.stock.dirtyWater - dirtyReserve);
+    const fromDirty = take(site, 'dirtyWater', Math.min(need.water, dirtyAvailable));
     const cleanReserve = site.stock.water - pop * 3.3 * 3;
     const fromClean = take(site, 'water', Math.max(0, Math.min(need.water - fromDirty, cleanReserve)));
     const drank = fromDirty + fromClean;

@@ -1074,3 +1074,13 @@ Mỗi vùng trên bản đồ có món khác nhau, nên tên món được đặ
 - **Bảo quản**: 3 công thức hun khói/phơi khô (bếp hun khói cấp 1–2) + sữa lên men (hầm lạnh) + phô mai + rau muối → **7 món để được ≥20 ngày**, mổ một con lợn không còn bị hỏng 90%.
 - **Ràng buộc giữ được**: mỗi khẩu phần ≤1.035 kcal, không món nào tạo calo từ không khí (output ≤ input), và **món mang đi phải là món bảo quản** (rot ≤5%/ngày) — test khoá cả hai.
 - Mỗi nguyên liệu sản xuất được dùng ở **≥2 món** (test), nên sữa/phô mai/đậu không còn là nguyên liệu chết.
+
+### 14.4 Ba lỗi tìm ra khi test kịch bản "chỉ dùng công tắc" (2026-11)
+
+Test 60 ngày, chỉ bật 3 công tắc tự động (không dùng bot) cho thấy:
+
+1. **Chuyến đi chiếm ruộng luôn thất bại vì quá tải**: hành lý viết cứng 105 kg (nước 60 + gỗ 40 + giống 40 + lương) trong khi 2 người chở được ~50 kg → `planExpedition` trả "Quá tải" và chuyến không bao giờ khởi hành. Cả bot lẫn công tắc đều không mở được ruộng. → `launchClaim()` chọn hành lý theo **sức chở thật**, thử từ lớn xuống nhỏ.
+2. **Công tắc tự lục soát rút mất người phụ trách nước** → hết nước, chết khát. → Không rút người đang giữ vai **gác** và **nước** khỏi viễn chinh.
+3. **Bầy uống hết nước bẩn mà trạm lọc cần** → trạm không có gì để lọc, nước sạch cạn. → Chừa lại **3 ngày nước bẩn/người** cho trạm lọc trước khi cho bầy uống.
+
+**Giới hạn đã biết:** chỉ bật 3 công tắc thì vẫn chết vì **thiếu hạ tầng nước** (giếng/bể/lọc) — công tắc không xây nhà. Người chơi vẫn phải tự xây (hoặc bật thêm công tắc "tự xây hạ tầng" nếu làm tiếp). Bot có xây nên 10/10 ván sống hết 120 ngày.

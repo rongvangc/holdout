@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DISHES, INGREDIENTS } from '../src/data/dishes';
 import { RECIPES } from '../src/data/recipes';
-import { ITEMS } from '../src/data/items';
 
 const dishRecipes = RECIPES.filter((r) => DISHES[r.out]);
 

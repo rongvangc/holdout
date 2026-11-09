@@ -58,14 +58,21 @@ export function autoCraftCore(s: GameState, site: Site): string | null {
  * Tự lập đội lục soát: chỉ đi khi có ít nhất 2 người rảnh khoẻ, còn nhà chưa vét
  * trong bán kính, và nguy cơ bị cắn dưới 25% (giống điều kiện bot dùng).
  */
+/** Vai trò không được rút đi viễn chinh: thiếu người là chết (nước/bếp/y tá/nông). */
+// Chỉ gác và nước là tuyệt đối không rút (chết trong 1-2 ngày). Bếp/nông/y tá có thể
+// đi vắng một buổi; nếu khoá hết 5 vai thì nhóm 5 người không còn ai đi lục soát.
+const ESSENTIAL_ROLES = new Set(['guard', 'water']);
+const keepHome = (v: { role: string; hp: number; sickDays: number }) => !ESSENTIAL_ROLES.has(v.role) && v.hp > 60 && v.sickDays === 0;
+
 export function autoLoot(s: GameState, world: World, site: Site): string | null {
-  if (s.expeditions.some((e) => e.fromSite === site.id && e.kind !== 'convoy')) return null;
-  // Không ai đi lấy nước là kiểu chết nhanh nhất: ưu tiên hơn lục soát.
+  // Không ai đi lấy nước là kiểu chết nhanh nhất: kiểm tra nước TRƯỚC khi bỏ qua vì
+  // "đang có chuyến lục soát" (trước đây chuyến lục soát chặn luôn chuyến nước).
   const pop = Math.max(1, present(s, site).length);
   const waterDays = site.stock.water / (pop * 3.3);
-  if (waterDays < 3 && world.waterPoints.length) {
+  const waterOut = s.expeditions.some((e) => e.fromSite === site.id && e.kind === 'water');
+  if (waterDays < 3 && !waterOut && world.waterPoints.length) {
     const team0 = present(s, site)
-      .filter((v) => v.location === 'base' && !v.commute && v.role !== 'guard' && v.hp > 60 && v.sickDays === 0)
+      .filter((v) => v.location === 'base' && !v.commute && keepHome(v))
       .sort((a, b) => b.hp - a.hp)
       .slice(0, 3)
       .map((v) => v.id);
@@ -77,9 +84,8 @@ export function autoLoot(s: GameState, world: World, site: Site): string | null 
       if (!why) return wp.id;
     }
   }
-  const idle = present(s, site)
-    .filter((v) => v.location === 'base' && !v.commute && v.role !== 'guard' && v.hp > 60 && v.sickDays === 0)
-    .sort((a, b) => b.hp - a.hp);
+  if (s.expeditions.some((e) => e.fromSite === site.id && e.kind !== 'convoy')) return null;
+  const idle = present(s, site).filter((v) => v.location === 'base' && !v.commute && keepHome(v)).sort((a, b) => b.hp - a.hp);
   if (idle.length < 2) return null;
   const owned = new Set(s.sites.map((x) => x.sourceId));
   const targets = world.buildings
@@ -125,12 +131,84 @@ export function runAuto(s: GameState, world: World): void {
   if (!auto) return;
   const sites = s.sites.filter((x) => present(s, x).length > 0);
   if (auto.craftCore) for (const site of sites) autoCraftCore(s, site);
-  if (auto.garden) for (const site of sites) autoGarden(s, site);
+  if (auto.garden) {
+    for (const site of sites) {
+      // Mở khoảnh trong sân trước; hết chỗ thì đi chiếm ruộng.
+      if (!autoGarden(s, site)) autoClaimField(s, world, site);
+    }
+  }
   if (auto.loot) {
     // Chỉ lập một chuyến mỗi ngày, ưu tiên điểm đông người nhất.
     const main = [...sites].sort((a, b) => present(s, b).length - present(s, a).length)[0];
     if (main) autoLoot(s, world, main);
   }
+}
+
+
+/**
+ * Sân nhà hết chỗ trồng → đi chiếm một bãi đất gần nhất.
+ *
+ * Công tắc "tự mở vườn" chỉ mở được khoảnh trong sân (tối đa ~180-300 m²), không đủ
+ * nuôi 5 người. Test 60 ngày chỉ bật công tắc cho thấy cả nhóm chết đói ở ngày 60 vì
+ * chưa bao giờ mở ruộng. Giờ công tắc này cũng lo việc claim.
+ */
+export function autoClaimField(s: GameState, world: World, site: Site): string | null {
+  if (s.sites.some((x) => x.kind === 'field')) return null;
+  if (s.expeditions.some((e) => e.kind === 'claim')) return null;
+  const pop = s.survivors.filter((v) => v.status === 'alive').length;
+  if (pop < 5) return null; // nhóm quá nhỏ: đi chiếm ruộng sẽ bỏ căn cứ trống
+  const st = baseStats(s, site);
+  if (!st.workshop) return null; // cần Bàn thợ để dựng lán/vườn ở điểm mới
+  const idle = present(s, site).filter((v) => v.location === 'base' && !v.commute && keepHome(v) && v.hp > 55).sort((a, b) => b.hp - a.hp);
+  if (idle.length < 2) return null;
+  const green = [...world.greens]
+    .filter((g) => g.area >= 1500)
+    .sort(
+      (a, b) =>
+        Math.hypot(a.centroid[0] - site.centroid[0], a.centroid[1] - site.centroid[1]) -
+        Math.hypot(b.centroid[0] - site.centroid[0], b.centroid[1] - site.centroid[1]),
+    )[0];
+  if (!green) return null;
+  // Đưa 2 người với hành lý vừa sức chở (xem launchClaim).
+  const team = idle.slice(0, 2).map((v) => v.id);
+  const made = launchClaim(s, world, site, green, team);
+  if (!made) return null;
+  log(s, `${site.name}: tự cử ${team.length} người đi chiếm đất trồng trọt (sân đã hết chỗ).`, 'info');
+  return made;
+}
+
+
+/**
+ * Đi chiếm đất với hành lý VỪA SỨC CHỞ.
+ *
+ * Trước đây cargo viết cứng (nước 60 L + gỗ 40 + giống 40 + lương 12.000) = 105 kg
+ * trong khi 2 người chỉ chở được ~50 kg → `planExpedition` trả "Quá tải" và chuyến đi
+ * không bao giờ khởi hành (cả bot lẫn công tắc), nên không ai mở được ruộng.
+ */
+export function launchClaim(s: GameState, world: World, site: Site, green: { id: string }, team: string[]): string | null {
+  const stock = site.stock;
+  const candidates: Record<string, number>[] = [
+    { water: 30, seeds: 20, wood: 20, tools: 1, scrap: 10 },
+    { water: 24, seeds: 14, wood: 12, tools: 1, scrap: 6 },
+    { water: 18, seeds: 10, wood: 8, scrap: 4 },
+    { water: 12, seeds: 6 },
+    { water: 8 },
+  ];
+  for (const raw of candidates) {
+    const cargo: Record<string, number> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      const have = Math.floor(stock[k] ?? 0);
+      const take = Math.min(v, have);
+      if (take > 0) cargo[k] = take;
+    }
+    if (raw.tools && !cargo.tools) continue; // cần dụng cụ để dựng lán/vườn
+    const order = { fromSite: site.id, members: team, target: { type: 'green' as const, id: green.id }, mode: 'walk' as const, cargo };
+    const plan = planExpedition(s, world, order);
+    if (!plan.ok) continue;
+    const why = launchExpedition(s, world, order);
+    return why ? null : green.id;
+  }
+  return null;
 }
 
 // --- Cảnh báo thiếu lao động ------------------------------------------------
