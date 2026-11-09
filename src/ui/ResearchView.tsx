@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { TECH_BRANCH_LABEL, TECHS, type TechBranch } from '../data/research';
 import { RECIPE_BY_ID } from '../data/recipes';
 import { ITEMS } from '../data/items';
@@ -24,14 +25,21 @@ export function ResearchView({ s, site, refresh }: ViewProps) {
   const books = (id: string) => ITEMS[id]?.label ?? id;
   const car = caravans(s);
 
+  // Lỗi hiện ngay trong trang: hộp thoại của trình duyệt chặn cả game, không style
+  // được, và trên điện thoại thì đẩy người chơi ra khỏi ngữ cảnh.
+  const [err, setErr] = useState('');
   const act = (fn: () => string | null) => {
-    const why = fn();
-    if (why) window.alert(why);
+    setErr(fn() ?? '');
     refresh();
   };
 
   return (
     <div className="col" style={{ gap: 10, padding: 10, overflow: 'auto' }}>
+      {err && (
+        <div className="red" role="alert">
+          {err}
+        </div>
+      )}
       <div className="card col" style={{ gap: 6 }}>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <div className="label">Kệ sách &amp; sách</div>
