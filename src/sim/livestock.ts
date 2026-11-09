@@ -199,6 +199,54 @@ export interface HerdState {
 const females = (h: HerdState) => Math.max(0, h.adults - h.males);
 
 /** Bầy khởi đầu khi xây xong: đủ con giống, có con đang mang thai/cho sữa để dùng được ngay. */
+/**
+ * Chân dung của từng cấp module — trước đây UI ghi "trứng ×1.6" và "chuồng kín"
+ * nhưng code không hề đọc cấp module cho bất cứ thứ gì ngoài diện tích.
+ */
+export interface HerdLevelFx {
+  eggs: number; // nhân sản lượng trứng
+  milk: number; // nhân sản lượng sữa
+  /** 1 = chuồng kín: ban đêm không mất con. */
+  shelter: number;
+  /** 1 = chuồng chắc: hao hụt do đói/khát giảm một nửa. */
+  sturdy: number;
+}
+
+export function herdLevelFx(level = 1): HerdLevelFx {
+  const l = Math.max(1, Math.min(3, level));
+  return {
+    eggs: l >= 2 ? 1.6 : 1,
+    milk: l >= 3 ? 1.8 : 1,
+    shelter: l >= 3 ? 1 : 0,
+    sturdy: l >= 2 ? 1 : 0,
+  };
+}
+
+/**
+ * Mất con ban đêm: ban ngày chăn thả ngoài trời, đêm xuống thì cáo, chó hoang và
+ * người lạ bắt gia cầm. Nhiệt càng cao (ồn, nhiều mùi) thì càng dễ bị dòm ngó,
+ * và mùa lạnh thì thú đói đi xa hơn. Chuồng kín (cấp 3) chặn hẳn.
+ */
+export function nightLossChance(heat: number, cold: boolean): number {
+  // ~1 con mỗi 40 đêm ở mức ồn trung bình. Quá hiếm thì cấp 3 thành vô nghĩa,
+  // quá dày thì người chơi mất đàn trước khi kịp nâng cấp.
+  return (0.012 + 0.0004 * Math.min(100, Math.max(0, heat))) * (cold ? 1.5 : 1);
+}
+
+/** Trả về số con mất, 0 nếu không mất. Con non bị bắt trước vì dễ hơn. */
+export function takeNightLoss(h: HerdState): { lost: number; young: boolean } {
+  if (h.young > 0) {
+    h.young -= 1;
+    return { lost: 1, young: true };
+  }
+  if (h.adults > 1) {
+    h.adults -= 1;
+    h.males = Math.min(h.males, h.adults);
+    return { lost: 1, young: false };
+  }
+  return { lost: 0, young: false };
+}
+
 export function startingHerd(kind: HerdKind, capacity: number): HerdState {
   const bio = HERDS[kind];
   const heads = Math.max(2, Math.min(capacity, kind === 'ga' || kind === 'vit' ? 8 : 3));
@@ -237,14 +285,14 @@ export interface HerdTick {
  * Một ngày của bầy. `care` = 0..1 mức chăm (đủ ăn/uống, có người trông);
  * `cap` = số con tối đa theo diện tích chuồng.
  */
-export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slaughter = 0): HerdTick {
+export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slaughter = 0, fx: HerdLevelFx = herdLevelFx(1)): HerdTick {
   const bio = HERDS[h.kind];
   const out: HerdTick = { eggs: 0, milk: 0, births: 0, grown: 0, lost: 0, meat: 0, slaughtered: 0, events: [] };
   const hens = females(h);
 
   // 1) Trứng: mỗi con mái đẻ 1 quả mỗi `eggEvery` ngày. Phần lẻ tích lại.
   if (bio.eggEvery > 0 && hens > 0) {
-    h.eggDebt += (hens / bio.eggEvery) * (0.5 + 0.5 * care);
+    h.eggDebt += (hens / bio.eggEvery) * (0.5 + 0.5 * care) * fx.eggs;
     const whole = Math.floor(h.eggDebt);
     if (whole > 0) {
       out.eggs = whole;
@@ -254,7 +302,7 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
 
   // 2) Sữa: chỉ con đang trong kỳ cho sữa (sau khi đẻ).
   if (bio.milkPerDay > 0 && h.lactating > 0) {
-    out.milk = h.lactating * bio.milkPerDay * (0.35 + 0.65 * care);
+    out.milk = h.lactating * bio.milkPerDay * (0.35 + 0.65 * care) * fx.milk;
     h.lactationIn -= 1;
     if (h.lactationIn <= 0) {
       out.events.push(`${bio.label}: hết kỳ cho sữa, cần phối lại mới có sữa.`);
@@ -277,11 +325,15 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
     h.dueIn -= 1;
     if (h.dueIn <= 0) {
       const litter = Math.max(1, Math.round(bio.litter * range(rng, 0.75, 1.25)));
-      const born = Math.min(litter, Math.max(1, room + h.pregnant));
+      // Không có chỗ thì không đẻ. Bản cũ dùng Math.max(1, ...) nên bầy luôn đẻ
+      // thêm ít nhất một con mỗi lứa, vượt sức chứa vô hạn: chuồng 12 m² giữ
+      // 1 lợn lớn + 9 lợn con, rồi bị mổ vì "quá tải" mãi không dứt.
+      const born = room > 0 ? Math.min(litter, room) : 0;
       h.young += born;
       h.youngIn = h.youngIn > 0 ? Math.min(h.youngIn, bio.maturityDays) : bio.maturityDays;
       h.pregnant -= 1;
       out.births = born;
+      if (born === 0) out.events.push(`${bio.label}: hết chỗ — không đẻ được, bán/thả bớt hoặc nâng cấp chuồng.`);
       if (bio.milkPerDay > 0) {
         h.lactating += 1;
         h.lactationIn = bio.lactationDays;
@@ -322,7 +374,7 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
   }
 
   // 6) Thiếu chăm: bầy gầy và có thể hao hụt (không có dịch bệnh, chỉ là đói/khát).
-  if (care < 0.25 && h.adults > 1 && chance(rng, 0.25)) {
+  if (care < 0.25 && h.adults > 1 && chance(rng, 0.25 * (fx.sturdy ? 0.5 : 1))) {
     h.adults -= 1;
     h.males = Math.min(h.males, h.adults);
     out.lost = 1;
@@ -341,6 +393,18 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
 
 /** Cám/cỏ quy ra kcal: 1 kg thức ăn khô ≈ 3.000 kcal (gạo, ngô, cỏ khô). */
 export const FEED_KCAL_PER_KG = 3000;
+/** Cỏ khô/rau thừa rẻ hơn hạt: 1 kg chỉ 1.800 kcal, nhưng không tranh với người. */
+export const FODDER_KCAL_PER_KG = 1800;
+
+/** Cỏ mọc bao nhiêu kg mỗi ngày trên mỗi m², theo cấp ruộng và thời tiết. */
+export function pastureYield(area: number, level = 1, tempC = 20, storm = false): number {
+  const lvl = Math.max(1, Math.min(3, level));
+  const lvlMult = lvl >= 3 ? 1.6 : lvl >= 2 ? 1.3 : 1;
+  // Mùa lạnh cỏ ngừng lớn; cấp 3 (có mái/ủ khô) thì không giảm.
+  const cold = tempC < 18 ? (lvl >= 3 ? 1 : lvl >= 2 ? 0.65 : 0.5) : 1;
+  const wet = storm ? 0.5 : 1;
+  return area * 0.05 * lvlMult * cold * wet;
+}
 
 /**
  * Tổng nhu cầu ăn/uống của bầy trong ngày.

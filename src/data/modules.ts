@@ -3,6 +3,7 @@ import type { Stock } from './items';
 export type ModuleId =
   | 'bedroom'
   | 'kitchen'
+  | 'pasture'
   | 'storage'
   | 'workshop'
   | 'infirmary'
@@ -188,6 +189,23 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     levels: [
       { cost: { scrap: 14, cloth: 6, wood: 8 }, workSec: 4 * H, note: 'Cấp 2: 18 L/giờ' },
       { cost: { plate: 2, clay: 4, cloth: 6 }, workSec: 7 * H, note: 'Cấp 3: 24 L/giờ' },
+    ],
+  },
+  pasture: {
+    label: 'Ruộng cỏ',
+    icon: '❧',
+    color: '#7d9a45',
+    placement: 'outdoor',
+    minArea: 40,
+    maxArea: 2000,
+    maxPerSite: 2,
+    workSec: (a) => 2 * H + a * 4,
+    // Cỏ mọc không cần gì ngoài đất: rào bằng dây, phát bằng liềm.
+    cost: (a) => ({ rope: Math.ceil(a / 400), wood: Math.ceil(a / 300), tools: 1 }),
+    desc: 'Cỏ khô và phụ phẩm cho gia súc. Đây là thức ăn KHÔNG tranh với khẩu phần người: 200 m² đủ nuôi vài con dê, mùa đông chỉ còn một nửa.',
+    levels: [
+      { cost: { wood: 24, rope: 8 }, workSec: 4 * H, note: 'Cấp 2: +30% cỏ, chịu rét tốt hơn' },
+      { cost: { plank: 12, lime: 6 }, workSec: 7 * H, note: 'Cấp 3: +60% cỏ, mùa đông không giảm năng suất' },
     ],
   },
   garden: {
@@ -562,8 +580,8 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: () => ({ wood: 26, rope: 6 }),
     desc: 'Gia súc theo vùng: dê trong phố, lợn ở vùng ruộng, bò/trâu ở đồng bằng rộng (trâu ở miền Bắc gần nước). Dê/bò cho sữa, lợn/bò cho thịt, phân bón +25% tốc độ cây. Cần nước uống, cỏ/cám — chăn thả ở ruộng đỡ 45% cám.',
     levels: [
-      { cost: { plank: 14, hinge: 4, rope: 8 }, workSec: 8 * H, note: 'Cấp 2: lợn — thịt nhiều hơn, sữa ít' },
-      { cost: { plank: 20, gear: 2, lime: 8 }, workSec: 12 * H, note: 'Cấp 3: bò — sữa ×1.8 và mổ được thịt bò' },
+      { cost: { plank: 14, hinge: 4, rope: 8 }, workSec: 8 * H, note: 'Cấp 2: chuồng chắc — đàn đông hơn, hao hụt đói/khát giảm một nửa' },
+      { cost: { plank: 20, gear: 2, lime: 8 }, workSec: 12 * H, note: 'Cấp 3: chuồng kín — sữa ×1.8, ban đêm không mất con' },
     ],
   },
   pond: {

@@ -16,7 +16,7 @@ import { raidBudget } from './scale';
 
 /** Đêm phát tín hiệu liên tục cần để được cứu. */
 export const RESCUE_DAYS = 7;
-import { HERDS, herdCapacity, herdFor, herdNeeds, startingHerd, tickHerd } from './livestock';
+import { FODDER_KCAL_PER_KG, HERDS, herdCapacity, herdFor, herdLevelFx, herdNeeds, nightLossChance, pastureYield, startingHerd, takeNightLoss, tickHerd } from './livestock';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
@@ -76,6 +76,13 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (before < 1 && plot.growth >= 1) log(s, `${site.name}: ${CROPS[plot.crop].label} đã chín.`, 'good');
   }
 
+  // Ruộng cỏ: nguồn cám không tranh với khẩu phần người (xem livestock.pastureYield).
+  for (const room of site.interior.rooms) {
+    if (room.module !== 'pasture') continue;
+    const kg = pastureYield(room.area, room.moduleLevel ?? 1, s.weather.tempC, s.weather.storm);
+    if (kg > 0) addStock(s, site, { cam: kg });
+  }
+
   // Chăn nuôi: mỗi chuồng/trại giữ một bầy có vòng sinh sản thật (xem sim/livestock.ts).
   for (const room of site.interior.rooms) {
     if (room.module !== 'coop' && room.module !== 'barn') continue;
@@ -100,10 +107,17 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const fromClean = take(site, 'water', Math.max(0, Math.min(need.water - fromDirty, cleanReserve)));
     const drank = fromDirty + fromClean;
     // Không bao giờ lấy từ khẩu phần ăn của người: chỉ cho ăn phần dư trên 10 ngày lương.
-    const humanReserve = pop * 2250 * 10;
+    // Bầy chỉ được ăn hạt khi người còn trên 20 ngày lương. Trước đây ngưỡng 10 ngày
+    // khiến lợn ăn hết phần dự trữ và cả trại đói theo.
+    const humanReserve = pop * 2250 * 20;
+    // Cám/cỏ trước: đây là lý do ruộng cỏ tồn tại. Chỉ khi hết cám mới lấy lương
+    // thực của người, và chỉ lấy phần dư trên 10 ngày.
+    const fodderKg = Math.min(need.feedKg, site.stock.cam ?? 0);
+    const fromFodder = fodderKg > 0 ? take(site, 'cam', fodderKg) * FODDER_KCAL_PER_KG : 0;
     const surplus = Math.max(0, stapleKcal(site.stock) - humanReserve);
-    const fed = Math.min(need.feed, surplus);
-    if (fed > 0) takeStapleKcal(site, fed);
+    const fromStaple = Math.min(Math.max(0, need.feed - fromFodder), surplus);
+    if (fromStaple > 0) takeStapleKcal(site, fromStaple);
+    const fed = fromFodder + fromStaple;
     // Người chăm có skill Chăn nuôi thì bầy khoẻ hơn.
     const husbandry = home.reduce((a, m) => a + skill(m, 'husbandry'), 0) / pop;
     // Một người chăm ~10 con; thiếu người thì bầy kém đi dù đủ ăn.
@@ -121,7 +135,15 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const hungryCamp = stapleKcal(site.stock) + site.stock.food + site.stock.meals < pop * 2250 * 3;
     const slaughter = crowded ? 1 : hungryCamp && h.adults > 2 ? 1 : 0;
 
-    const tick = tickHerd(h, cap, care, s.rng, slaughter);
+    const fx = herdLevelFx(room.moduleLevel ?? 1);
+    const tick = tickHerd(h, cap, care, s.rng, slaughter, fx);
+    // Đêm xuống: cáo/chó hoang/người lạ bắt con. Chuồng kín (cấp 3) thì không.
+    if (!fx.shelter && h.adults + h.young > 1 && chance(s.rng, nightLossChance(site.heat, s.weather.tempC < 12))) {
+      const gone = takeNightLoss(h);
+      if (gone.lost) {
+        log(s, `${site.name}: mất một con ${bio.label.toLowerCase()}${gone.young ? ' non' : ''} trong đêm — không có chuồng kín.`, 'warn');
+      }
+    }
     // Hao hụt tự nhiên: 0,3%/ngày, tăng khi chăm kém (thay cho hệ dịch bệnh đã bỏ).
     if (h.adults > 2 && chance(s.rng, care < 0.3 ? 0.015 : 0.003)) {
       h.adults -= 1;

@@ -32,6 +32,7 @@ export const MODULE_ICONS: Record<ModuleId, string> = {
   latrine: "/icons/pixel/latrine.png",
   water_tank: "/icons/pixel/water_tank.png",
   filter: "/icons/pixel/filter.png",
+  pasture: "/icons/pixel/garden.png",
   garden: "/icons/pixel/garden.png",
   herb_garden: "/icons/pixel/herb_garden.png",
   well: "/icons/pixel/well.png",
