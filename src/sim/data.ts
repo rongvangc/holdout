@@ -27,7 +27,7 @@ export const SKILLS: Record<SkillId, string> = {
   husbandry: 'Chăn nuôi',
 };
 
-export type Role = 'idle' | 'builder' | 'cook' | 'water' | 'farmer' | 'guard' | 'medic' | 'sanitation' | 'gatherer';
+export type Role = 'idle' | 'builder' | 'cook' | 'water' | 'farmer' | 'guard' | 'medic' | 'sanitation' | 'gatherer' | 'researcher';
 
 export const ROLES: Record<Role, { label: string; skill?: SkillId; desc: string }> = {
   idle: { label: 'Tự do', desc: 'Nghỉ ngơi, đọc sách, phụ việc lặt vặt.' },
@@ -39,6 +39,7 @@ export const ROLES: Record<Role, { label: string; skill?: SkillId; desc: string 
   medic: { label: 'Y tá', skill: 'medical', desc: 'Băng bó, chữa bệnh, kiểm tra vết cắn.' },
   sanitation: { label: 'Vệ sinh', skill: 'fitness', desc: 'Dọn rác, xử lý xác, giữ base sạch.' },
   gatherer: { label: 'Kiếm củi', skill: 'fitness', desc: 'Tháo đồ gỗ, sắt vụn quanh base. Ồn!' },
+  researcher: { label: 'Nghiên cứu', skill: 'crafting', desc: 'Đọc sách ở Kệ sách, đẩy tiến độ đề tài đang làm.' },
 };
 
 export type TraitId = 'hardy' | 'light_sleeper' | 'glutton' | 'brave' | 'coward' | 'handy' | 'optimist' | 'quiet';

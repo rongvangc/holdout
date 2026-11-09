@@ -113,8 +113,11 @@ describe('crafting through the build queue', () => {
 
     expect(stationLevel(site, 'forge')).toBe(2);
     expect(site.interior.rooms.find((r) => r.id === room.id)!.moduleLevel).toBe(2);
-    // And now the level-2 recipe is queueable.
-    expect(queueCraft(s, site, 'r_plate')).toBeNull();
+    // Cấp trạm đủ nhưng chưa nghiên cứu thì vẫn không chế được: nâng cấp ≠ biết làm.
+    expect(queueCraft(s, site, 'r_wpn-axe')).toContain('Chưa nghiên cứu');
+    s.techs = ['t_metalwork'];
+    // Đã biết làm → lỗi còn lại chỉ là thiếu vật tư, không còn là "chưa nghiên cứu".
+    expect(queueCraft(s, site, 'r_wpn-axe')).not.toContain('Chưa nghiên cứu');
   });
 
   it('refuses to exceed the ladder, and refuses a room with no station', () => {

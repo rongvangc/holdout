@@ -282,6 +282,39 @@ export interface GameState {
   won?: boolean;
   /** Consecutive nights the rescue signal has been on the air. */
   rescueDays?: number;
+  /** Đề tài đã nghiên cứu xong (id trong data/research.ts). */
+  techs?: string[];
+  /** Đề tài đang làm, nếu có. */
+  research?: ResearchState;
+  /** Đoàn buôn đang ở cổng + uy tín từng nhóm. */
+  caravan?: CaravanState;
+}
+
+export interface ResearchState {
+  tech: string;
+  /** 0..1 — ngày công đã tích luỹ chia cho độ dài đề tài. */
+  progress: number;
+  siteId: string;
+}
+
+export interface CaravanOffer {
+  id: string;
+  give: [ItemId, number][];
+  take: [ItemId, number][];
+}
+
+export interface Caravan {
+  id: string;
+  faction: string;
+  cell: string;
+  arriveDay: number;
+  leaveDay: number;
+  offers: CaravanOffer[];
+}
+
+export interface CaravanState {
+  list: Caravan[];
+  rep: Record<string, number>;
 }
 
 export type StockDelta = Partial<Record<ItemId, number>>;

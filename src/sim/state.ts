@@ -108,6 +108,8 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
     nextId: 1,
     autoRoles: true,
     auto: { ...DEFAULT_AUTO },
+    techs: [],
+    caravan: { list: [], rep: {} },
     gameOver: false,
   };
   const home = makeSite(s, world, 'base', baseId);
@@ -192,6 +194,8 @@ export function migrate(raw: unknown): GameState {
   o.version = 2;
   o.autoRoles ??= true;
   o.auto ??= { ...DEFAULT_AUTO };
+  o.techs ??= [];
+  o.caravan ??= { list: [], rep: {} };
   for (const v of o.survivors) v.siteId ??= site.id;
   for (const e of o.expeditions) {
     e.kind ??= e.target.type === 'water' ? 'water' : 'loot';

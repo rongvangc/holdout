@@ -13,6 +13,8 @@ export interface Recipe {
   in: [ItemId, number][];
   workSec: number;
   skill: SkillId;
+  /** Tech phải nghiên cứu xong trước khi chế được (xem data/research.ts). */
+  req?: string;
   /** When set, the recipe consumes this item instead of producing a fresh one. */
   upgradeFrom?: ItemId;
   note?: string;

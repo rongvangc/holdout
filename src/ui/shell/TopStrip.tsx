@@ -7,13 +7,14 @@ import { Icon, SITE_IMG, TAB_IMG } from '../icons';
 import { toggleHints, useHints } from '../hints';
 import { soundEnabled, toggleSound } from '../audio';
 
-export type TabId = 'base' | 'people' | 'map' | 'laws' | 'log';
+export type TabId = 'base' | 'people' | 'map' | 'research' | 'laws' | 'log';
 
 const SPEED_LABEL = ['❚❚', '1×', '10×', '60×', '240×'];
 const TABS: [TabId, string][] = [
   ['base', 'Căn cứ'],
   ['people', 'Người'],
   ['map', 'Bản đồ & viễn chinh'],
+  ['research', 'Nghiên cứu'],
   ['laws', 'Luật'],
   ['log', 'Nhật ký'],
 ];

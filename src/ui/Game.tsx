@@ -7,6 +7,7 @@ import { loadWorld } from '../world/loader';
 import type { World } from '../world/types';
 import { BaseView } from './BaseView';
 import { LawsView } from './LawsView';
+import { ResearchView } from './ResearchView';
 import { LogView } from './LogView';
 import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
@@ -180,6 +181,7 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         {tab === 'base' && <BaseView key={site.id} {...props} />}
         {tab === 'people' && <PeopleView {...props} />}
         {tab === 'map' && <MapView key={world.key} {...props} />}
+        {tab === 'research' && <ResearchView {...props} />}
         {tab === 'laws' && <LawsView {...props} />}
         {tab === 'log' && <LogView {...props} />}
       </OverlayShell>

@@ -11,6 +11,7 @@ import { DESIGN_LIMITS } from '../src/data/structures';
 import { canAfford } from '../src/sim/state';
 import { canPlace } from '../src/base/interior';
 import { MODULES } from '../src/data/modules';
+import { canStart, startResearch } from '../src/sim/research';
 import { RECIPE_BY_ID, RECIPES } from '../src/data/recipes';
 import { siteCapacity } from '../src/sim/scale';
 import { regionStaple, stapleKcal } from '../src/data/staples';
@@ -30,7 +31,8 @@ export function makeTestWorld(): World {
   return w;
 }
 
-const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine'];
+// Ruộng cỏ đứng trước chuồng/trại: không có cỏ thì bầy ăn mất lương thực của người.
+const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'pasture', 'coop', 'barn', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine'];
 const WANT_FIELD: ModuleId[] = ['garden', 'garden', 'well', 'shelter', 'latrine'];
 
 
@@ -459,6 +461,33 @@ function solarKit(s: GameState, base: Site): void {
   else if ((base.stock.battery ?? 0) < 2) queueCraft(s, base, 'r_battery');
 }
 
+
+/**
+ * Bot cũng nghiên cứu — nếu không, nó không rèn được tấm thép, không lắp pin mặt trời,
+ * không hun khói được thịt, và cân bằng sẽ tụt vì cơ sở không phát triển.
+ * Thứ tự chọn: thứ mở ra thứ bot đang thiếu (bảo quản → luyện kim → điện → y tế).
+ */
+const TECH_ORDER = ['t_mill', 't_preserve', 't_metalwork', 't_breed', 't_firstaid', 't_smith', 't_electric', 't_pharma', 't_armour', 't_surgery'];
+
+function botResearch(s: GameState, base: Site): void {
+  // Nhóm <6 người: rút một người đi đọc sách là mất 20% lao động, không đáng.
+  if (present(s, base).length < 6) return;
+  if (!s.research) {
+    for (const id of TECH_ORDER) {
+      if (canStart(s, base, id) === null) {
+        startResearch(s, base, id);
+        break;
+      }
+    }
+  }
+  if (!s.research) return;
+  // Gán một người đọc sách (autoAssign không biết vai này vì người chơi phải tự chọn).
+  const staff = present(s, base).filter((v) => v.location === 'base' && !v.commute && v.sickDays === 0 && v.role !== 'guard' && v.role !== 'water');
+  if (staff.some((v) => v.role === 'researcher')) return;
+  const pick = staff[staff.length - 1];
+  if (pick) pick.role = 'researcher';
+}
+
 export function botDay(s: GameState, world: World): void {
   const base = mainSite(s);
   const st = baseStats(s, base);
@@ -485,6 +514,7 @@ export function botDay(s: GameState, world: World): void {
   craftGear(s, base);
   solarKit(s, base);
   autoAssign(s);
+  botResearch(s, base);
   convoys(s, world, base);
 
   const idle = s.survivors

@@ -1,5 +1,6 @@
 import { canPlace, type Room } from '../base/interior';
 import { fortifyCost, MODULES, type ModuleId } from '../data/modules';
+import { TECH_BY_ID, TECH_FOR_RECIPE } from '../data/research';
 import { RECIPE_BY_ID, resolveInputs, STATION_LABEL, type Recipe } from '../data/recipes';
 import type { SkillId } from './data';
 import { dist } from '../world/geo';
@@ -156,6 +157,10 @@ export function queueCraft(s: GameState, site: Site, recipeId: string): string |
     return lvl === 0
       ? `Cần ${STATION_LABEL(r.station)}`
       : `${STATION_LABEL(r.station)} phải lên cấp ${r.level} (đang cấp ${lvl})`;
+  }
+  const need = TECH_FOR_RECIPE[r.id];
+  if (need && !(s.techs ?? []).includes(need)) {
+    return `Chưa nghiên cứu "${TECH_BY_ID[need]?.label ?? need}"`;
   }
   if (r.upgradeFrom && (site.stock[r.upgradeFrom] ?? 0) < 1) return 'Không có món gốc để nâng cấp';
   // `@staple` means "any bulk starch": pick the one this site actually has.

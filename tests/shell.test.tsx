@@ -49,7 +49,7 @@ describe('overlay shell', () => {
     expect(khoOpen).toEqual({ khoOpen: true, sheet: 'kho' });
   });
 
-  it('renders all five primary tabs', () => {
+  it('renders all six primary tabs', () => {
     const { s, world, site } = setup();
     const html = renderToStaticMarkup(
       <OverlayShell s={s} world={world} site={site} setSite={() => {}} tab="base" setTab={() => {}}>
@@ -58,6 +58,6 @@ describe('overlay shell', () => {
     );
 
     const tabbar = html.match(/<nav class="tabbar"[^>]*>(.*?)<\/nav>/)?.[1] ?? '';
-    expect((tabbar.match(/<button/g) ?? [])).toHaveLength(5);
+    expect((tabbar.match(/<button/g) ?? [])).toHaveLength(6);
   });
 });
