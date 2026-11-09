@@ -13,6 +13,7 @@ import { MapView } from './MapView';
 import { PeopleView } from './PeopleView';
 import { saveGame } from './save';
 import { play, stopRain } from './audio';
+import { PausedBanner } from './PausedBanner';
 import { OverlayShell } from './shell/OverlayShell';
 import type { TabId } from './shell/TopStrip';
 
@@ -48,6 +49,10 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
   const [speed, setSpeed] = useState(1);
   const [tab, setTab] = useState<Tab>('base');
   const [toast, setToast] = useState<LogEntry | null>(null);
+  // Câu giải thích vì sao đồng hồ đứng — phải ở lại cho tới khi người chơi chạy tiếp.
+  const [pausedBy, setPausedBy] = useState<string | null>(null);
+  // Trả lại đúng tốc độ người chơi đã chọn, đừng âm thầm hạ về 10×.
+  const speedBeforePause = useRef(4);
   const [saved, setSaved] = useState('');
   const [siteId, setSiteId] = useState(s.sites[0].id);
   // R1: a decision row jumps to the tab *and* the section that can fix it.
@@ -69,7 +74,11 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         if (s.alerts.length) {
           const bad = s.alerts.find((a) => a.level === 'bad');
           setToast(s.alerts[s.alerts.length - 1]);
-          if (bad) setSpeed(0);
+          if (bad) {
+            if (speed > 0) speedBeforePause.current = speed;
+            setSpeed(0);
+            setPausedBy(bad.msg);
+          }
           // Raid / death / build cues come from the alerts themselves.
           for (const a of s.alerts) {
             if (a.level === 'bad' && /tập kích|zombie/.test(a.msg)) play('raid');
@@ -190,6 +199,15 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         {tab === 'laws' && <LawsView {...props} />}
         {tab === 'log' && <LogView {...props} />}
       </OverlayShell>
+      {pausedBy && speed === 0 && (
+        <PausedBanner
+          reason={pausedBy}
+          onResume={() => {
+            setPausedBy(null);
+            setSpeed(speedBeforePause.current || 2);
+          }}
+        />
+      )}
       {toast && (
         <div className="toast" role="status" aria-live="polite" onClick={() => setToast(null)}>
           {toast.msg}

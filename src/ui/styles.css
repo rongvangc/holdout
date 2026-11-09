@@ -1466,3 +1466,39 @@ table.grid tr.sel td {
     scroll-behavior: auto !important;
   }
 }
+
+/* The clock stopped on purpose — say so, and give one button to start it again. */
+.paused-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px calc(7px + env(safe-area-inset-top, 0px));
+  background: var(--panel);
+  border-bottom: 2px solid var(--red);
+  border-top: 2px solid var(--red);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.paused-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--red);
+}
+.paused-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  background: var(--red);
+  border-radius: 50%;
+  animation: paused-blink 1.2s steps(2, end) infinite;
+}
+@keyframes paused-blink {
+  50% { opacity: 0.25; }
+}
