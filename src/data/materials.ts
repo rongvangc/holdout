@@ -215,6 +215,16 @@ export const MATERIALS: Record<string, ItemDef> = {
     icon: P + 'items/other/ingot__920.png',
     desc: 'Rèn dẹt. Giáp tấm, cửa thép, khiên.',
   },
+  can_20l: {
+    label: 'Can 20 L',
+    unit: 'cái',
+    kgPerUnit: 0.6,
+    category: 'component',
+    tier: 1,
+    mechanic: 'component',
+    icon: P + 'items/other/jerrycan__451.png',
+    desc: 'Can nhựa 20 L. Không có can thì mang được chai, không mang được xăng.',
+  },
   filter_core: {
     label: 'Lõi lọc',
     unit: 'cái',

@@ -1,4 +1,5 @@
 import type { Site, Vehicle } from './types';
+import { liquidFree, liquidRoom } from './containers';
 import type { ItemId } from '../data/items';
 
 /**
@@ -168,6 +169,24 @@ export function addVehicle(site: Site, v: Vehicle): Vehicle | null {
   site.vehicles = fleet;
   syncVehicleStock(site);
   return dropped.id === v.id ? v : dropped;
+}
+
+/** Can còn trống bao nhiêu lít ở sân này (nước + xăng dùng chung chỗ). */
+export function siphonRoom(site: Site): number {
+  return liquidFree(site.stock) + (site.stock.fuel ?? 0);
+}
+
+/**
+ * Hút xăng từ một chiếc xe sang kho. Đây là cách kiếm nhiên liệu chính: xe bỏ lại
+ * đầy bình, chỉ là không nổ máy. Cần can, và bình xe phải còn xăng.
+ */
+export function siphon(site: Site, v: Vehicle): number {
+  const room = Math.max(0, liquidRoom(site.stock) - ((site.stock.water ?? 0) + (site.stock.dirtyWater ?? 0)));
+  const moved = Math.min(v.fuelL, room);
+  if (moved <= 0.01) return 0;
+  v.fuelL -= moved;
+  site.stock.fuel = (site.stock.fuel ?? 0) + moved;
+  return moved;
 }
 
 export function vehicleLabel(v: Vehicle): string {

@@ -182,7 +182,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
     per100: 4,
     danger: 1.3,
     loot: [
-      ['fuel', 45, 2, 10],
+      ['fuel', 45, 8, 30],
       ['food', 20, 400, 1500],
       ['water', 20, 1, 4],
       ['parts', 15, 1, 3],
@@ -217,7 +217,7 @@ export const CATS: Record<BuildingCat, CatDef> = {
     loot: [
       ['parts', 35, 1, 4],
       ['scrap', 30, 2, 8],
-      ['fuel', 20, 1, 5],
+      ['fuel', 20, 2, 8],
       ['tools', 14, 1, 1],
       ['vehicle', 1, 1, 1],
       ['rubber', 16, 2, 8],

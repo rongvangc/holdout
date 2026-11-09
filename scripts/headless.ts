@@ -18,6 +18,7 @@ import { ITEMS } from '../src/data/items';
 import { FARM_M2_PER_WORKER } from '../src/sim/data';
 import { launchExpedition, planExpedition } from '../src/sim/expedition';
 import { stockWeight } from '../src/data/items';
+import { liquidFree } from '../src/sim/containers';
 import { setCommute } from '../src/sim/commute';
 import type { ModuleId } from '../src/data/modules';
 import type { GameState, Site, StockDelta } from '../src/sim/types';
@@ -127,9 +128,28 @@ function tripMode(
   return heavy || walk.totalSec - car.totalSec > 3600 ? 'car' : 'walk';
 }
 
+/**
+ * Can chứa là nút cổ chai của nước và xăng. Thiếu can thì mọi chuyến đi lấy nước
+ * đều về tay không, nên bot phải tự chế thêm.
+ */
+function needCans(site: Site): boolean {
+  if (liquidFree(site.stock) >= 40) return false;
+  return canAfford(site, { scrap: 3, cloth: 1 });
+}
+
+/** Xếp hàng chế can nếu thiếu chỗ chứa. */
+function queueCans(s: GameState, site: Site): void {
+  if (!needCans(site)) return;
+  if (site.projects.some((p) => p.kind === 'craft' && p.id === 'r_can')) return;
+  queueCraft(s, site, 'r_can');
+}
+
 function sendLoot(s: GameState, world: World, from: Site, team: string[]): void {
   const st = baseStats(s, from);
-  const needWater = from.stock.water + from.stock.dirtyWater < st.population * 10;
+  // Nước bẩn không được tính là "đã có nước": uống nó chỉ để sống qua ngày và
+  // làm người ốm. Trước đây cộng dồn hai thứ nên một trận mưa to làm bot tưởng
+  // mình no nước, ngừng đi lấy, rồi cả đội uống nước bẩn và chết.
+  const needWater = from.stock.water < st.population * 3;
   const foodLow = from.stock.food + from.stock.rawFood + from.stock.meals < st.population * 2250 * 14;
   const matsLow = from.stock.wood < 60 || from.stock.scrap < 30;
   if (needWater && world.waterPoints.length) {
@@ -137,6 +157,20 @@ function sendLoot(s: GameState, world: World, from: Site, team: string[]): void 
     launchExpedition(s, world, { fromSite: from.id, members: team, target: { type: 'water', id: wp.id }, mode: 'walk' });
     return;
   }
+  // Xăng: có xe mà bình chỉ còn vài lít thì phải đi lấy, đừng để xe nằm chết.
+  const fleet = from.vehicles ?? [];
+  const spareFuel = from.stock.fuel ?? 0;
+  const fuelLow = fleet.length > 0 && spareFuel < 20 && liquidFree(from.stock) > 10;
+  if (fuelLow) {
+    const station = world.buildings
+      .filter((b) => b.cat === 'fuel' && (s.looted[b.id] ?? 0) < b.containers)
+      .sort((a, b) => dist(a.centroid, from.centroid) - dist(b.centroid, from.centroid))[0];
+    if (station) {
+      launchExpedition(s, world, { fromSite: from.id, members: team, target: { type: 'building', id: station.id }, mode: 'walk', containers: Math.min(12, station.containers) });
+      return;
+    }
+  }
+
   const owned = new Set(s.sites.map((x) => x.sourceId));
   const targets = world.buildings
     .filter((b) => !owned.has(b.id) && b.containers - (s.looted[b.id] ?? 0) > 3)
@@ -446,6 +480,7 @@ export function botDay(s: GameState, world: World): void {
     if (!f.projects.length && f.fence.level < 1) queueDefense(s, f, 'fence');
   }
   upgradeStations(s, base);
+  queueCans(s, base);
   cookForTheDay(s, base);
   craftGear(s, base);
   solarKit(s, base);

@@ -125,6 +125,9 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
     [regionStaple(s.latitude)]: 20000 / Math.max(1, ITEMS[regionStaple(s.latitude)]?.kcal ?? 3000),
     water: 80,
     dirtyWater: 40,
+    // 120 L nước phải nằm trong cái gì đó: 10 can 20 L = 200 L, dư 80 L chỗ
+    // trống. Đúng bằng 6 can thì chuyến lấy nước đầu tiên về tay không.
+    can_20l: 10,
     wood: 40,
     scrap: 20,
     cloth: 14,

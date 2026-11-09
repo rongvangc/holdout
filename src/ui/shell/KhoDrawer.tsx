@@ -5,7 +5,8 @@ import { ITEMS, stockWeight, type ItemId } from '../../data/items';
 import { stapleKcal } from '../../data/staples';
 import { ammoFor } from '../../sim/equipment';
 import { queueRepair, repairableWeapons, stationLevel } from '../../sim/build';
-import { canRepair, refuel, repairVehicle, syncVehicleStock } from '../../sim/vehicles';
+import { canRepair, refuel, repairVehicle, siphon, siphonRoom, syncVehicleStock } from '../../sim/vehicles';
+import { liquidFree, liquidRoom } from '../../sim/containers';
 import { baseStats, present } from '../../sim/state';
 import { GEAR_SLOTS } from '../../sim/gear';
 import { HERDS, herdCapacity, herdBudget, type HerdState } from '../../sim/livestock';
@@ -153,7 +154,9 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
       {vehicles.length > 0 && (
         <>
           <div className="dither" />
-          <div className="label">Xe trong sân</div>
+          <div className="label">
+            Xe trong sân · can chứa {Math.round(liquidRoom(stock) - liquidFree(stock))}/{Math.round(liquidRoom(stock))} L
+          </div>
           <div className="col" style={{ gap: 4 }}>
             {vehicles.map((v) => (
               <div key={v.id} className="col" style={{ gap: 2 }}>
@@ -175,6 +178,22 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
                     }}
                   >
                     Đổ 20 L
+                  </button>
+                  <button
+                    disabled={v.fuelL < 0.5 || siphonRoom(site) < 0.5}
+                    title={
+                      v.fuelL < 0.5
+                        ? 'Bình xe rỗng'
+                        : siphonRoom(site) < 0.5
+                          ? 'Không có can trống — cần Can 20 L (chế ở bàn thợ)'
+                          : `Hút ${Math.min(v.fuelL, siphonRoom(site)).toFixed(0)} L sang can`
+                    }
+                    onClick={() => {
+                      siphon(site, v);
+                      bump((n) => n + 1);
+                    }}
+                  >
+                    Hút xăng
                   </button>
                   <button
                     disabled={!canRepair(site, v)}

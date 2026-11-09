@@ -35,6 +35,7 @@ const MATERIAL_RECIPES: Recipe[] = [
   { id: 'r_gear', out: 'gear', qty: 1, station: 'workshop', level: 1, in: [['scrap', 1], ['parts', 1]], workSec: HOUR, skill: 'mechanics' },
   { id: 'r_wire', out: 'wire', qty: 4, station: 'workshop', level: 1, in: [['scrap', 1]], workSec: 30 * MIN, skill: 'mechanics' },
   { id: 'r_plate', out: 'plate', qty: 1, station: 'forge', level: 2, in: [['scrap', 3], ['wood', 2]], workSec: 2 * HOUR, skill: 'crafting', note: 'Cần lò rèn cấp 2' },
+  { id: 'r_can', out: 'can_20l', qty: 1, station: 'workshop', level: 1, in: [['scrap', 3], ['cloth', 1]], workSec: 30 * MIN, skill: 'mechanics' },
   { id: 'r_filter_core', out: 'filter_core', qty: 1, station: 'workshop', level: 1, in: [['wood', 1], ['sand', 1], ['cloth', 1]], workSec: HOUR, skill: 'crafting' },
   { id: 'r_battery', out: 'battery', qty: 1, station: 'workshop', level: 2, in: [['scrap', 6], ['parts', 2], ['wire', 2]], workSec: 4 * HOUR, skill: 'mechanics', note: 'Cần bàn thợ cấp 2' },
   { id: 'r_solar_panel', out: 'solar_panel', qty: 1, station: 'workshop', level: 3, in: [['plate', 1], ['wire', 3], ['scrap', 4]], workSec: 6 * HOUR, skill: 'mechanics', note: 'Cần bàn thợ cấp 3' },

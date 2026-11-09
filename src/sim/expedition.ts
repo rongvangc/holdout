@@ -20,6 +20,7 @@ import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
 import { interrupt } from './tasks';
 import type { Expedition, GameState, Site, StockDelta, Survivor } from './types';
 import { densityMult, effectiveDanger, encounterRate, lootFactor, meanBite, poisson, zombieType } from './zombies';
+import { liquidFree, liquidRoom, liquidUsed } from './containers';
 import { addVehicle, burnFuel, fuelFor, makeVehicle, pickVehicle, syncVehicleStock, vehicleCargo, vehicleOdds } from './vehicles';
 import type { Vehicle } from './types';
 
@@ -531,7 +532,7 @@ function fightContact(s: GameState, e: Expedition, from: Site, alive: Survivor[]
 
 
 /** Roll loot for n containers of a building. `capKg` limits what fits in bags. */
-function rollContainers(s: GameState, world: World, buildingId: string, n: number, scav: number, out: StockDelta, capKg: number, yieldMult = 1): { searched: number; full: boolean; vehicle: boolean } {
+function rollContainers(s: GameState, world: World, buildingId: string, n: number, scav: number, out: StockDelta, capKg: number, yieldMult = 1, liquidBudget = 0): { searched: number; full: boolean; vehicle: boolean } {
   const b = world.buildings.find((x) => x.id === buildingId)!;
   const lf = lootFactor(dayOf(s.t));
   let searched = 0;
@@ -558,8 +559,16 @@ function rollContainers(s: GameState, world: World, buildingId: string, n: numbe
       );
       // Xe không còn nằm trong danh sách container: nó là một lần quay riêng cho
       // cả toà nhà, vì một chiếc xe không "rơi ra" từ hộp đồ.
+      // Xăng và nước chỉ lấy được tới mức can chứa cho phép, không phải tới mức
+      // trọng tải: một người không xách được 20 L xăng bằng tay không.
       if (item === 'vehicle') continue;
       let amount = range(s.rng, lo, hi) * (0.5 + 0.5 * lf) * yieldMult;
+      // Chất lỏng: không có can thì không lấy được quá vài lít.
+      if (item === 'fuel' || item === 'water' || item === 'dirtyWater') {
+        // Đội mang can của sân đi, nên chỗ chứa là của cả sân trừ phần đang xách.
+        const room = Math.max(0, liquidBudget - liquidUsed(out));
+        amount = Math.min(amount, room);
+      }
       // Lương thực thô trong bảng loot là kcal; đổi sang lương thực của vùng này
       // (gạo/lúa mì/khoai/sắn) để mỗi ván ăn đúng thứ mọc ở đó.
       let rolledItem: ItemId = item as ItemId;
@@ -592,7 +601,10 @@ function searchBuilding(s: GameState, world: World, e: Expedition): void {
   // Ban đêm không có đèn thì lục được 60%.
   const lightOnHand = hasLight(e.rations ?? {}) || hasLight(e.carried);
   const nightYield = isNight(s.t) && !lightOnHand ? 0.6 : 1;
-  const r = rollContainers(s, world, b.id, Math.min(e.plannedContainers, remaining), scav, e.carried, e.capacityKg, nightYield);
+  const home = siteById(s, e.fromSite);
+  // Can mang theo: chỗ trống của sân cộng phần đang xách trên tay.
+  const liquidBudget = Math.max(0, liquidRoom(home.stock) - liquidUsed(home.stock)) + liquidUsed(e.carried);
+  const r = rollContainers(s, world, b.id, Math.min(e.plannedContainers, remaining), scav, e.carried, e.capacityKg, nightYield, liquidBudget);
   // Một lần quay cho cả toà: bãi đỗ, trạm xăng, xưởng sửa có xe nhiều hơn nhà dân,
   // và càng về sau càng ít vì xe bị lấy mất.
   const foundHere = chance(s.rng, vehicleOdds(b.cat, dayOf(s.t)));
@@ -716,9 +728,18 @@ export function onExpeditionEvent(s: GameState, world: World, eid: string): void
     else if (e.kind === 'patrol') sweep(s, e);
     else {
       const team = members(s, e);
-      const liters = Math.min(team.length * 20, e.capacityKg - stockWeight(e.carried));
-      e.carried.dirtyWater = (e.carried.dirtyWater ?? 0) + liters;
-      e.report.push(`Gánh về ${Math.round(liters)} L nước sông.`);
+      const home = siteById(s, e.fromSite);
+      // Trọng tải là một chuyện, đổ vào đâu là chuyện khác: không có can thì chỉ
+      // mang được chai. Can lấy từ kho và quay về kho.
+      const room = liquidFree({ ...home.stock, ...e.carried }) + liquidUsed(e.carried);
+      const weightRoom = e.capacityKg - stockWeight(e.carried);
+      const liters = Math.max(0, Math.min(team.length * 20, weightRoom, room));
+      if (liters < 1) {
+        e.report.push('Không có can/bình nào để đựng nước — chuyến này về tay không.');
+      } else {
+        e.carried.dirtyWater = (e.carried.dirtyWater ?? 0) + liters;
+        e.report.push(`Gánh về ${Math.round(liters)} L nước sông.`);
+      }
     }
     e.phase = 'back';
     e.phaseStart = s.t;
