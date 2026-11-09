@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_FLEET,
   MIN_CONDITION,
+  addVehicle,
+  vehicleOdds,
+  vehicleValue,
   burnFuel,
   canRepair,
   fuelFor,
@@ -118,6 +122,39 @@ describe('vehicles', () => {
     expect(site.stock.scrap).toBe(6);
     expect(site.stock.parts).toBe(3);
     expect(site.stock.vehicle).toBe(1);
+  });
+
+  it('starts the colony with the car they arrived in', () => {
+    const { site } = setup();
+    expect(site.vehicles).toHaveLength(1);
+    const v = site.vehicles![0];
+    expect(v.fuelL).toBeGreaterThan(0);
+    expect(v.condition).toBeGreaterThanOrEqual(MIN_CONDITION);
+    expect(site.stock.vehicle).toBe(1);
+  });
+
+  it('finds cars far more often early, and almost never after months', () => {
+    expect(vehicleOdds('fuel', 1)).toBeGreaterThan(vehicleOdds('fuel', 90));
+    expect(vehicleOdds('fuel', 90)).toBeGreaterThan(vehicleOdds('fuel', 400));
+    // Một trạm xăng có xe nhiều hơn một nhà dân.
+    expect(vehicleOdds('fuel', 10)).toBeGreaterThan(vehicleOdds('houselabel', 10));
+    expect(vehicleOdds('generic', 400)).toBeGreaterThan(0);
+  });
+
+  it('keeps the yard to MAX_FLEET cars and drops the worst one', () => {
+    const { site } = setup();
+    site.vehicles = [];
+    const added: ReturnType<typeof makeVehicle>[] = [];
+    for (let i = 0; i < MAX_FLEET + 2; i++) {
+      const v = makeVehicle('car', site.id, `v${i}`);
+      v.condition = 40 + i * 5;
+      added.push(v);
+      addVehicle(site, v);
+    }
+    expect(site.vehicles).toHaveLength(MAX_FLEET);
+    // Chiếc tệ nhất bị bỏ lại phải là chiếc mòn nhất.
+    expect(site.vehicles!.some((v) => v.id === added[0].id)).toBe(false);
+    expect(Math.min(...site.vehicles!.map(vehicleValue))).toBeGreaterThan(vehicleValue(added[0]));
   });
 
   it('cannot repair past 100 or without materials', () => {

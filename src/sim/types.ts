@@ -192,6 +192,20 @@ export type GameEvent =
   | { k: 'exp'; eid: string };
 
 /** One held location: main base, outpost building, or field. Each has its own stockpile. */
+/** Một chiếc xe cụ thể trong sân: bình xăng, độ mòn và sức chở riêng. */
+export interface Vehicle {
+  id: string;
+  siteId: string;
+  kind: 'car' | 'van' | 'pickup' | 'truck';
+  label: string;
+  fuelL: number;
+  tankL: number;
+  condition: number; // 0..100
+  seats: number;
+  cargoKg: number;
+  kmPerL: number;
+}
+
 export interface Site {
   id: string;
   kind: 'base' | 'outpost' | 'field';
@@ -202,6 +216,8 @@ export interface Site {
   centroid: Vec;
   interior: Interior;
   stock: Stock;
+  /** Xe thật trong sân; `stock.vehicle` chỉ là số xe còn chạy được. */
+  vehicles?: Vehicle[];
   fuelBatches: { liters: number; day: number }[];
   projects: Project[];
   fortify: { level: number; hp: number };

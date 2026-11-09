@@ -114,6 +114,62 @@ export function repairVehicle(site: Site, v: Vehicle): boolean {
   return true;
 }
 
+/**
+ * Cơ hội tìm được xe khi lục một toà nhà, theo loại toà và theo ngày.
+ *
+ * Ngay sau bạo loạn thì xe còn đầy đường; càng về sau càng bị lấy, bị vét, bị
+ * hỏng. Đây là lý do người chơi phải lo chuyện xe trong tuần đầu chứ không phải
+ * tháng thứ ba.
+ */
+export function vehicleOdds(cat: string, day: number): number {
+  const byCat: Record<string, number> = {
+    fuel: 0.25,
+    car_repair: 0.22,
+    industrial: 0.12,
+    market: 0.1,
+    supermarket: 0.1,
+    hardware: 0.08,
+    houselabel: 0.07,
+    apartment: 0.05,
+    office: 0.04,
+    school: 0.03,
+    hospital: 0.03,
+    police: 0.06,
+    generic: 0.04,
+  };
+  const base = byCat[cat] ?? 0.1;
+  // Xe bị lấy mất dần: mạnh nhất trong tháng đầu, còn 20% sau nửa năm.
+  const decay = Math.max(0.2, 1 - day / 150);
+  return base * decay;
+}
+
+/** Bãi xe có hạn: giữ chiếc tốt nhất, thay chiếc tệ nhất khi tìm được chiếc hơn. */
+export const MAX_FLEET = 4;
+
+/** Điểm xếp hạng một chiếc xe: chở nhiều, còn tốt, còn xăng. */
+export function vehicleValue(v: Vehicle): number {
+  return v.cargoKg * 0.4 * (v.condition / 100) + v.fuelL * 2 + v.condition;
+}
+
+/**
+ * Thêm xe vào sân, tôn trọng trần bãi xe. Trả về chiếc bị thay (nếu có).
+ * Một cộng đồng 13 người không thể giữ 18 chiếc xe — họ kéo về chiếc tốt nhất.
+ */
+export function addVehicle(site: Site, v: Vehicle): Vehicle | null {
+  const fleet = [...(site.vehicles ?? [])];
+  fleet.push(v);
+  if (fleet.length <= MAX_FLEET) {
+    site.vehicles = fleet;
+    syncVehicleStock(site);
+    return null;
+  }
+  fleet.sort((a, b) => vehicleValue(b) - vehicleValue(a));
+  const dropped = fleet.pop()!;
+  site.vehicles = fleet;
+  syncVehicleStock(site);
+  return dropped.id === v.id ? v : dropped;
+}
+
 export function vehicleLabel(v: Vehicle): string {
   return `${v.label} · ${Math.round(v.condition)}% · ${v.fuelL.toFixed(0)}/${v.tankL} L`;
 }

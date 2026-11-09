@@ -17,6 +17,7 @@ import { regionStaple, stapleKcal } from '../src/data/staples';
 import { ITEMS } from '../src/data/items';
 import { FARM_M2_PER_WORKER } from '../src/sim/data';
 import { launchExpedition, planExpedition } from '../src/sim/expedition';
+import { stockWeight } from '../src/data/items';
 import { setCommute } from '../src/sim/commute';
 import type { ModuleId } from '../src/data/modules';
 import type { GameState, Site, StockDelta } from '../src/sim/types';
@@ -104,6 +105,28 @@ function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
   for (const r of free) if (!queueModule(s, site, r.id, next)) break;
 }
 
+/**
+ * Đi xe hay đi bộ? Xe chỉ đáng khi chở nặng hoặc đường xa, và chỉ khi nó thật sự
+ * nổ máy với đủ xăng — nếu không thì `planExpedition` sẽ từ chối và bot mất chuyến.
+ */
+function tripMode(
+  s: GameState,
+  world: World,
+  from: Site,
+  target: { type: 'building' | 'green' | 'water' | 'site'; id: string },
+  members: string[],
+  cargo?: StockDelta,
+): 'walk' | 'car' {
+  const base = { fromSite: from.id, members, target, cargo } as never;
+  const walk = planExpedition(s, world, { ...(base as object), mode: 'walk' } as never);
+  if (!walk.ok) return 'walk';
+  const car = planExpedition(s, world, { ...(base as object), mode: 'car' } as never);
+  if (!car.ok) return 'walk';
+  // Chở nặng hơn 70% sức đi bộ, hoặc tiết kiệm từ 1 giờ trở lên.
+  const heavy = cargo ? stockWeight(cargo) > walk.capacityKg * 0.7 : false;
+  return heavy || walk.totalSec - car.totalSec > 3600 ? 'car' : 'walk';
+}
+
 function sendLoot(s: GameState, world: World, from: Site, team: string[]): void {
   const st = baseStats(s, from);
   const needWater = from.stock.water + from.stock.dirtyWater < st.population * 10;
@@ -182,7 +205,7 @@ function maybeClaimField(s: GameState, world: World, base: Site, idle: string[])
     ...stapleCargo(s, base.stock, 6000),
   };
   if (cargo.tools! < 1 || cargo.scrap! < 8 || cargo.wood! < 18) return false;
-  return launchExpedition(s, world, { fromSite: base.id, members: two, target: { type: 'green', id: g.id }, mode: 'walk', cargo }) === null;
+  return launchExpedition(s, world, { fromSite: base.id, members: two, target: { type: 'green', id: g.id }, mode: tripMode(s, world, base, { type: 'green', id: g.id }, two, cargo), cargo }) === null;
 }
 
 /** Field crews haul harvests home; the base ships seeds and food out. */
@@ -194,7 +217,7 @@ function convoys(s: GameState, world: World, base: Site): void {
     if (stapleKcal(f.stock) > keepKcal + 10000 && crew.length >= 3) {
       const team = crew.slice(0, 2).map((v) => v.id);
       const cargo: StockDelta = stapleCargo(s, f.stock, Math.min(stapleKcal(f.stock) - keepKcal, 2 * 22 * 3000));
-      launchExpedition(s, world, { fromSite: f.id, members: team, target: { type: 'site', id: base.id }, mode: 'walk', cargo });
+      launchExpedition(s, world, { fromSite: f.id, members: team, target: { type: 'site', id: base.id }, mode: tripMode(s, world, f, { type: 'site', id: base.id }, team, cargo), cargo });
       continue;
     }
     const pop = present(s, f).length;
@@ -209,7 +232,8 @@ function convoys(s: GameState, world: World, base: Site): void {
         ...(needFood ? stapleCargo(s, base.stock, 30000) : {}),
         water: Math.min(Math.floor(base.stock.water / 3), 30),
       };
-      launchExpedition(s, world, { fromSite: base.id, members: runners.slice(0, 2).map((v) => v.id), target: { type: 'site', id: f.id }, mode: 'walk', cargo });
+      const crew = runners.slice(0, 2).map((v) => v.id);
+      launchExpedition(s, world, { fromSite: base.id, members: crew, target: { type: 'site', id: f.id }, mode: tripMode(s, world, base, { type: 'site', id: f.id }, crew, cargo), cargo });
     }
   }
 }

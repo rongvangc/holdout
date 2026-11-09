@@ -1,5 +1,5 @@
 import { push, makeQueue } from '../core/eventQueue';
-import { makeRng, range } from '../core/rng';
+import { makeRng, pick, range } from '../core/rng';
 import { DAY, HOUR, dayOf, nextClock } from '../core/time';
 import { generateInterior, roomsWith } from '../base/interior';
 import { CATS } from '../data/categories';
@@ -14,7 +14,7 @@ import { issueGear } from './gear';
 import { DEFAULT_AUTO } from './automation';
 import { isActive, makeSurvivor, skill } from './survivors';
 import type { GameState, LogEntry, Site, StockDelta, Survivor } from './types';
-import { migrateVehicles } from './vehicles';
+import { makeVehicle, migrateVehicles } from './vehicles';
 
 export const START_SURVIVORS = 5;
 const LOG_MAX = 500;
@@ -111,6 +111,14 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
     gameOver: false,
   };
   const home = makeSite(s, world, 'base', baseId);
+  // Cộng đồng tới đây bằng xe: một chiếc đã có sẵn trong sân, xăng còn non nửa.
+  // Đầu tận thế mà không có xe nào là vô lý — và người chơi cần thấy hệ thống xe
+  // ngay tuần đầu, không phải chờ may mắn lục được một chiếc.
+  const ride = makeVehicle(pick(s.rng, ['car', 'van', 'pickup'] as const), home.id, `${home.id}-v0`);
+  ride.fuelL = ride.tankL * 0.45;
+  ride.condition = range(s.rng, 55, 80);
+  home.vehicles = [ride];
+  home.stock.vehicle = 1;
   s.sites.push(home);
   Object.assign(home.stock, {
     food: 30000,

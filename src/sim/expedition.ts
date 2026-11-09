@@ -20,7 +20,7 @@ import { gainXp, hasTrait, makeSurvivor, skill } from './survivors';
 import { interrupt } from './tasks';
 import type { Expedition, GameState, Site, StockDelta, Survivor } from './types';
 import { densityMult, effectiveDanger, encounterRate, lootFactor, meanBite, poisson, zombieType } from './zombies';
-import { burnFuel, fuelFor, makeVehicle, pickVehicle, syncVehicleStock, vehicleCargo } from './vehicles';
+import { addVehicle, burnFuel, fuelFor, makeVehicle, pickVehicle, syncVehicleStock, vehicleCargo, vehicleOdds } from './vehicles';
 import type { Vehicle } from './types';
 
 export type Mode = Expedition['mode'];
@@ -556,10 +556,9 @@ function rollContainers(s: GameState, world: World, buildingId: string, n: numbe
         s.rng,
         CATS[b.cat].loot.map((e2) => [e2, e2[1]] as const),
       );
-      if (item === 'vehicle') {
-        if (chance(s.rng, 0.5)) vehicle = true;
-        continue;
-      }
+      // Xe không còn nằm trong danh sách container: nó là một lần quay riêng cho
+      // cả toà nhà, vì một chiếc xe không "rơi ra" từ hộp đồ.
+      if (item === 'vehicle') continue;
       let amount = range(s.rng, lo, hi) * (0.5 + 0.5 * lf) * yieldMult;
       // Lương thực thô trong bảng loot là kcal; đổi sang lương thực của vùng này
       // (gạo/lúa mì/khoai/sắn) để mỗi ván ăn đúng thứ mọc ở đó.
@@ -594,16 +593,20 @@ function searchBuilding(s: GameState, world: World, e: Expedition): void {
   const lightOnHand = hasLight(e.rations ?? {}) || hasLight(e.carried);
   const nightYield = isNight(s.t) && !lightOnHand ? 0.6 : 1;
   const r = rollContainers(s, world, b.id, Math.min(e.plannedContainers, remaining), scav, e.carried, e.capacityKg, nightYield);
+  // Một lần quay cho cả toà: bãi đỗ, trạm xăng, xưởng sửa có xe nhiều hơn nhà dân,
+  // và càng về sau càng ít vì xe bị lấy mất.
+  const foundHere = chance(s.rng, vehicleOdds(b.cat, dayOf(s.t)));
   // Tìm được xe: thêm một chiếc cụ thể vào sân, không chỉ tăng một con số.
-  if (r.vehicle) {
+  if (foundHere) {
     const home = siteById(s, e.fromSite);
     const kind = (['car', 'van', 'pickup', 'truck'] as const)[Math.floor(range(s.rng, 0, 4))];
     const v = makeVehicle(kind, home.id, newId(s, 'v'));
     v.condition = Math.floor(range(s.rng, 45, 85));
     v.fuelL = v.tankL * range(s.rng, 0.1, 0.35);
-    home.vehicles = [...(home.vehicles ?? []), v];
-    syncVehicleStock(home);
-    e.report.push(`Tìm được một chiếc ${v.label.toLowerCase()} còn nổ máy (${Math.round(v.condition)}%).`);
+    const dropped = addVehicle(home, v);
+    if (dropped?.id === v.id) e.report.push('Tìm thấy xe nhưng bãi đã chật, đành bỏ lại.');
+    else if (dropped) e.report.push(`Kéo về một chiếc ${v.label.toLowerCase()}, thay chiếc cũ tệ hơn.`);
+    else e.report.push(`Tìm được một chiếc ${v.label.toLowerCase()} còn nổ máy (${Math.round(v.condition)}%).`);
   }
   s.cellHeat[e.target.cell] = Math.min(100, (s.cellHeat[e.target.cell] ?? 0) + r.searched * 0.15 * (e.mode === 'sneak' ? 0.5 : 1));
   for (const m of team) gainXp(m, 'scavenging', (8 * r.searched) / team.length);
