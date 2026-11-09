@@ -1054,3 +1054,23 @@ Không phải thiếu cân bằng số — mà là **chiếm ruộng xong là ch
 | Dân cuối | 0,6 | **11,7** (9–15) |
 | Chết đói sau ngày 30 | 7 ván | **0 ván** |
 | Chết do tập kích | 0% | 0% (raid vẫn xảy ra: +36/-6 ở seed 6) |
+
+### 12.20 Mở rộng món ăn — tên trung tính theo vùng (2026-11)
+
+Mỗi vùng trên bản đồ có món khác nhau, nên tên món được đặt **trung tính** (không "phở", "bánh mì", "dưa muối"…): 12 → **25 món**, món nào cũng có công thức.
+
+| Nhóm | Món |
+|---|---|
+| Lương thực (4) | Cơm nấu · Cơm trộn rau · Cháo · Củ/hạt luộc |
+| Rau (4) | Canh rau · Rau xào · Rau muối chua · Trà lá* |
+| Đạm (6) | Thịt kho · Thịt nướng · Thịt hun khói · Cá kho · Cá nướng · Cá khô |
+| Trứng/đậu (3) | Trứng chiên · Trứng kho · Đậu nấu · Đậu hầm |
+| Sữa (4) | Cháo sữa · Sữa lên men · Phô mai nướng · Bánh bột phô mai |
+| Bảo quản (3) | Thịt khô · Cá khô · Thịt hun khói |
+| Nước (2) | Trà lá · Nước dùng |
+
+- **Đồ uống nấu được**: trước đây 62 loại đồ uống đều chỉ đi lục; giờ có Trà lá và Nước dùng ở bếp cấp 1.
+- **Chế biến nguyên liệu**: xay lương thực → bột (Bàn thợ), ép đậu → dầu ăn (Bàn thợ), thắng mỡ (Bếp) — trước đây bột/dầu chỉ có từ loot.
+- **Bảo quản**: 3 công thức hun khói/phơi khô (bếp hun khói cấp 1–2) + sữa lên men (hầm lạnh) + phô mai + rau muối → **7 món để được ≥20 ngày**, mổ một con lợn không còn bị hỏng 90%.
+- **Ràng buộc giữ được**: mỗi khẩu phần ≤1.035 kcal, không món nào tạo calo từ không khí (output ≤ input), và **món mang đi phải là món bảo quản** (rot ≤5%/ngày) — test khoá cả hai.
+- Mỗi nguyên liệu sản xuất được dùng ở **≥2 món** (test), nên sữa/phô mai/đậu không còn là nguyên liệu chết.

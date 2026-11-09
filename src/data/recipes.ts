@@ -61,6 +61,25 @@ const DISH_RECIPES: Recipe[] = [
   { id: 'rd_thit_kho', out: 'mon_thit_kho', qty: 3, station: 'kitchen', level: 2, in: [['thit', 1.5], ['@staple', 600], ['salt', 0.4]], workSec: 2 * HOUR, skill: 'cooking', note: 'Món đám cưới. Cần bếp cấp 2' },
   { id: 'rd_banh_mi', out: 'mon_banh_mi', qty: 6, station: 'kiln', level: 2, in: [['bot', 1], ['water', 2]], workSec: 2 * HOUR, skill: 'cooking', note: 'Cần lò nung cấp 2' },
   { id: 'r_pho_mai', out: 'pho_mai', qty: 2, station: 'kitchen', level: 2, in: [['sua', 4], ['salt', 0.2]], workSec: 90 * MIN, skill: 'cooking', note: 'Sữa để được lâu: phô mai giữ hàng tháng' },
+  // --- Món mới: đạm rẻ, sữa, bảo quản, đồ uống (tên trung tính theo vùng) ---
+  { id: 'rd_thit_nuong', out: 'mon_thit_nuong', qty: 2, station: 'kitchen', level: 1, in: [['thit', 0.8], ['salt', 0.1]], workSec: 25 * MIN, skill: 'cooking' },
+  { id: 'rd_ca_nuong', out: 'mon_ca_nuong', qty: 2, station: 'kitchen', level: 1, in: [['ca', 0.8], ['salt', 0.1]], workSec: 25 * MIN, skill: 'cooking' },
+  { id: 'rd_trung_kho', out: 'mon_trung_kho', qty: 2, station: 'kitchen', level: 1, in: [['trung', 4], ['@staple', 300], ['salt', 0.1]], workSec: 30 * MIN, skill: 'cooking' },
+  { id: 'rd_chao_sua', out: 'mon_chao_sua', qty: 2, station: 'kitchen', level: 1, in: [['@staple', 800], ['sua', 1.5], ['water', 2]], workSec: 25 * MIN, skill: 'cooking', note: 'Cần sữa từ trại chăn nuôi' },
+  { id: 'rd_sua_len_men', out: 'mon_sua_len_men', qty: 2, station: 'cellar', level: 1, in: [['sua', 2], ['salt', 0.05]], workSec: 3 * HOUR, skill: 'cooking', note: 'Hầm lạnh: sữa lên men để được hàng tháng' },
+  { id: 'rd_pho_mai_nuong', out: 'mon_pho_mai_nuong', qty: 2, station: 'kitchen', level: 1, in: [['pho_mai', 0.3], ['oil', 0.05]], workSec: 15 * MIN, skill: 'cooking' },
+  { id: 'rd_banh_pho_mai', out: 'mon_banh_pho_mai', qty: 4, station: 'kiln', level: 2, in: [['bot', 0.5], ['pho_mai', 0.2], ['water', 1]], workSec: 45 * MIN, skill: 'cooking' },
+  { id: 'rd_thit_phoi', out: 'mon_thit_phoi', qty: 2, station: 'smokehouse', level: 1, in: [['thit', 1], ['salt', 0.3]], workSec: 4 * HOUR, skill: 'cooking', note: 'Phơi/hun khô: giữ được hàng tháng' },
+  { id: 'rd_ca_phoi', out: 'mon_ca_phoi', qty: 2, station: 'smokehouse', level: 1, in: [['ca', 1], ['salt', 0.3]], workSec: 4 * HOUR, skill: 'cooking' },
+  { id: 'rd_thit_hun', out: 'mon_thit_hun', qty: 2, station: 'smokehouse', level: 2, in: [['thit', 1], ['salt', 0.2], ['wood', 1]], workSec: 5 * HOUR, skill: 'cooking', note: 'Bếp hun khói cấp 2' },
+  { id: 'rd_dau_ham', out: 'mon_dau_ham', qty: 2, station: 'kitchen', level: 1, in: [['dau', 0.8], ['@staple', 400], ['water', 2], ['salt', 0.1]], workSec: 50 * MIN, skill: 'cooking' },
+  { id: 'rd_tra_la', out: 'mon_tra_la', qty: 4, station: 'kitchen', level: 1, in: [['rau', 0.2], ['water', 1]], workSec: 10 * MIN, skill: 'cooking' },
+  { id: 'rd_nuoc_dung', out: 'mon_nuoc_dung', qty: 3, station: 'kitchen', level: 1, in: [['thit', 0.4], ['water', 2], ['salt', 0.1]], workSec: 40 * MIN, skill: 'cooking' },
+
+  // --- Chế biến nguyên liệu: bột từ lương thực, dầu từ đậu, mỡ từ thịt ---
+  { id: 'r_bot', out: 'bot', qty: 0.35, station: 'workshop', level: 1, in: [['@staple', 1000]], workSec: 40 * MIN, skill: 'cooking', note: 'Xay lương thực thành bột (bàn thợ có cối xay)' },
+  { id: 'r_dau_an', out: 'oil', qty: 0.3, station: 'workshop', level: 1, in: [['dau', 1]], workSec: HOUR, skill: 'cooking', note: 'Ép dầu từ đậu/hạt' },
+  { id: 'r_mo', out: 'oil', qty: 0.35, station: 'kitchen', level: 1, in: [['thit', 1], ['wood', 0.3]], workSec: 45 * MIN, skill: 'cooking', note: 'Thắng mỡ: mổ một con thì có dầu ăn' },
   { id: 'rd_dua_muoi', out: 'mon_dua_muoi', qty: 6, station: 'kitchen', level: 1, in: [['rau', 2], ['salt', 0.4], ['dirtyWater', 2]], workSec: 4 * HOUR, skill: 'cooking', note: 'Ủ chua: để được hàng tháng, có vitamin' },
 ];
 

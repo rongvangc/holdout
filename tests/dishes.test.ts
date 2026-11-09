@@ -109,9 +109,11 @@ describe('dishes do something', () => {
     expect(DISHES.mon_rau_xao.fx?.vitamin).toBe(true);
   });
 
-  it('only bread is marked as travel food', () => {
-    const travel = Object.entries(DISHES).filter(([, d]) => d.fx?.travel).map(([id]) => id);
-    expect(travel).toEqual(['mon_banh_mi']);
+  it('travel food must be food that survives the trip', () => {
+    // Mang đi xa chỉ hợp với món bảo quản (rot ≤ 5%/ngày); món tươi ăn trong ngày.
+    const travel = Object.entries(DISHES).filter(([, d]) => d.fx?.travel);
+    expect(travel.length).toBeGreaterThanOrEqual(2);
+    for (const [id, d] of travel) expect(d.rotPerDay ?? 1, id).toBeLessThanOrEqual(0.05);
   });
 
   it('labels the effects for the player', () => {
