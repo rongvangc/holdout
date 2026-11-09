@@ -4,7 +4,7 @@ import { makeRng } from '../src/core/rng';
 import { HOUR } from '../src/core/time';
 import { advanceTo } from '../src/sim/engine';
 import { baseStats, mainSite, newGame } from '../src/sim/state';
-import { hordeSize, nextHordeCell, zombieType } from '../src/sim/zombies';
+import { hordeSize, nextHordeCell, siegeStrengthCap, zombieType } from '../src/sim/zombies';
 import { hordeTargetCell, periStretch, startDecoy } from '../src/sim/daily';
 import { makeTestWorld } from '../scripts/headless';
 
@@ -40,14 +40,22 @@ describe('tiến hoá theo vùng — zombieType', () => {
 });
 
 describe('hordeSize', () => {
-  it('tăng theo ngày + danger, trong tầm hợp lý', () => {
+  it('tăng theo ngày + danger nhưng bị cap 50', () => {
     const rng = makeRng(5);
     const early = hordeSize(rng, 12, 2);
     const late = hordeSize(rng, 60, 4);
-    expect(early).toBeGreaterThanOrEqual(12);
-    expect(early).toBeLessThanOrEqual(45);
+    const lateBig = hordeSize(rng, 120, 5);
+    expect(early).toBeGreaterThanOrEqual(14);
+    expect(early).toBeLessThanOrEqual(28);
     expect(late).toBeGreaterThan(early);
-    expect(late).toBeLessThanOrEqual(120);
+    expect(late).toBeLessThanOrEqual(55); // cap ~50 ± jitter
+    expect(lateBig).toBeLessThanOrEqual(55); // ngày 120 vẫn cap 50
+  });
+
+  it('siegeStrengthCap: tuyến tính theo ngày (120 + 3×day)', () => {
+    expect(siegeStrengthCap(10)).toBe(150);
+    expect(siegeStrengthCap(70)).toBe(330);
+    expect(siegeStrengthCap(90)).toBe(390);
   });
 });
 
@@ -131,5 +139,19 @@ describe('Tích hợp: bầy tới nơi -> siege qua engine', () => {
     advanceTo(s, world, s.t + 16 * HOUR);
     expect(s.stats.raidsRepelled > repelled0 || s.stats.raidsLost > lost0).toBe(true);
     expect(s.hordes).toHaveLength(0);
+  });
+});
+
+describe('nextHordeCell — đường bế (mọi lân cận ngoài map)', () => {
+  it('vẫn tiến về đích qua đường lưới h3, không kẹt', () => {
+    const A = latLngToCell(21.05, 105.86, 9);
+    const B = latLngToCell(21.028, 105.83, 9);
+    const d0 = gridDistance(A, B);
+    expect(d0).toBeGreaterThan(1);
+    const rng = makeRng(9);
+    for (let i = 0; i < 8; i++) {
+      const next = nextHordeCell(A, B, [], rng); // không có neighbor nào đã biết
+      expect(gridDistance(next, B)).toBeLessThan(d0);
+    }
   });
 });

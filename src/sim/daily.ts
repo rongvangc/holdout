@@ -23,7 +23,7 @@ import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take, takeStapleKcal } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
 import type { GameState, Site, Survivor, Weather } from './types';
-import { densityMult, effectiveDanger, hordeSize, nextHordeCell, zombieType } from './zombies';
+import { densityMult, effectiveDanger, hordeSize, nextHordeCell, siegeStrengthCap, zombieType } from './zombies';
 import { structureEffects } from '../data/structures';
 
 // Vietnam monthly climate: [rain probability, mean mm on a rainy day, temp North, temp South, storm probability].
@@ -396,7 +396,8 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
   const budget = raidBudget(home.length, site.heat);
   const gated = Math.min(raw, budget);
   // Traps thin the wave first, but can never stop more than 70% of it.
-  const strength = Math.max(gated * 0.3, gated - structureEffects(site.interior.structures).spikes);
+  // Sàn tối thiểu 12 + 0.5×day: khu đã dọn sạch vẫn có lẻ tẻ trườn về — không có đêm an toàn tuyệt đối.
+  const strength = Math.max(gated * 0.3, gated - structureEffects(site.interior.structures).spikes, 12 + 0.5 * day);
   // Đợt tập kích là hỗn hợp loại zombie của đêm đó (tiến hoá theo vùng) — loại quyết định sát thương & cắn.
   const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true, danger, s.cellClear[site.cell] ?? 0));
   defendAssault(s, site, strength, waveTypes, 'một đợt tập kích đêm');
@@ -474,11 +475,17 @@ export function siegeEvent(s: GameState, world: World, sid: string, size: number
   const day = dayOf(s.t);
   const home = s.survivors.filter((v) => v.status === 'alive' && v.siteId === site.id && v.location === 'base');
   if (home.length < 3) {
-    // Không đủ người gác — bầy san vào địa bàn rồi đi tiếp (chỉ bớt "sạch" ở ô).
+    // Không đủ người gác — bầy quét qua điểm: mất mức vật tư nhưng không có trận đánh tổng lực.
     s.cellClear[site.cell] = Math.max(0, (s.cellClear[site.cell] ?? 0) - 0.3);
+    const loss = Math.min(0.15, 0.05 + day * 0.001);
+    for (const k of ['food', 'rawFood', 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
+    alert(s, `${site.name}: bầy ~${size} zombie quét qua điểm trống — lấy mất ${Math.round(loss * 100)}% vật tư.`, 'warn');
     return;
   }
-  const strength = size * (8 + 1.5 * day ** 0.75) * (0.6 + 0.4 * Math.min(1, home.length / 10)) * (1 + site.heat / 100) * range(s.rng, 0.85, 1.15) * 0.75;
+  const strength = Math.min(
+    siegeStrengthCap(day),
+    size * (8 + 1.5 * day ** 0.75) * (0.6 + 0.4 * Math.min(1, home.length / 10)) * (1 + site.heat / 100) * range(s.rng, 0.85, 1.15) * 0.75,
+  );
   const danger = effectiveDanger(s, world, site.cell);
   const cleared = s.cellClear[site.cell] ?? 0;
   const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true, danger, cleared));

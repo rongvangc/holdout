@@ -1,5 +1,5 @@
 import { range, weighted, type Rng } from '../core/rng';
-import { gridDistance } from 'h3-js';
+import { gridDistance, gridPathCells } from 'h3-js';
 import type { World } from '../world/types';
 import { ZOMBIES, type ZombieType } from './data';
 import type { GameState } from './types';
@@ -83,14 +83,18 @@ export function poisson(rng: Rng, mean: number): number {
   return k - 1;
 }
 
-/** Kích thước một bầy mới: to dần theo ngày, theo danger của ô sinh. */
+/** Kích thước một bầy mới: to dần theo ngày + danger, nhưng bị cap — không thể vô hạn. */
 export function hordeSize(rng: Rng, day: number, danger: number): number {
-  return Math.round((10 + 0.9 * day) * (0.8 + 0.2 * Math.max(1, danger)) * range(rng, 0.9, 1.1));
+  return Math.round(Math.min(50, 12 + 0.6 * day + 2 * Math.max(0, danger - 2)) * range(rng, 0.9, 1.1));
 }
 
+/** Trần sức của một trận siege — để căn cứ gia cố tốt là đủ thắng, bằng không thực sự phải né. */
+export const siegeStrengthCap = (day: number): number => 120 + 3 * day;
+
 /**
- * Bầy trườn 1 ô về đích: chọn trong lân cận ô gần đích hơn,
- * có jitter nhỏ cho tự nhiên (vẫn deterministic qua rng).
+ * Bầy trườn 1 ô về đích. Ưu tiên ô lân cận "đã biết" (world.cells) gần đích hơn;
+ * nếu đường bế (mọi lân cận ngoài known map) thì đi theo đường lưới h3 trực tiếp —
+ * để không bao giờ kẹt đứng mãi vì ô trống.
  */
 export function nextHordeCell(cell: string, target: string, candidates: string[], rng: Rng): string {
   let best = cell;
@@ -103,5 +107,7 @@ export function nextHordeCell(cell: string, target: string, candidates: string[]
       best = c;
     }
   }
-  return best;
+  if (bestScore < gridDistance(cell, target)) return best;
+  const path = gridPathCells(cell, target);
+  return path.length > 1 ? path[1] : cell;
 }
