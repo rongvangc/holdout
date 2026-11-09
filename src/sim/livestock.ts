@@ -203,6 +203,31 @@ const females = (h: HerdState) => Math.max(0, h.adults - h.males);
  * Chân dung của từng cấp module — trước đây UI ghi "trứng ×1.6" và "chuồng kín"
  * nhưng code không hề đọc cấp module cho bất cứ thứ gì ngoài diện tích.
  */
+/** Mọi con số UI cần để nói về một bầy, tính từ state thật. */
+export interface HerdSummary {
+  label: string;
+  adults: number;
+  young: number;
+  heads: number;
+  capacity: number;
+  /** kg cám/cỏ cần mỗi ngày, và lít nước. */
+  feedKg: number;
+  waterL: number;
+  /** Sản lượng kỳ vọng mỗi ngày khi được chăm đầy đủ. */
+  eggsPerDay: number;
+  milkPerDay: number;
+  /** kg thịt khi mổ một con trưởng thành. */
+  meatPerAdult: number;
+  /** Diện tích cần thêm để chứa thêm một con. */
+  m2PerHead: number;
+  lactating: number;
+  pregnant: number;
+  level: number;
+  fx: HerdLevelFx;
+  /** ≥1 thì đầy, > 1 là đang quá tải. */
+  fill: number;
+}
+
 export interface HerdLevelFx {
   eggs: number; // nhân sản lượng trứng
   milk: number; // nhân sản lượng sữa
@@ -503,6 +528,32 @@ export interface HerdBudget {
 }
 
 const KCAL = { trung: 78, sua: 640, thit: 1900 };
+
+export function herdSummary(h: HerdState, area: number, level = 1, graze = 0): HerdSummary {
+  const bio = HERDS[h.kind];
+  const fx = herdLevelFx(level);
+  const cap = herdCapacity(area * (1 + 0.25 * (level - 1)), h.kind);
+  const need = herdNeeds(h, graze);
+  const femalesCount = Math.max(0, h.adults - h.males);
+  return {
+    label: bio.label,
+    adults: h.adults,
+    young: h.young,
+    heads: h.adults + h.young,
+    capacity: cap,
+    feedKg: need.feedKg,
+    waterL: need.water,
+    eggsPerDay: bio.eggEvery > 0 ? (femalesCount / bio.eggEvery) * 0.9 * fx.eggs : 0,
+    milkPerDay: h.lactating * bio.milkPerDay * 0.8 * fx.milk,
+    meatPerAdult: Math.round(bio.adultKg * bio.dressing * 10) / 10,
+    m2PerHead: bio.m2PerHead,
+    lactating: h.lactating,
+    pregnant: h.pregnant,
+    level,
+    fx,
+    fill: cap > 0 ? (h.adults + h.young) / cap : 9,
+  };
+}
 
 export function herdBudget(h: HerdState, graze = 0): HerdBudget {
   const bio = HERDS[h.kind];

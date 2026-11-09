@@ -21,6 +21,10 @@ export interface Room {
   herd?: import('../sim/livestock').HerdKind;
   /** Bầy của chuồng/trại: số con, mang thai, kỳ sữa, con non. */
   herdState?: import('../sim/livestock').HerdState;
+  /** Nhịp chăm sóc của ngày hôm qua, 0..1 — để UI nói được "đang được ăn bao nhiêu". */
+  herdCare?: number;
+  herdFed?: number;
+  herdWater?: number;
   name?: string;
   walled?: boolean; // false while a player-drawn room is waiting for its partitions
 }

@@ -135,6 +135,10 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const hungryCamp = stapleKcal(site.stock) + site.stock.food + site.stock.meals < pop * 2250 * 3;
     const slaughter = crowded ? 1 : hungryCamp && h.adults > 2 ? 1 : 0;
 
+    // Ghi lại nhịp ăn/uống của hôm nay để UI hiển thị được con số thật.
+    room.herdCare = care;
+    room.herdFed = need.feedKg > 0 ? Math.min(1, (fed / Math.max(0.01, need.feed)) * 1) : 1;
+    room.herdWater = need.water > 0 ? Math.min(1, drank / Math.max(0.01, need.water)) : 1;
     const fx = herdLevelFx(room.moduleLevel ?? 1);
     const tick = tickHerd(h, cap, care, s.rng, slaughter, fx);
     // Đêm xuống: cáo/chó hoang/người lạ bắt con. Chuồng kín (cấp 3) thì không.

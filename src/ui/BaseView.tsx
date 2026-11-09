@@ -7,6 +7,7 @@ import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data
 import { availableRecipes, isStapleTag, resolveInputs } from '../data/recipes';
 import { Hint } from './hints';
 import { KitchenPanel } from './KitchenPanel';
+import { HerdPanel } from './HerdPanel';
 import { ModulesPanel } from './ModulesPanel';
 import { APPLIANCES } from '../sim/power';
 import { foodFxLabel } from '../sim/diet';
@@ -53,7 +54,7 @@ const TOOLS: [Tool, string, string][] = [
   ['erase', '⌫ Bỏ khỏi phòng', 'Kéo chọn ô để tách khỏi phòng (thành hành lang/đất trống)'],
 ];
 
-export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
+export function BaseView({ s, world, site, refresh, focusPanel }: ViewProps) {
   const it = site.interior;
   const [floor, setFloor] = useState(0);
   const [sel, setSel] = useState<string | null>(null);
@@ -728,6 +729,9 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
               {room.walled === false && <span className="amber"> · đang chờ dựng vách</span>}
             </div>
             {room.module && <div className="dim">{MODULES[room.module].desc}</div>}
+            {(room.herdState || room.module === 'coop' || room.module === 'barn') && (
+              <HerdPanel s={s} world={world} site={site} room={room} />
+            )}
             {plot && (
               <div className="kv">
                 <span>Cây</span>
