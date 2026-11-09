@@ -1502,3 +1502,36 @@ table.grid tr.sel td {
 @keyframes paused-blink {
   50% { opacity: 0.25; }
 }
+
+/* Crash screen: dark, readable, one action. */
+.crash {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: var(--bg);
+  z-index: 90;
+}
+.crash-inner {
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--red);
+  border-left-width: 4px;
+  background: var(--panel);
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.crash-msg {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--panel-2);
+  color: var(--dim);
+  font: 11px var(--mono);
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow: auto;
+}
