@@ -88,6 +88,12 @@ export function nextTierGoals(s: GameState, site: Site): Goal[] {
   const cap = siteCapacity(site, site.interior.rooms.filter((r) => r.herdState).map((r) => ({ state: r.herdState!, graze: site.kind === 'field' ? 1 : 0.4 })));
   const cleanDays = site.stock.water / (pop * 3.3);
   const alive = s.survivors.filter((v) => v.status === 'alive').length;
+  // "Người của điểm này" chứ không phải "người đang có mặt": đội đi lục không được
+  // làm mục tiêu nhảy số.
+  const residents = Math.max(
+    1,
+    s.survivors.filter((v) => v.status === 'alive' && (v.commute?.home ?? v.siteId) === site.id).length,
+  );
   const techs = (s.techs ?? []).length;
   const tower = st.watchtowers ?? 0;
 
@@ -96,9 +102,9 @@ export function nextTierGoals(s: GameState, site: Site): Goal[] {
       // Dùng số người của cả căn cứ, không phải số đang có mặt: người đi lục về thì
       // mục tiêu không được nhảy số.
       id: 'self-food',
-      text: `Đất tự nuôi được ${Math.max(1, st.population)} người`,
+      text: `Đất tự nuôi được ${residents} người`,
       why: `Vườn + bầy hiện nuôi ${cap.ceiling.toFixed(1)} người; phần còn lại vẫn phải đi lục.`,
-      done: cap.ceiling >= Math.max(1, st.population),
+      done: cap.ceiling >= residents,
     },
     {
       id: 'water-buffer',

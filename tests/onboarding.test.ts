@@ -42,6 +42,9 @@ describe('onboarding checklist', () => {
     expect(second.tier).toBe(2);
     expect(second.goals.map((g) => g.id)).toContain('self-food');
     expect(second.goals.some((g) => g.why.length > 10)).toBe(true);
+    // Dân số trong mục tiêu là người của điểm, không phải người đang có mặt.
+    const food = second.goals.find((g) => g.id === 'self-food')!;
+    expect(food.text).toContain(String(late.s.survivors.filter((v) => v.status === 'alive').length));
     expect(showOnboarding(late.s, late.site)).toBe(true);
   });
 
