@@ -2,6 +2,7 @@ import { dayOf } from '../core/time';
 import { stapleKcal } from '../data/staples';
 import { baseStats, present } from '../sim/state';
 import { siteCapacity } from '../sim/scale';
+import { gridDistance } from 'h3-js';
 import type { GameState, Site } from '../sim/types';
 import type { TabId } from './shell/TopStrip';
 
@@ -182,6 +183,22 @@ export function decide(s: GameState, site: Site): Decision[] {
       text: 'Có trạm nước nhưng không ai phụ trách nước',
       action: 'Xem người',
       tab: 'people',
+    });
+  }
+
+  // Bầy đang tới gần: đây là lúc gom người, gia cố, đặt mồi — phải nằm trong danh
+  // sách việc cần làm, không chỉ một dòng log trôi qua.
+  const horde = (s.hordes ?? [])
+    .map((h) => ({ h, d: Math.min(...s.sites.map((x) => gridDistance(h.cell, x.cell))) }))
+    .filter((x) => x.d <= 4)
+    .sort((a, b) => a.d - b.d)[0];
+  if (horde) {
+    out.push({
+      id: 'horde-near',
+      level: 'bad',
+      text: `Bầy ~${horde.h.size} zombie còn cách ${horde.d} ô — gom người về, gia cố, hoặc đặt mồi ồn`,
+      action: 'Xem bản đồ',
+      tab: 'map',
     });
   }
 

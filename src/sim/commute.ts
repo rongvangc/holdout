@@ -1,5 +1,6 @@
 import { chance, range } from '../core/rng';
 import { dayOf, HOUR, isNight, MIN, timeOfDay } from '../core/time';
+import { gridDistance } from 'h3-js';
 import { shortestPath } from '../world/graph';
 import type { World } from '../world/types';
 import { ZOMBIES } from './data';
@@ -42,11 +43,21 @@ export function setCommute(s: GameState, world: World, sid: string, work: string
   return null;
 }
 
+/** Bầy đang ở sát điểm này chưa (trong 2 ô)? Người đi làm phải quay về. */
+export function hordeNear(s: GameState, siteId: string): boolean {
+  if (!s.hordes?.length) return false;
+  const cell = siteById(s, siteId).cell;
+  return s.hordes.some((h) => gridDistance(h.cell, cell) <= 2);
+}
+
 /** Destination if the person should set off now, else null. */
 export function commuteIntent(s: GameState, v: Survivor): string | null {
   const c = v.commute;
   if (!c || v.location !== 'base') return null;
   const tod = timeOfDay(s.t);
+  // Bầy tới gần: ở ngoài đường một mình lúc này là chết. Về nhà, không cần đợi 17h.
+  if (v.siteId !== c.home && hordeNear(s, c.home)) return c.home;
+  if (v.siteId === c.home && hordeNear(s, c.home)) return null;
   if (v.siteId === c.home) {
     if (!c.work) {
       v.commute = undefined;
