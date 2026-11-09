@@ -27,7 +27,7 @@ export function makeTestWorld(): World {
 }
 
 const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine'];
-const WANT_FIELD: ModuleId[] = ['garden', 'garden', 'shelter', 'latrine'];
+const WANT_FIELD: ModuleId[] = ['garden', 'garden', 'well', 'shelter', 'latrine'];
 
 
 /**
@@ -142,7 +142,10 @@ function maybeClaimField(s: GameState, world: World, base: Site, idle: string[])
   const fields = s.sites.filter((x) => x.kind === 'field').length;
   const wantFields = s.survivors.filter((v) => v.status === 'alive').length >= 9 ? 3 : 1;
   // Nhóm nhỏ vẫn phải ra ruộng được: trước đây cần 6 người rảnh nên cộng đồng 3-4 người chết đói.
-  if (!useFields || fields >= wantFields || dayOf(s.t) < 8 || idle.length < 4) return false;
+  // Chiếm ruộng là đi MỘT CHIỀU: người ở lại đó. Nếu rút 4/5 người thì căn cứ không còn
+  // ai chở nước ra → cả đội chết khát sau 2 ngày (đã xảy ra ở seed 3/5/8).
+  const pop = s.survivors.filter((v) => v.status === 'alive').length;
+  if (!useFields || fields >= wantFields || dayOf(s.t) < 8 || idle.length < 4 || pop < 7) return false;
   // Đừng mở ruộng mới khi ruộng hiện tại còn chưa ai chăm.
   for (const f of s.sites.filter((x) => x.kind === 'field')) if (present(s, f).length < 2) return false;
   if (!baseStats(s, base).workshop || s.expeditions.some((e) => e.kind === 'claim')) return false;
@@ -154,11 +157,11 @@ function maybeClaimField(s: GameState, world: World, base: Site, idle: string[])
     cloth: Math.min(6, Math.floor(base.stock.cloth)),
     scrap: Math.min(20, Math.floor(base.stock.scrap)),
     tools: Math.min(1, Math.floor(base.stock.tools)),
-    water: Math.min(30, Math.floor(base.stock.water)),
+    water: Math.min(60, Math.floor(base.stock.water)),
     rawFood: Math.min(30000, Math.floor(base.stock.rawFood)),
   };
   if (cargo.tools! < 1 || cargo.scrap! < 20 || cargo.wood! < 40) return false;
-  const team = idle.slice(0, 4);
+  const team = idle.slice(0, 2); // 2 người đủ dọn một bãi; căn cứ giữ 4-5 người
   return launchExpedition(s, world, { fromSite: base.id, members: team, target: { type: 'green', id: g.id }, mode: 'walk', cargo }) === null;
 }
 
@@ -179,7 +182,7 @@ function convoys(s: GameState, world: World, base: Site): void {
     const needFood = f.stock.food + f.stock.rawFood + f.stock.meals < pop * 2250 * 4;
     const needWater = f.stock.water < pop * 3.3 * 3 && !baseStats(s, f).well;
     const runners = present(s, base).filter((v) => v.location === 'base' && v.hp > 60 && v.role !== 'guard');
-    if ((needSeeds || needFood || needWater) && runners.length >= 4) {
+    if ((needSeeds || needFood || needWater) && runners.length >= 2) {
       const cargo: StockDelta = {
         seeds: needSeeds ? Math.floor(base.stock.seeds / 2) : 0,
         food: needFood ? Math.min(base.stock.food, 15000) : 0,

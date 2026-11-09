@@ -1025,3 +1025,32 @@ Mọi thay đổi cân bằng phải chạy lệnh này và ghi lại kết qu�
 | Mổ thịt | Ưu tiên con **đực** (giữ con cái sinh sản) |
 | Hao hụt | 0,3%/ngày, 1,5%/ngày khi care < 0,3 (thay hệ dịch bệnh đã bỏ) |
 | Trần dân số | Chỉ bầy **không lỗ calo** mới cộng phần đạm vào sức chứa của điểm (kho + cảnh báo "quá tải") |
+
+### 14.3 Nguyên nhân 7/10 ván chết đói (tìm ra 2026-11)
+
+Không phải thiếu cân bằng số — mà là **chiếm ruộng xong là chết**:
+
+| Seed | Chiếm ruộng | Người ở ruộng | Nước mang theo | Chết ngày 18–19 |
+|---|---|---|---|---|
+| 3 | D15 | 4 | 30 L (đủ 2 ngày) | 3 người (khát + đói) |
+| 5 | D16 | 4 → 0 | 0 | **4 người** |
+| 8 | D16 | 2 | 66 L | 3 người |
+
+- **Chiếm ruộng là đi một chiều**: 4 người rời căn cứ và ở lại ruộng, chỉ mang ~2 ngày nước.
+- Căn cứ còn 345 L nước nhưng `convoys()` đòi **4 người rảnh** mới chở được — mà 4 người đã đi rồi → **bế tắc**: đội ngoài ruộng chết khát, căn cứ đứng nhìn.
+- Dân sụt 5 → 1–2, không còn ai làm nông → đói kéo dài → ván chết.
+
+**Sửa** (`scripts/headless.ts`):
+1. Chỉ chiếm ruộng khi **dân ≥ 7** và chỉ đưa **2 người** (trước: 4) → căn cứ giữ 4–5 người.
+2. Chở **60 L nước** thay vì 30 (đủ ~7–10 ngày cho đội 2 người).
+3. Ngưỡng tiếp tế hạ từ **4 → 2 người rảnh** → căn cứ luôn chở được nước/lương ra ruộng.
+4. Trả **giếng** vào danh sách xây của ruộng (sau vườn) để ruộng tự có nước.
+
+**Kết quả harness 10 seed × 120 ngày: PASS cả 4 tiêu chí**
+
+| Tiêu chí | Trước | Sau |
+|---|---|---|
+| Sống ≥100 ngày | 3/10 | **10/10** |
+| Dân cuối | 0,6 | **11,7** (9–15) |
+| Chết đói sau ngày 30 | 7 ván | **0 ván** |
+| Chết do tập kích | 0% | 0% (raid vẫn xảy ra: +36/-6 ở seed 6) |
