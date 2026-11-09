@@ -98,7 +98,7 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: () => ({ wood: 10, scrap: 6 }),
     desc: 'Nấu gạo/khoai thành bữa ăn, đun sôi nước bẩn (tốn củi). Không có bếp, đồ sống chỉ ăn được một nửa năng lượng.',
     levels: [
-      { cost: { scrap: 10, stone: 8, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: nấu mẻ lớn bằng than' },
+      { cost: { scrap: 10, stone: 8, wood: 10 }, workSec: 4 * H, note: 'Cấp 2: nấu mẻ lớn, tốn ít củi hơn' },
       { cost: { stone: 20, plate: 2, wood: 8 }, workSec: 7 * H, note: 'Cấp 3: bếp cho cả điểm, đỡ tốn củi' },
     ],
   },
@@ -251,8 +251,8 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: () => ({ scrap: 12, wood: 10, tools: 1 }),
     desc: 'Nguồn nước bẩn ổn định ~1500 L/ngày. Phải cách nhà vệ sinh tối thiểu 10 m.',
     levels: [
-      { cost: { scrap: 18, rope: 6, wood: 10 }, workSec: 6 * H, note: 'Cấp 2: 2000 L/ngày' },
-      { cost: { plate: 3, gear: 1, stone: 8 }, workSec: 9 * H, note: 'Cấp 3: 2500 L/ngày, bơm tay' },
+      { cost: { scrap: 18, rope: 6, wood: 10 }, workSec: 6 * H, note: 'Cấp 2: 2025 L/ngày' },
+      { cost: { plate: 3, gear: 1, stone: 8 }, workSec: 9 * H, note: 'Cấp 3: 2550 L/ngày, bơm tay' },
     ],
   },
   watchtower: {
@@ -311,8 +311,8 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     cost: () => ({ wood: 10, scrap: 20, parts: 1 }),
     desc: 'Xe xuất phát từ điểm có chòi: tốn 0.08 L/km (thay vì 0.1) và thêm 80 kg sức chở.',
     levels: [
-      { cost: { wood: 14, scrap: 14, parts: 1 }, workSec: 4 * H, note: 'Cấp 2: 0,07 L/km, +100 kg sức chở' },
-      { cost: { plate: 2, gear: 2, parts: 2 }, workSec: 7 * H, note: 'Cấp 3: 0,06 L/km, +140 kg, sửa xe tại chỗ' },
+      { cost: { wood: 14, scrap: 14, parts: 1 }, workSec: 4 * H, note: 'Cấp 2: 0,06 L/km, +100 kg sức chở' },
+      { cost: { plate: 2, gear: 2, parts: 2 }, workSec: 7 * H, note: 'Cấp 3: 0,04 L/km, +140 kg, sửa xe tại chỗ' },
     ],
   },
   generator: {
@@ -487,10 +487,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     needsWorkshop: true,
     workSec: () => 3 * H,
     cost: () => ({ wood: 12, scrap: 14, stone: 10 }),
-    desc: 'Rèn lưỡi, đầu dụng cụ, đinh, bản lề. Cần than và Bàn thợ trước.',
+    desc: 'Rèn lưỡi, đầu dụng cụ, đinh, bản lề. Cần Bàn thợ trước.',
     levels: [
       { cost: { scrap: 24, wood: 12, stone: 10 }, workSec: 5 * H, note: 'Cấp 2: mở lưỡi thép, tấm thép, sửa vũ khí hỏng' },
-      { cost: { plate: 6, gear: 2, stone: 20 }, workSec: 9 * H, note: 'Cấp 3: mở thép tôi, nhanh gấp đôi' },
+      { cost: { plate: 6, gear: 2, stone: 20 }, workSec: 9 * H, note: 'Cấp 3: mở thép tôi, nhanh ×1,5' },
     ],
   },
   carpentry: {
@@ -517,10 +517,10 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     maxPerSite: 1,
     workSec: () => 3 * H,
     cost: () => ({ stone: 20, clay: 14, wood: 8 }),
-    desc: 'Nung than, vôi, gạch. Sinh khói — heat tăng khi chạy.',
+    desc: 'Nung vôi (cho nâng cấp) và nướng bánh mì, bánh phô mai. Sinh khói — heat tăng khi chạy.',
     levels: [
-      { cost: { stone: 30, clay: 16, wood: 10 }, workSec: 6 * H, note: 'Cấp 2: thêm gạch chịu lửa, nung gốm' },
-      { cost: { stone: 40, plate: 2 }, workSec: 10 * H, note: 'Cấp 3: nung cả đêm, sản lượng ×2' },
+      { cost: { stone: 30, clay: 16, wood: 10 }, workSec: 6 * H, note: 'Cấp 2: nướng bánh mì và bánh phô mai' },
+      { cost: { stone: 40, plate: 2 }, workSec: 10 * H, note: 'Cấp 3: nhanh ×1,5, nung cả đêm' },
     ],
   },
   tailor: {
