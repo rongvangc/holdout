@@ -97,8 +97,13 @@ describe('auto: loot expedition', () => {
 });
 
 describe('auto switches', () => {
-  it('default off and runAuto does nothing until switched on', () => {
-    expect(DEFAULT_AUTO).toEqual({ craftCore: false, loot: false, garden: false });
+  it('ván mới bật sẵn cả 3 công tắc', () => {
+    const { s } = setup();
+    expect(s.auto).toEqual({ craftCore: true, loot: true, garden: true });
+  });
+
+  it('default on (ván mới bật sẵn), tắt được từng cái', () => {
+    expect(DEFAULT_AUTO).toEqual({ craftCore: true, loot: true, garden: true });
     const { s, world, site } = setup();
     addRoom(site, 'forge', 30);
     addStock(s, site, { scrap: 200, wood: 200, food: 2250 * 4 } as never);

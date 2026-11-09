@@ -1084,3 +1084,12 @@ Test 60 ngày, chỉ bật 3 công tắc tự động (không dùng bot) cho th�
 3. **Bầy uống hết nước bẩn mà trạm lọc cần** → trạm không có gì để lọc, nước sạch cạn. → Chừa lại **3 ngày nước bẩn/người** cho trạm lọc trước khi cho bầy uống.
 
 **Giới hạn đã biết:** chỉ bật 3 công tắc thì vẫn chết vì **thiếu hạ tầng nước** (giếng/bể/lọc) — công tắc không xây nhà. Người chơi vẫn phải tự xây (hoặc bật thêm công tắc "tự xây hạ tầng" nếu làm tiếp). Bot có xây nên 10/10 ván sống hết 120 ngày.
+
+### 14.5 Ba công tắc tự động bật sẵn (2026-11)
+
+Ván mới bật sẵn cả 3 công tắc (tự chế đồ cần, tự đi lục soát, tự mở vườn + tự chiếm ruộng khi hết chỗ trong sân). Người chơi vẫn tắt được từng cái trong tab **Người**; ván cũ giữ nguyên lựa chọn đã lưu.
+
+- Bot cân bằng **tắt** cả 3 — bot đã tự lập kế hoạch, bật cùng thì hai bên giành người (dân cuối tụt 7,9 → 3,2, 3 ván chết đói).
+- Bật sẵn thì hệ thống chạy đúng: tự chiếm ruộng, tự trồng, tự gặt (test 60 ngày: harvest 41.000 kcal), tự đi lục (21–23 chuyến).
+- **Nhưng bật sẵn không bảo đảm sống**: vườn trong sân tối đa 300 m² chỉ cho ~2.900 kcal/ngày (đủ ~1,3 người), nên nhóm 5 người vẫn phải mở ruộng ngoài. Muốn sống lâu vẫn cần giếng + bể + lọc + ruộng.
+- Không nên bỏ "chừa 1 người dư" trong `autoAssign`: thử bỏ cho nhóm <4 người thì balance tụt 10/10 → 8/10 vì cả 3 người bị khoá vào vai, không còn ai đi lục soát.

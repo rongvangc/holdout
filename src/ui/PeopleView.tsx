@@ -11,6 +11,7 @@ import type { Survivor, TaskKind } from '../sim/types';
 import { ITEMS } from '../data/items';
 import { GEAR_SLOTS, SLOT_LABEL, availableGear, equip, gearLabel, insulation, packCapacity, survivorArmor, survivorWeapon } from '../sim/gear';
 import type { ViewProps } from './Game';
+import { DEFAULT_AUTO } from '../sim/automation';
 
 const TASK_LABEL: Record<TaskKind, string> = {
   sleep: 'Ngủ',
@@ -100,9 +101,9 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
         <label className="row" style={{ gap: 4 }} title="Tự chế vật tư lõi (ván, đinh, chỉ, than…) khi thiếu">
           <input
             type="checkbox"
-            checked={!!s.auto?.craftCore}
+            checked={s.auto?.craftCore ?? DEFAULT_AUTO.craftCore}
             onChange={(e) => {
-              s.auto = { ...(s.auto ?? { craftCore: false, loot: false, garden: false }), craftCore: e.target.checked };
+              s.auto = { ...(s.auto ?? { ...DEFAULT_AUTO }), craftCore: e.target.checked };
               refresh();
             }}
           />
@@ -112,9 +113,9 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
         <label className="row" style={{ gap: 4 }} title="Tự lập đội đi lục soát khi có người rảnh và còn nhà chưa vét">
           <input
             type="checkbox"
-            checked={!!s.auto?.loot}
+            checked={s.auto?.loot ?? DEFAULT_AUTO.loot}
             onChange={(e) => {
-              s.auto = { ...(s.auto ?? { craftCore: false, loot: false, garden: false }), loot: e.target.checked };
+              s.auto = { ...(s.auto ?? { ...DEFAULT_AUTO }), loot: e.target.checked };
               refresh();
             }}
           />
@@ -124,9 +125,9 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
         <label className="row" style={{ gap: 4 }} title="Tự mở thêm vườn khi kho lương thực dưới 20 ngày">
           <input
             type="checkbox"
-            checked={!!s.auto?.garden}
+            checked={s.auto?.garden ?? DEFAULT_AUTO.garden}
             onChange={(e) => {
-              s.auto = { ...(s.auto ?? { craftCore: false, loot: false, garden: false }), garden: e.target.checked };
+              s.auto = { ...(s.auto ?? { ...DEFAULT_AUTO }), garden: e.target.checked };
               refresh();
             }}
           />

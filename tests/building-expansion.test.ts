@@ -74,6 +74,8 @@ describe('herb garden', () => {
     const base = mainSite(s);
     for (const v of ALIVE(s)) v.role = 'farmer';
     const room = addModule(base, 'h2', 'herb_garden', 24, true);
+    // Công tắc tự động mặc định BẬT; tắt để chỉ đo việc trồng của nông dân.
+    s.auto = { craftCore: false, loot: false, garden: false };
     base.stock.seeds = 0;
     for (let i = 0; i < 8; i++) advanceTo(s, world, s.t + DAY);
     expect(base.plots[room.id]).toBeDefined();

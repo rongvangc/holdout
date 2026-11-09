@@ -14,6 +14,7 @@ import { issueGear } from './gear';
 import { DEFAULT_AUTO } from './automation';
 import { isActive, makeSurvivor, skill } from './survivors';
 import type { GameState, LogEntry, Site, StockDelta, Survivor } from './types';
+import { migrateVehicles } from './vehicles';
 
 export const START_SURVIVORS = 5;
 const LOG_MAX = 500;
@@ -143,7 +144,11 @@ export function migrate(raw: unknown): GameState {
   o.decoy ??= null;
   if (o.version === 2) {
     // Saves made before the item registry grew are missing every new id.
-    for (const site of o.sites ?? []) site.stock = normalizeStock(site.stock);
+    for (const site of o.sites ?? []) {
+      site.stock = normalizeStock(site.stock);
+      // Xưa chỉ có một con số `stock.vehicle`; nay mỗi xe là một vật thể.
+      migrateVehicles(site);
+    }
     return o;
   }
   const site: Site = {
@@ -497,6 +502,9 @@ export function autoAssign(s: GameState, only?: Site): void {
     for (const [role, k] of want) {
       const sk = ROLES[role].skill;
       const ranked = [...free].sort((a, b) => (sk ? skill(b, sk) - skill(a, sk) : 0));
+      // Luôn chừa 1 người dư cho việc phát sinh (đi lục, dựng, chữa cháy). Đã thử bỏ
+      // chỗ chừa này cho nhóm <4 người: balance tụt 10/10 → 8/10 (2 ván chết đói) vì
+      // cả 3 người bị khoá vào vai, không còn ai đi lục soát. Đừng bỏ.
       for (const v of ranked.slice(0, Math.min(k, Math.max(0, free.size - 1)))) {
         v.role = role;
         free.delete(v);

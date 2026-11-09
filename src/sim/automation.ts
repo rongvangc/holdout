@@ -25,7 +25,9 @@ export interface AutoSettings {
   garden: boolean;
 }
 
-export const DEFAULT_AUTO: AutoSettings = { craftCore: false, loot: false, garden: false };
+// Bật sẵn cho ván mới: người chơi không phải nhớ bật 3 công tắc mới sống được.
+// Tắt được từng cái trong tab Người; ván cũ giữ nguyên lựa chọn đã lưu.
+export const DEFAULT_AUTO: AutoSettings = { craftCore: true, loot: true, garden: true };
 
 /** Mức cần có của vật tư lõi. Dưới mức này thì chế thêm. */
 const CORE_TARGETS: [ItemId, number][] = [

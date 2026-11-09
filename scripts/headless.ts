@@ -466,6 +466,8 @@ export function runBot(days: number, seed = 11, verbose = false, fields = true):
     .filter((b) => b.area > 250 && b.area < 900)
     .sort((a, b) => a.centroid[0] ** 2 + a.centroid[1] ** 2 - (b.centroid[0] ** 2 + b.centroid[1] ** 2))[0];
   const s = newGame(world, baseB.id, seed, new Date(2026, 5, 1));
+  // Bot THAY THẾ 3 công tắc tự động (nó tự lập kế hoạch); để cả hai bật thì giành người.
+  s.auto = { craftCore: false, loot: false, garden: false };
   let t = s.t;
   while (dayOf(t) <= days && !s.gameOver) {
     // Bot plays at 07:00 and 13:00 each day.
