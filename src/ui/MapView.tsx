@@ -1,4 +1,11 @@
 import * as maplibregl from 'maplibre-gl';
+// maplibre v6 resolves its worker from its own module URL, which a bundler
+// rewrites. Shipping the worker as an asset and pointing at it explicitly is the
+// documented fix: without it `vite build` ships a map that throws
+// "Worker failed to load" while `vite dev` works.
+import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+
+maplibregl.setWorkerUrl(mapWorkerUrl);
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { dayOf, fmtClock, fmtDuration } from '../core/time';
 import { CATS } from '../data/categories';
