@@ -944,3 +944,50 @@ Kết quả 120 ngày × 5 seed: **4/5 sống hết**, thu hoạch **114k–229k
 - Vì vậy chăn nuôi phải được tính vào ngân sách như **nguồn đạm + tinh thần + bảo hiểm**, không phải nguồn kcal. `herdBudget()` trả về `gain / feed / net / proteinServings`, và kho hiện `±X kcal/ngày` cho từng bầy để người chơi thấy mình đang lỗ hay lãi.
 - **Quy tắc ăn**: bầy chỉ ăn phần `rawFood` **dư trên 10 ngày lương của người** — không bao giờ lấy từ khẩu phần.
 - Trần dân số theo lãnh thổ (mục 6 của kế hoạch) **không cộng kcal gia súc**; chỉ cộng phần đạm: mỗi 5 con dê trên ruộng ≈ 1 người ăn.
+
+---
+
+## 19. Lương thực theo vùng (`data/staples.ts`)
+
+Trước đây mọi thứ tinh bột là **một con số** `rawFood` ("Gạo/khoai sống"), kèm ghi chú
+trong code rằng *"Vietnamese homes keep a sack of rice"* — trong khi bản đồ là OSM và
+có thể chơi ở bất kỳ đâu. Nay lương thực có loại, và loại phụ thuộc **vĩ độ nơi bạn chọn**.
+
+### 19.1 Năm loại lương thực
+
+| Loại | kcal/kg | Hỏng/ngày | Vùng |
+|---|---|---|---|
+| Gạo | 3600 | 2% | nhiệt đới (|lat| < 23,5) |
+| Sắn | 1600 | 12% | nhiệt đới (loại phụ) |
+| Lúa mì | 3400 | 2% | ôn đới (23,5–45°) |
+| Ngô | 3600 | 2,5% | ôn đới (loại phụ) |
+| Khoai tây | 770 | 6% | hàn đới (> 45°) |
+
+Đánh đổi có thật: **khoai tây nặng gấp ~4,7 lần gạo cho cùng một lượng kcal** và hỏng
+nhanh gấp ba. Vùng lạnh trồng được khoai nhưng phải ở gần kho hoặc ăn nhanh.
+
+### 19.2 Chúng đến từ đâu
+
+| Nguồn | Trước | Nay |
+|---|---|---|
+| Kho khởi đầu | 20.000 kcal `rawFood` | lương thực của vùng (quy đổi kg) |
+| Vườn (thu hoạch) | `rawFood` (kcal) | **lương thực của vùng** (kg) |
+| Lục soát | `rawFood` | **lương thực của vùng**, 25% ra loại phụ; lượng kcal giữ nguyên |
+| Bếp (nấu món) | `rawFood` | **bất kỳ loại nào** |
+
+### 19.3 Công thức nhận `@staple`
+
+Món ăn không gắn với một loại cụ thể. Công thức khai báo `@staple` với số lượng **kcal**,
+và `resolveInputs()` chọn loại mà điểm đó có nhiều kcal nhất (thiếu thì lấy loại của vùng).
+`resolveInputs()` quy đổi kcal → kg theo đúng loại: 3.000 kcal là **0,83 kg gạo** nhưng
+**3,9 kg khoai tây**. Nên UI báo giá bằng kg thật, không phải kcal trừu tượng.
+
+`rawFood` vẫn tồn tại như một kho kcal cũ để save cũ không hỏng; mọi phép tính "trời ơi
+còn mấy ngày ăn" đều dùng `stapleKcal(stock)` nên cộng cả hai.
+
+### 19.4 Kiểm chứng
+
+- Cô lập: một điểm chỉ có `gao` (không food/meals/rawFood) — 5 người sống 13 ngày,
+  kcal/người 1.000–3.000, **0 chết đói**.
+- Test `tests/staples.test.ts`: phân vùng theo vĩ độ, quy đổi kcal→kg, đội ở vùng lạnh
+  nấu được bằng khoai tây, và không còn công thức nào hard-code `rawFood`.

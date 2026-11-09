@@ -1,4 +1,5 @@
 import { dayOf, fmtClock } from '../../core/time';
+import { stapleKcal } from '../../data/staples';
 import { baseStats, present } from '../../sim/state';
 import type { GameState, Site } from '../../sim/types';
 import { Icon, SITE_IMG, TAB_IMG } from '../icons';
@@ -46,7 +47,7 @@ export function TopStrip({
   const here = present(s, site).length;
   const alive = s.survivors.filter((v) => v.status === 'alive');
   const stock = site.stock;
-  const foodDays = (stock.food + stock.meals + stock.rawFood) / (Math.max(1, st.population) * 2250);
+  const foodDays = (stock.food + stock.meals + stapleKcal(stock)) / (Math.max(1, st.population) * 2250);
   const waterDays = stock.water / (Math.max(1, st.population) * 3.3);
 
   return (

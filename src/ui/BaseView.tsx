@@ -4,7 +4,7 @@ import { canPlace, CELL_FLOOR, CELL_YARD, type Room } from '../base/interior';
 import { ITEMS, type ItemId, type Stock } from '../data/items';
 import { MODULES, type ModuleId } from '../data/modules';
 import { DESIGN_LIMITS, STRUCTS, structureEffects, type StructId } from '../data/structures';
-import { availableRecipes } from '../data/recipes';
+import { availableRecipes, isStapleTag, resolveInputs } from '../data/recipes';
 import { Hint } from './hints';
 import { KitchenPanel } from './KitchenPanel';
 import { ModulesPanel } from './ModulesPanel';
@@ -37,10 +37,10 @@ const strHash = (s: string) => {
   return h;
 };
 
-const fmtCost = (c: Partial<Stock>) =>
+const fmtCost = (c: Partial<Stock>, labelOf?: (id: string) => string | null) =>
   Object.entries(c)
     .filter(([, v]) => v)
-    .map(([k, v]) => `${Math.round(v! * 10) / 10} ${ITEMS[k as ItemId].label.toLowerCase()}`)
+    .map(([k, v]) => `${Math.round((v ?? 0) * 10) / 10} ${(labelOf?.(k) ?? ITEMS[k as ItemId].label).toLowerCase()}`)
     .join(', ');
 
 type Tool = 'select' | 'room' | 'erase' | 'merge' | 'demolish' | StructId;
@@ -861,7 +861,8 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
               </button>
             ))}
             {recipes.map((r) => {
-              const afford = canAfford(site, Object.fromEntries(r.in));
+              const resolved = resolveInputs(r, site.stock, s.latitude);
+              const afford = canAfford(site, Object.fromEntries(resolved));
               const outKg = (ITEMS[r.out]?.kgPerUnit ?? 0) * r.qty;
               return (
                 <button
@@ -880,7 +881,9 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
                   <span>
                     {ITEMS[r.out]?.label ?? r.out} ×{r.qty}
                     <br />
-                    <span className={afford ? 'faint' : 'amber'}>{fmtCost(Object.fromEntries(r.in))}</span>
+                    <span className={afford ? 'faint' : 'amber'}>
+                      {fmtCost(Object.fromEntries(resolved), (id) => (isStapleTag(id) ? 'lương thực' : null))}
+                    </span>
                     <Hint text={r.note ?? (ITEMS[r.out]?.desc ?? undefined)} />
                   </span>
                   <span className="dim">{outKg ? `${outKg.toFixed(1)} kg` : ''}</span>

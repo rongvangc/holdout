@@ -44,6 +44,8 @@ describe('craft data', () => {
       expect(r.level).toBeGreaterThanOrEqual(1);
       expect(r.level).toBeLessThanOrEqual(maxStationLevel(r.station));
       for (const [id, n] of r.in) {
+        // '@staple' is a tag resolved at queue time to whatever starch the site has.
+        if (id === '@staple') continue;
         expect(ITEMS[id], `input ${id} of ${r.id}`).toBeDefined();
         expect(n).toBeGreaterThan(0);
       }

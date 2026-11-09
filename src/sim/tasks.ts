@@ -4,11 +4,12 @@ import { DAY, HOUR, isNight } from '../core/time';
 import { ITEMS, type FoodFx, type ItemDef } from '../data/items';
 import { applyFoodFx, edibleStock, isVegetable, pushMeal } from './diet';
 import { ANTIBIOTIC_RELIEF, ANTIBIOTIC_SKILL, bleedOf, canTreatSepsis, findMed, isBleeding, medKind, triageOrder } from './medical';
+import { regionStaple, stapleKcal } from '../data/staples';
 import { CROPS, ROLES, SKILLS, SLEEP_BED_PER_HOUR, SLEEP_FLOOR_PER_HOUR, TEND_H_PER_M2_DAY, type Intensity, type SkillId } from './data';
 import { activeProject, applyBuildWork, projectSkill } from './build';
 import { releaseFromQuarantine } from './lifecycle';
 import { arrive, commuteIntent } from './commute';
-import { addStock, baseStats, log, siteOf, take, type BaseStats } from './state';
+import { addStock, baseStats, log, siteOf, take, takeStapleKcal, type BaseStats } from './state';
 import { gainXp, hasTrait, skill, speed } from './survivors';
 import type { GameState, Site, Survivor, Task, TaskKind } from './types';
 
@@ -58,6 +59,8 @@ export function finishTask(s: GameState, v: Survivor): void {
     case 'cook': {
       const bonus = 1 + 0.08 * skill(v, 'cooking');
       addStock(s, site, { meals: (task.amount ?? 0) * f * bonus });
+      // Phụ phẩm bếp: ~5% kcal nấu thành cám cho gia súc (không lấy từ phần ăn).
+      addStock(s, site, { cam: ((task.amount ?? 0) * f * bonus * 0.05) / 3000 });
       if (f < 1) addStock(s, site, { rawFood: (task.amount ?? 0) * (1 - f) });
       xp(s, v, 'cooking', h);
       break;
@@ -114,14 +117,19 @@ export function finishTask(s: GameState, v: Survivor): void {
           log(s, `${site.name}: thu hoạch dược liệu +${medicine.toFixed(1)} liều thuốc` + (bandage > 0 ? ` +${bandage.toFixed(1)} băng gạc.` : '.'), 'good', { medicine, bandage });
         } else {
           const kcal = CROPS[plot.crop].kcalPerM2 * area * baseStats(s, site).gardenYield;
+          // Vườn trồng ra lương thực của vùng: gạo/lúa mì/khoai tuỳ vĩ độ người chơi chọn.
+          const staple = regionStaple(s.latitude);
+          const stapleKg = kcal / Math.max(1, ITEMS[staple]?.kcal ?? 3000);
           // Giống thu lại = 1 gói / 150 m², gieo tốn 1 gói/plot → vụ sau dư giống để mở rộng.
           const seeds = Math.max(1, Math.round(area / 100));
           // Rau muống/khoai còn cho rau tươi: nguyên liệu cho món ăn và nguồn vitamin.
           const veg = plot.crop === 'rau' ? Math.round((area / 60) * 10) / 10 : Math.round((area / 200) * 10) / 10;
-          addStock(s, site, { rawFood: kcal, seeds, rau: veg });
+          // Rơm/thân cây sau thu = cám cho gia súc (0,3 kg mỗi 100 m²).
+          const straw = Math.round((area / 100) * 0.3 * 10) / 10;
+          addStock(s, site, { [staple]: stapleKg, seeds, rau: veg, cam: straw });
           s.stats.harvestedKcal += kcal;
           log(s, `${site.name}: thu hoạch ${CROPS[plot.crop].label} +${Math.round(kcal).toLocaleString('vi')} kcal (giữ lại ngọn/dây để trồng tiếp).`, 'good', {
-            rawFood: kcal,
+            [staple]: stapleKg,
             seeds,
           });
         }
@@ -316,13 +324,13 @@ function eat(s: GameState, v: Survivor, site: Site, st: BaseStats): boolean {
     mainKind ||= extra.kind;
     if (extra.veg) site.lastVegDay = Math.floor(s.t / DAY) + 1;
   }
-  if (site.stock.rawFood > 0 && got < portion) mainKind ||= 'rawFood';
+  if (stapleKcal(site.stock) > 0 && got < portion) mainKind ||= regionStaple(s.latitude);
   if (mainKind) pushMeal(site, mainKind);
   // Rau muống/khoai từ vườn nằm trong rawFood, và cơm nấu từ đó — cả hai đều là nguồn vitamin C.
   if (mainKind === 'meals' || mainKind === 'rawFood') site.lastVegDay = Math.floor(s.t / DAY) + 1;
-  if (got < portion * 0.5 && site.stock.rawFood > 0) {
+  if (got < portion * 0.5 && stapleKcal(site.stock) > 0) {
     // Raw rice/potato without a kitchen: half the energy, upset stomach risk.
-    const raw = take(site, 'rawFood', (portion - got) * 2);
+    const raw = takeStapleKcal(site, (portion - got) * 2);
     got += raw * 0.5;
     if (!st.kitchen && chance(s.rng, 0.03)) v.sickDays = Math.max(v.sickDays, 2);
   }
@@ -376,8 +384,14 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
       return true;
     }
     case 'cook': {
-      if (st.kitchen && stock.rawFood >= 300 && stock.wood >= 0.5 && stock.meals < pop * 2200) {
-        const amount = take(site, 'rawFood', 3000 * workMult(s, v, 'cooking', site));
+      const staple = regionStaple(s.latitude);
+      const stapleKcal = Math.max(1, ITEMS[staple]?.kcal ?? 3000);
+      const stapleHave = (stock[staple] ?? 0) * stapleKcal + (stock.rawFood ?? 0);
+      if (st.kitchen && stapleHave >= 300 && stock.wood >= 0.5 && stock.meals < pop * 2200) {
+        // Lấy từ lương thực của vùng trước, còn lại lấy từ kho kcal cũ.
+        const want = 3000 * workMult(s, v, 'cooking', site);
+        const fromStaple = Math.min(stock[staple] ?? 0, want / stapleKcal);
+        const amount = take(site, staple, fromStaple) * stapleKcal + take(site, 'rawFood', want - fromStaple * stapleKcal);
         take(site, 'wood', 0.5);
         start(s, v, 'cook', 'light', 1500, { amount });
         return true;
@@ -409,7 +423,7 @@ function roleTask(s: GameState, v: Survivor, site: Site, st: BaseStats, night: b
           // (90 ngày) vì khoai cho 12 kcal/m²/ngày so với rau 3,6 — gấp hơn 3 lần.
           // Lỗi cũ: hễ kho dưới 30 ngày lương là gieo rau cho TOÀN BỘ khoảnh, đúng lúc
           // cần calo nhất lại trồng cây ít calo nhất → năng suất chỉ còn 1/3.
-          const storedDays = (stock.food + stock.rawFood + stock.meals) / (pop * 2250);
+          const storedDays = (stock.food + stapleKcal(stock) + stock.meals) / (pop * 2250);
           const urgent = storedDays < 12; // còn quá ít thì dồn hết sang rau (25 ngày)
           // 1/3 số khoảnh giữ rau để có thu hoạch rải đều (mỗi ~7 ngày một khoảnh chín),
           // 2/3 trồng khoai — cây calo. Trước đây hoặc toàn rau (đói) hoặc toàn khoai

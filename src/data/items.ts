@@ -2,6 +2,7 @@ import { withDerivedCaliber } from './calibers';
 import { withDerivedArmor, withDerivedAttack, withDerivedInsulation, withDerivedWeaponClass } from './item-fields';
 import { GENERATED_ITEMS } from './items.generated';
 import { FOOD_ITEMS } from './dishes';
+import { STAPLES } from './staples';
 import { MATERIALS } from './materials';
 
 /**
@@ -102,6 +103,7 @@ const CORE: Record<string, ItemDef> = {
 const BASE_ITEMS: Record<string, ItemDef> = {
   ...GENERATED_ITEMS,
   ...MATERIALS,
+  ...STAPLES,
   ...FOOD_ITEMS,
   ...CORE,
 };

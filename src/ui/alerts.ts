@@ -1,5 +1,7 @@
 import { dayOf } from '../core/time';
+import { stapleKcal } from '../data/staples';
 import { baseStats, present } from '../sim/state';
+import { siteCapacity } from '../sim/scale';
 import type { GameState, Site } from '../sim/types';
 import type { TabId } from './shell/TopStrip';
 
@@ -29,7 +31,7 @@ export const MAX_DECISIONS = 3;
 const days = (site: Site, population: number) => {
   const pop = Math.max(1, population);
   return {
-    food: (site.stock.food + site.stock.meals + site.stock.rawFood) / (pop * 2250),
+    food: (site.stock.food + site.stock.meals + stapleKcal(site.stock)) / (pop * 2250),
     water: site.stock.water / (pop * 3.3),
   };
 };
@@ -180,6 +182,20 @@ export function decide(s: GameState, site: Site): Decision[] {
       text: 'Có trạm nước nhưng không ai phụ trách nước',
       action: 'Xem người',
       tab: 'people',
+    });
+  }
+
+  // Vượt sức chứa của lãnh thổ: thêm người mà không thêm đất thì chỉ ăn mòn dự trữ.
+  const herds = site.interior.rooms.filter((r) => r.herdState).map((r) => ({ state: r.herdState!, graze: site.kind === 'field' ? 1 : 0.4 }));
+  const cap = siteCapacity(site, herds);
+  if (pop > cap.ceiling + 0.5) {
+    out.push({
+      id: 'over-capacity',
+      level: 'warn',
+      text: `Dân ${pop} nhưng lãnh thổ chỉ nuôi ${cap.ceiling.toFixed(0)} — mở thêm ruộng`,
+      action: 'Xem',
+      tab: 'base',
+      panel: 'modules',
     });
   }
 

@@ -1,5 +1,6 @@
 import type { SkillId } from '../sim/data';
 import { ITEMS, type ItemId } from './items';
+import { regionStaple, STAPLE_IDS } from './staples';
 import { MODULES, type ModuleId } from './modules';
 
 export interface Recipe {
@@ -41,23 +42,23 @@ const MATERIAL_RECIPES: Recipe[] = [
 
 /** Cooking and preserving. Outputs feed the existing eat logic (meals / food). */
 const FOOD_RECIPES: Recipe[] = [
-  { id: 'r_meals', out: 'meals', qty: 3000, station: 'kitchen', level: 1, in: [['rawFood', 3000], ['water', 2], ['wood', 0.5]], workSec: 25 * MIN, skill: 'cooking', note: 'Nấu một mẻ cơm cho cả điểm' },
-  { id: 'r_meals_big', out: 'meals', qty: 8000, station: 'kitchen', level: 2, in: [['rawFood', 8000], ['water', 5], ['wood', 1]], workSec: 45 * MIN, skill: 'cooking', note: 'Bếp cấp 2: nấu mẻ lớn bằng than' },
-  { id: 'r_dry', out: 'food', qty: 4000, station: 'smokehouse', level: 1, in: [['rawFood', 4000], ['salt', 1], ['wood', 2]], workSec: 3 * HOUR, skill: 'cooking', note: 'Hun khói: để được hàng chục ngày' },
+  { id: 'r_meals', out: 'meals', qty: 3000, station: 'kitchen', level: 1, in: [['@staple', 3000], ['water', 2], ['wood', 0.5]], workSec: 25 * MIN, skill: 'cooking', note: 'Nấu một mẻ cơm cho cả điểm' },
+  { id: 'r_meals_big', out: 'meals', qty: 8000, station: 'kitchen', level: 2, in: [['@staple', 8000], ['water', 5], ['wood', 1]], workSec: 45 * MIN, skill: 'cooking', note: 'Bếp cấp 2: nấu mẻ lớn bằng than' },
+  { id: 'r_dry', out: 'food', qty: 4000, station: 'smokehouse', level: 1, in: [['@staple', 4000], ['salt', 1], ['wood', 2]], workSec: 3 * HOUR, skill: 'cooking', note: 'Hun khói: để được hàng chục ngày' },
 ];
 
 /** Cooking: rawFood is the bulk, one fresh ingredient is what makes it a meal. */
 const DISH_RECIPES: Recipe[] = [
-  { id: 'rd_com', out: 'mon_com', qty: 4, station: 'kitchen', level: 1, in: [['rawFood', 3600], ['water', 2]], workSec: 20 * MIN, skill: 'cooking' },
-  { id: 'rd_com_rau', out: 'mon_com_rau', qty: 3, station: 'kitchen', level: 1, in: [['rawFood', 2800], ['rau', 0.7], ['water', 2]], workSec: 25 * MIN, skill: 'cooking' },
-  { id: 'rd_chao', out: 'mon_chao', qty: 2, station: 'kitchen', level: 1, in: [['rawFood', 1100], ['water', 5]], workSec: 20 * MIN, skill: 'cooking' },
-  { id: 'rd_khoai', out: 'mon_khoai', qty: 3, station: 'kitchen', level: 1, in: [['rawFood', 2200], ['water', 2]], workSec: 15 * MIN, skill: 'cooking' },
-  { id: 'rd_canh', out: 'mon_canh', qty: 3, station: 'kitchen', level: 1, in: [['rau', 1], ['rawFood', 250], ['water', 4], ['salt', 0.1]], workSec: 15 * MIN, skill: 'cooking' },
+  { id: 'rd_com', out: 'mon_com', qty: 4, station: 'kitchen', level: 1, in: [['@staple', 3600], ['water', 2]], workSec: 20 * MIN, skill: 'cooking' },
+  { id: 'rd_com_rau', out: 'mon_com_rau', qty: 3, station: 'kitchen', level: 1, in: [['@staple', 2800], ['rau', 0.7], ['water', 2]], workSec: 25 * MIN, skill: 'cooking' },
+  { id: 'rd_chao', out: 'mon_chao', qty: 2, station: 'kitchen', level: 1, in: [['@staple', 1100], ['water', 5]], workSec: 20 * MIN, skill: 'cooking' },
+  { id: 'rd_khoai', out: 'mon_khoai', qty: 3, station: 'kitchen', level: 1, in: [['@staple', 2200], ['water', 2]], workSec: 15 * MIN, skill: 'cooking' },
+  { id: 'rd_canh', out: 'mon_canh', qty: 3, station: 'kitchen', level: 1, in: [['rau', 1], ['@staple', 250], ['water', 4], ['salt', 0.1]], workSec: 15 * MIN, skill: 'cooking' },
   { id: 'rd_rau_xao', out: 'mon_rau_xao', qty: 2, station: 'kitchen', level: 1, in: [['rau', 1], ['oil', 0.2]], workSec: 15 * MIN, skill: 'cooking' },
   { id: 'rd_trung', out: 'mon_trung_chien', qty: 2, station: 'kitchen', level: 1, in: [['trung', 6], ['oil', 0.1]], workSec: 10 * MIN, skill: 'cooking' },
   { id: 'rd_dau_hu', out: 'mon_dau_hu', qty: 3, station: 'kitchen', level: 1, in: [['dau', 1], ['water', 3], ['salt', 0.1]], workSec: 40 * MIN, skill: 'cooking' },
-  { id: 'rd_ca_kho', out: 'mon_ca_kho', qty: 3, station: 'kitchen', level: 2, in: [['ca', 1.5], ['rawFood', 600], ['salt', 0.3]], workSec: 90 * MIN, skill: 'cooking', note: 'Kho lâu, cần bếp cấp 2' },
-  { id: 'rd_thit_kho', out: 'mon_thit_kho', qty: 3, station: 'kitchen', level: 2, in: [['thit', 1.5], ['rawFood', 600], ['salt', 0.4]], workSec: 2 * HOUR, skill: 'cooking', note: 'Món đám cưới. Cần bếp cấp 2' },
+  { id: 'rd_ca_kho', out: 'mon_ca_kho', qty: 3, station: 'kitchen', level: 2, in: [['ca', 1.5], ['@staple', 600], ['salt', 0.3]], workSec: 90 * MIN, skill: 'cooking', note: 'Kho lâu, cần bếp cấp 2' },
+  { id: 'rd_thit_kho', out: 'mon_thit_kho', qty: 3, station: 'kitchen', level: 2, in: [['thit', 1.5], ['@staple', 600], ['salt', 0.4]], workSec: 2 * HOUR, skill: 'cooking', note: 'Món đám cưới. Cần bếp cấp 2' },
   { id: 'rd_banh_mi', out: 'mon_banh_mi', qty: 6, station: 'kiln', level: 2, in: [['bot', 1], ['water', 2]], workSec: 2 * HOUR, skill: 'cooking', note: 'Cần lò nung cấp 2' },
   { id: 'r_pho_mai', out: 'pho_mai', qty: 2, station: 'kitchen', level: 2, in: [['sua', 4], ['salt', 0.2]], workSec: 90 * MIN, skill: 'cooking', note: 'Sữa để được lâu: phô mai giữ hàng tháng' },
   { id: 'rd_dua_muoi', out: 'mon_dua_muoi', qty: 6, station: 'kitchen', level: 1, in: [['rau', 2], ['salt', 0.4], ['dirtyWater', 2]], workSec: 4 * HOUR, skill: 'cooking', note: 'Ủ chua: để được hàng tháng, có vitamin' },
@@ -166,6 +167,44 @@ function upgradeRecipes(): Recipe[] {
 export const RECIPES: Recipe[] = [...MATERIAL_RECIPES, ...FOOD_RECIPES, ...DISH_RECIPES, ...upgradeRecipes(), ...derivedRecipes()];
 
 export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+
+/** A recipe input that any bulk starch satisfies: rice, wheat, potatoes, maize… */
+export const STAPLE_TAG = '@staple';
+
+export const isStapleTag = (id: string) => id === STAPLE_TAG;
+
+/**
+ * `@staple` amounts are always in **kcal**, because that is what a recipe actually
+ * needs. Staples are stored in kg (potatoes are mostly water), so the resolved
+ * quantity is converted: 3000 kcal of rice is 0.83 kg, of potatoes 3.9 kg.
+ */
+export const stapleQty = (id: ItemId, kcalNeeded: number): number =>
+  id === 'rawFood' ? kcalNeeded : kcalNeeded / Math.max(1, ITEMS[id]?.kcal ?? 3000);
+
+/**
+ * Turn `@staple` into a real item id for this site: the staple it actually has the
+ * most calories of, else the region's own staple (so the button still explains what
+ * you are missing). Recipes never have to know which grain a player is eating.
+ */
+export function resolveInputs(
+  recipe: Recipe,
+  stock: Partial<Record<string, number>>,
+  latitude: number,
+): [ItemId, number][] {
+  let best: string | null = null;
+  let bestKcal = 0;
+  for (const id of STAPLE_IDS) {
+    const n = stock[id] ?? 0;
+    if (n <= 0) continue;
+    const kcal = id === 'rawFood' ? 1 : (ITEMS[id]?.kcal ?? 0);
+    if (n * kcal > bestKcal) {
+      bestKcal = n * kcal;
+      best = id;
+    }
+  }
+  const chosen = best ?? regionStaple(latitude);
+  return recipe.in.map(([id, n]) => [isStapleTag(id) ? chosen : id, isStapleTag(id) ? stapleQty(chosen, n) : n] as [ItemId, number]);
+}
 
 /** Recipes a station can produce at a given level. */
 export function recipesFor(station: ModuleId, level: number): Recipe[] {

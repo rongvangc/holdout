@@ -9,8 +9,10 @@ import { describeWeapon, weaponDefense, wearWeapon } from './equipment';
 import { armourAgainst, killShare } from './combat';
 import { survivorWeapon } from './gear';
 import { ITEMS } from '../data/items';
+import { PERISHABLE_STAPLES, STAPLE_IDS, stapleKcal } from '../data/staples';
 import { FEATURES } from './config';
 import { chargeBatteries, planPower } from './power';
+import { raidBudget } from './scale';
 
 /** Đêm phát tín hiệu liên tục cần để được cứu. */
 export const RESCUE_DAYS = 7;
@@ -18,7 +20,7 @@ import { HERDS, herdCapacity, herdFor, herdNeeds, startingHerd, tickHerd } from 
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
-import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take } from './state';
+import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take, takeStapleKcal } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
 import type { GameState, Site, Survivor, Weather } from './types';
 import { densityMult, effectiveDanger, hordeSize, nextHordeCell, zombieType } from './zombies';
@@ -83,9 +85,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     if (!room.herdState) room.herdState = startingHerd(room.herd, cap);
     const h = room.herdState;
 
-    // Chăm = đủ ăn + đủ uống. Cỏ ở ruộng là miễn phí; trong sân phố chỉ có 40%.
-    const graze = site.kind === 'field' ? 1 : 0.4;
-    const need = herdNeeds(h, graze);
+    // Chăn thả thật: chỉ có cỏ khi quanh điểm có bãi cỏ/ruộng đủ rộng (≥5.000 m² trong 1 km).
+    const pasture = site.kind === 'field' ? 1 : world.greens.some(
+      (g) => g.area >= 5000 && Math.hypot(g.centroid[0] - site.centroid[0], g.centroid[1] - site.centroid[1]) <= 1000,
+    ) ? 1 : 0.3;
+    const need = herdNeeds(h, pasture);
     const pop = Math.max(1, home.length);
     const fromDirty = take(site, 'dirtyWater', Math.min(need.water, site.stock.dirtyWater));
     const cleanReserve = site.stock.water - pop * 3.3 * 3;
@@ -93,22 +97,33 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const drank = fromDirty + fromClean;
     // Không bao giờ lấy từ khẩu phần ăn của người: chỉ cho ăn phần dư trên 10 ngày lương.
     const humanReserve = pop * 2250 * 10;
-    const surplus = Math.max(0, site.stock.rawFood - humanReserve);
+    const surplus = Math.max(0, stapleKcal(site.stock) - humanReserve);
     const fed = Math.min(need.feed, surplus);
-    if (fed > 0) take(site, 'rawFood', fed);
+    if (fed > 0) takeStapleKcal(site, fed);
     // Người chăm có skill Chăn nuôi thì bầy khoẻ hơn.
     const husbandry = home.reduce((a, m) => a + skill(m, 'husbandry'), 0) / pop;
+    // Một người chăm ~10 con; thiếu người thì bầy kém đi dù đủ ăn.
+    const heads = h.adults + h.young * 0.4;
+    const herdersNeeded = Math.max(1, Math.ceil(heads / 10));
+    const herders = home.filter((m) => m.role === 'farmer').length;
+    const labour = Math.min(1, 0.4 + 0.6 * (herders / herdersNeeded));
     const care = Math.max(
       0,
-      Math.min(1, (0.55 * Math.min(1, fed / Math.max(0.01, need.feed * (1 - graze))) + 0.45 * Math.min(1, drank / Math.max(0.01, need.water))) * (1 + 0.1 * ((room.moduleLevel ?? 1) - 1)) * (1 + 0.05 * husbandry)),
+      Math.min(1, (0.55 * Math.min(1, fed / Math.max(0.01, need.feed)) + 0.45 * Math.min(1, drank / Math.max(0.01, need.water))) * (1 + 0.1 * ((room.moduleLevel ?? 1) - 1)) * (1 + 0.05 * husbandry) * labour),
     );
 
     // Mổ thịt khi bầy vượt sức chứa hoặc khi kho lương thực cạn (giữ lại 2 con giống).
     const crowded = h.adults + h.young > cap;
-    const hungryCamp = site.stock.rawFood + site.stock.food + site.stock.meals < pop * 2250 * 3;
+    const hungryCamp = stapleKcal(site.stock) + site.stock.food + site.stock.meals < pop * 2250 * 3;
     const slaughter = crowded ? 1 : hungryCamp && h.adults > 2 ? 1 : 0;
 
     const tick = tickHerd(h, cap, care, s.rng, slaughter);
+    // Hao hụt tự nhiên: 0,3%/ngày, tăng khi chăm kém (thay cho hệ dịch bệnh đã bỏ).
+    if (h.adults > 2 && chance(s.rng, care < 0.3 ? 0.015 : 0.003)) {
+      h.adults -= 1;
+      h.males = Math.min(h.males, h.adults);
+      log(s, `${site.name}: một con ${bio.label.toLowerCase()} chết vì kiệt sức.`, 'warn');
+    }
     if (tick.eggs) addStock(s, site, { trung: tick.eggs });
     if (tick.milk) addStock(s, site, { sua: Math.round(tick.milk * 10) / 10 });
     if (tick.meat) addStock(s, site, { thit: tick.meat });
@@ -128,6 +143,11 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;
   site.stock.rawFood *= 1 - (st.storage ? 0.005 : 0.02) * hot;
+  for (const id of PERISHABLE_STAPLES) {
+    if ((site.stock[id] ?? 0) <= 0) continue;
+    const keep = 1 - (st.storage ? 0.005 : 0.02) * hot * 1.5;
+    site.stock[id] *= keep;
+  }
   // Catalogued food (MRE, tins, dried goods) rots per item; a locked store halves it too.
   // Tủ lạnh mạnh hơn hầm đất, nhưng chỉ khi có điện.
   const cellarMul = rotFactor(st.cellar, st.storage) * st.fridgeRot;
@@ -143,7 +163,7 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
 
   if (!home.length && site.kind !== 'base') {
     // Nobody home: other scavengers and animals help themselves.
-    for (const k of ['food', 'rawFood', 'water', 'medicine', 'fuel'] as const) take(site, k, site.stock[k] * UNGUARDED_LOSS);
+    for (const k of ['food', ...STAPLE_IDS, 'water', 'medicine', 'fuel'] as const) take(site, k, site.stock[k] * UNGUARDED_LOSS);
   }
 
   // Hygiene water (Sphere ~15 L/person/day) — grey water is fine for washing,
@@ -370,11 +390,13 @@ export function raidEvent(s: GameState, world: World, siteId: string): void {
     (danger / 3) *
     (densityMult(day, horde, s.weather.tempC) / 1.5) *
     (1 + site.heat / 100) *
-    // Đợt tập kích co theo số người: nhóm 2-4 người không chịu nổi đợt dành cho 10 người.
-    (0.25 + 0.75 * Math.min(1, home.length / 10)) *
     range(s.rng, 0.7, 1.3);
+  // Trần theo LAO ĐỘNG của điểm (sim/scale.ts): nhóm 3 người không phải chịu đợt dành
+  // cho 10 người. Trước đây sức tập kích tính theo ngày tuyệt đối nên nhóm nhỏ bị quét sạch.
+  const budget = raidBudget(home.length, site.heat);
+  const gated = Math.min(raw, budget);
   // Traps thin the wave first, but can never stop more than 70% of it.
-  const strength = Math.max(raw * 0.3, raw - structureEffects(site.interior.structures).spikes);
+  const strength = Math.max(gated * 0.3, gated - structureEffects(site.interior.structures).spikes);
   // Đợt tập kích là hỗn hợp loại zombie của đêm đó (tiến hoá theo vùng) — loại quyết định sát thương & cắn.
   const waveTypes = Array.from({ length: 5 }, () => zombieType(s.rng, day, true, danger, s.cellClear[site.cell] ?? 0));
   defendAssault(s, site, strength, waveTypes, 'một đợt tập kích đêm');
@@ -534,7 +556,7 @@ function defendAssault(s: GameState, site: Site, strength: number, waveTypes: Zo
     }
   }
   const loss = ratio * (st.storage ? st.storeLoss : 0.25);
-  for (const k of ['food', 'rawFood', 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
+  for (const k of ['food', ...STAPLE_IDS, 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
   alert(
     s,
     `${site.name}: zombie phá vào trong ${atkLabel}! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư${brokenStructs ? `, ${brokenStructs} ô công trình bị phá` : ''}.`,

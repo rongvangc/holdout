@@ -3,7 +3,8 @@ import { makeRng, range } from '../core/rng';
 import { DAY, HOUR, dayOf, nextClock } from '../core/time';
 import { generateInterior, roomsWith } from '../base/interior';
 import { CATS } from '../data/categories';
-import { emptyStock, normalizeStock, type ItemId } from '../data/items';
+import { emptyStock, ITEMS, normalizeStock, type ItemId } from '../data/items';
+import { PERISHABLE_STAPLES, regionStaple } from '../data/staples';
 import { FENCE_DEFENSE_PER_LEVEL, FORTIFY_DEFENSE_PER_LEVEL } from '../data/modules';
 import { structureEffects } from '../data/structures';
 import { dist } from '../world/geo';
@@ -112,7 +113,7 @@ export function newGame(world: World, baseId: string, seed: number, startDate = 
   s.sites.push(home);
   Object.assign(home.stock, {
     food: 30000,
-    rawFood: 20000,
+    [regionStaple(s.latitude)]: 20000 / Math.max(1, ITEMS[regionStaple(s.latitude)]?.kcal ?? 3000),
     water: 80,
     dirtyWater: 40,
     wood: 40,
@@ -258,6 +259,28 @@ export function addStock(s: GameState, site: Site, d: StockDelta, mult = 1): voi
 /** Whether the site has every id in `d`, in the asked amount or more. */
 export function canAfford(site: Site, d: StockDelta): boolean {
   return Object.entries(d).every(([k, v]) => (site.stock[k as ItemId] ?? 0) + 1e-9 >= (v ?? 0));
+}
+
+/**
+ * Spend `kcal` of bulk food, eating what spoils soonest first.
+ * A colony should finish the potatoes before opening another sack of grain.
+ */
+export function takeStapleKcal(site: Site, kcal: number): number {
+  let left = kcal;
+  const order = [...PERISHABLE_STAPLES].sort(
+    (a, b) => (ITEMS[b]?.rotPerDay ?? 0) - (ITEMS[a]?.rotPerDay ?? 0),
+  );
+  for (const id of [...order, 'rawFood']) {
+    if (left <= 0) break;
+    const per = id === 'rawFood' ? 1 : (ITEMS[id]?.kcal ?? 0);
+    if (per <= 0) continue;
+    const have = site.stock[id] ?? 0;
+    if (have <= 0) continue;
+    const units = Math.min(have, left / per);
+    const used = take(site, id, units);
+    left -= used * per;
+  }
+  return kcal - left;
 }
 
 export function take(site: Site, id: ItemId, amount: number): number {

@@ -4,6 +4,7 @@ import { RECIPES } from '../data/recipes';
 import type { World } from '../world/types';
 import { queueCraft, queueModule, stationLevel } from './build';
 import { launchExpedition, planExpedition } from './expedition';
+import { stapleKcal } from '../data/staples';
 import { baseStats, log, present, canAfford } from './state';
 import type { GameState, Site } from './types';
 import { canPlace } from '../base/interior';
@@ -101,7 +102,7 @@ export function autoLoot(s: GameState, world: World, site: Site): string | null 
 export function autoGarden(s: GameState, site: Site): string | null {
   const st = baseStats(s, site);
   const pop = Math.max(1, st.population);
-  const days = (site.stock.food + site.stock.rawFood + site.stock.meals) / (pop * 2250);
+  const days = (site.stock.food + stapleKcal(site.stock) + site.stock.meals) / (pop * 2250);
   if (days >= 20) return null;
   if (site.projects.some((p) => p.kind === 'module' && p.module === 'garden')) return null;
   // Mở vườn mà không có ai chăm thì chỉ tạo cảnh "vườn bỏ hoang" (đúng lỗi đã gặp).
@@ -172,7 +173,7 @@ export function siteWarnings(s: GameState, site: Site): SiteWarning[] {
       severity: 'bad',
     });
   }
-  if (st.kitchen && roleCount('cook') === 0 && (site.stock.rawFood ?? 0) > 2000) {
+  if (st.kitchen && roleCount('cook') === 0 && stapleKcal(site.stock) > 2000) {
     out.push({ id: 'no-cook', text: 'Có bếp và gạo sống nhưng không có đầu bếp', severity: 'warn' });
   }
   const armed = staff.filter((v) => v.gear?.weapon).length;

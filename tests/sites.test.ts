@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { regionStaple } from '../src/data/staples';
 import { advanceTo } from '../src/sim/engine';
 import { launchExpedition } from '../src/sim/expedition';
 import { mainSite, migrate, newGame } from '../src/sim/state';
@@ -27,7 +28,8 @@ describe('multi-site', () => {
       members: [a, b],
       target: { type: 'green', id: green.id },
       mode: 'walk',
-      cargo: { water: 10, rawFood: 6000 },
+      // Lương thực đầu ván là lương thực của vùng (xem data/staples.ts).
+      cargo: { water: 10, [regionStaple(s.latitude)]: 2 },
     });
     expect(why).toBeNull();
     // 10 L went as cargo, and the party also packs drinking water for the trip.

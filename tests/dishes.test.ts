@@ -125,7 +125,8 @@ describe('cooking conserves calories', () => {
   it('no dish creates energy out of nothing', () => {
     // The legacy buckets (rawFood/food/meals) are already counted in kcal per unit.
     const LEGACY = new Set(['rawFood', 'food', 'meals']);
-    const kcalOf = (id: string) => (LEGACY.has(id) ? 1 : (ITEMS[id]?.kcal ?? 0));
+    // Legacy buckets and the '@staple' tag are both counted in kcal per unit.
+    const kcalOf = (id: string) => (LEGACY.has(id) || id === '@staple' ? 1 : (ITEMS[id]?.kcal ?? 0));
     for (const r of RECIPES.filter((x) => x.out in DISHES)) {
       const input = r.in.reduce((sum, [id, n]) => sum + kcalOf(id) * n, 0);
       const output = kcalOf(r.out) * r.qty;

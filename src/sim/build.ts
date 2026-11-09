@@ -1,6 +1,6 @@
 import { canPlace, type Room } from '../base/interior';
 import { fortifyCost, MODULES, type ModuleId } from '../data/modules';
-import { RECIPE_BY_ID, STATION_LABEL, type Recipe } from '../data/recipes';
+import { RECIPE_BY_ID, resolveInputs, STATION_LABEL, type Recipe } from '../data/recipes';
 import type { SkillId } from './data';
 import { dist } from '../world/geo';
 import { addStock, alert, baseStats, canAfford, log, newId, take } from './state';
@@ -158,7 +158,9 @@ export function queueCraft(s: GameState, site: Site, recipeId: string): string |
       : `${STATION_LABEL(r.station)} phải lên cấp ${r.level} (đang cấp ${lvl})`;
   }
   if (r.upgradeFrom && (site.stock[r.upgradeFrom] ?? 0) < 1) return 'Không có món gốc để nâng cấp';
-  if (!canAfford(site, Object.fromEntries(r.in) as StockDelta)) return `Thiếu vật tư: ${fmtCostShort(Object.fromEntries(r.in))}`;
+  // `@staple` means "any bulk starch": pick the one this site actually has.
+  const inputs = resolveInputs(r, site.stock, s.latitude);
+  if (!canAfford(site, Object.fromEntries(inputs) as StockDelta)) return `Thiếu vật tư: ${fmtCostShort(Object.fromEntries(inputs))}`;
   site.projects.push({
     id: newId(s, 'p'),
     kind: 'craft',
@@ -167,7 +169,7 @@ export function queueCraft(s: GameState, site: Site, recipeId: string): string |
     // A better station works faster: +25% per level above the first.
     workTotal: Math.round(r.workSec / (1 + 0.25 * (lvl - 1))),
     progress: 0,
-    cost: Object.fromEntries(r.in) as StockDelta,
+    cost: Object.fromEntries(inputs) as StockDelta,
     paid: false,
   });
   return null;

@@ -3,7 +3,7 @@ import { push } from '../core/eventQueue';
 import { chance, int, pick, range, weighted, type Rng } from '../core/rng';
 import { dayOf, isNight, MIN } from '../core/time';
 import { CATS } from '../data/categories';
-import { regionStaple, regionStapleAlt } from '../data/staples';
+import { regionStaple, regionStapleAlt, STAPLE_IDS } from '../data/staples';
 import { gearPool } from '../data/lootPools';
 import { ITEMS, itemLabel, stockWeight, type ItemId, type Stock } from '../data/items';
 import { shortestPath } from '../world/graph';
@@ -270,7 +270,7 @@ function packRations(_s: GameState, from: Site, n: number, sec: number): StockDe
     takeFood(id);
   }
   // Legacy calorie buckets, if that is all there is.
-  for (const id of ['meals', 'food', 'rawFood'] as ItemId[]) {
+  for (const id of ['meals', 'food', ...STAPLE_IDS] as ItemId[]) {
     if (need <= 0) break;
     const units = Math.min(from.stock[id] ?? 0, Math.ceil(need));
     const got = take(from, id, units);

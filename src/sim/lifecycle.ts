@@ -1,6 +1,7 @@
 import { push } from '../core/eventQueue';
 import { chance, int } from '../core/rng';
 import { DAY, dayOf } from '../core/time';
+import { stapleKcal } from '../data/staples';
 import { forfeitGear, returnGear } from './gear';
 import { addSurvivor, alert, log, mainSite, siteById, siteOf, take } from './state';
 import type { GameState, Survivor } from './types';
@@ -110,7 +111,7 @@ export function handleStrangers(s: GameState, group: Survivor[], where: string, 
   // Nhận người là nhận thêm miệng ăn: mọi luật đều phải qua cổng "còn ≥ 18 ngày lương".
   const home = siteById(s, siteId);
   const pop = Math.max(1, s.survivors.filter((v) => v.status === 'alive' && v.siteId === siteId).length);
-  const days = (home.stock.food + home.stock.rawFood + home.stock.meals) / (pop * 2250);
+  const days = (home.stock.food + stapleKcal(home.stock) + home.stock.meals) / (pop * 2250);
   const room = Math.max(0, Math.floor((days - 18) / 2));
   const admitted = group.slice(0, room);
 
