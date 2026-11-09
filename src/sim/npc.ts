@@ -1,7 +1,7 @@
 import { FACTION_BY_ID, FACTIONS, stackValue, tradeValue, type FactionDef } from '../data/factions';
 import { ITEMS, type ItemId } from '../data/items';
 import type { Caravan, CaravanOffer, GameState, Site, StockDelta } from './types';
-import { log, take, addStock, present } from './state';
+import { alert, log, take, addStock, present } from './state';
 import { dayOf } from '../core/time';
 import { chance, int, next, pick } from '../core/rng';
 
@@ -91,6 +91,9 @@ export function tickCaravans(s: GameState, site: Site): void {
   if (chance(s.rng, 0.5)) offers.push(makeOffer(s, chosen, 'o3'));
   s.caravan.list.push({ id: `cv${s.nextId++}`, faction: chosen.id, cell, arriveDay: day, leaveDay: day + STAY, offers });
   log(s, `${chosen.label} dừng ở cổng căn cứ (${STAY} ngày). ${chosen.desc}`, 'good');
+  // Ai cũng cần biết khách tới: trước đây đoàn buôn chỉ hiện trong tab Nghiên cứu,
+  // nên hai ngày trôi qua mà người chơi không thấy, rồi mất uy tín vì "không ai ra tiếp".
+  alert(s, `${chosen.label} dừng ở cổng — đổi hàng trong ${STAY} ngày.`, 'good');
 }
 
 export function acceptOffer(s: GameState, site: Site, caravanId: string, offerId: string): string | null {

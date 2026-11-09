@@ -19,6 +19,7 @@ export const RESCUE_DAYS = 7;
 import { FODDER_KCAL_PER_KG, HERDS, herdCapacity, herdFor, herdLevelFx, herdNeeds, nightLossChance, pastureYield, startingHerd, takeNightLoss, tickHerd } from './livestock';
 import { isMonotone, MONOTONY_MORALE, rotFactor, SCURVY_DAYS, SCURVY_HP } from './diet';
 import { bleedOf, CLEAN_SEPSIS_CHANCE, rollWound, WOUND_SEPSIS_CHANCE } from './medical';
+import { researchBonus } from './research';
 import { applyBiteLaw, desert, handleStrangers, killSurvivor } from './lifecycle';
 import { addStock, alert, baseStats, latrineShortfall, log, newId, present, siteById, take, takeStapleKcal } from './state';
 import { hasTrait, makeSurvivor, skill } from './survivors';
@@ -141,6 +142,9 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     room.herdWater = need.water > 0 ? Math.min(1, drank / Math.max(0.01, need.water)) : 1;
     const fx = herdLevelFx(room.moduleLevel ?? 1);
     const tick = tickHerd(h, cap, care, s.rng, slaughter, fx);
+    // "Chọn giống" (t_breed): con giống tốt hơn → +12% trứng và sữa.
+    if (tick.eggs) tick.eggs = tick.eggs * researchBonus(s, 'yield');
+    if (tick.milk) tick.milk = tick.milk * researchBonus(s, 'yield');
     // Đêm xuống: cáo/chó hoang/người lạ bắt con. Chuồng kín (cấp 3) thì không.
     if (!fx.shelter && h.adults + h.young > 1 && chance(s.rng, nightLossChance(site.heat, s.weather.tempC < 12))) {
       const gone = takeNightLoss(h);
@@ -172,15 +176,17 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   // Spoilage. Heat speeds everything up.
   const hot = s.weather.hot ? 1.5 : 1;
   site.stock.meals *= s.weather.hot ? 0.4 : 0.6;
-  site.stock.rawFood *= 1 - (st.storage ? 0.005 : 0.02) * hot;
+  site.stock.rawFood *= 1 - (st.storage ? 0.005 : 0.02) * hot * researchBonus(s, 'rot');
   for (const id of PERISHABLE_STAPLES) {
     if ((site.stock[id] ?? 0) <= 0) continue;
-    const keep = 1 - (st.storage ? 0.005 : 0.02) * hot * 1.5;
+    const keep = 1 - (st.storage ? 0.005 : 0.02) * hot * 1.5 * researchBonus(s, 'rot');
     site.stock[id] *= keep;
   }
   // Catalogued food (MRE, tins, dried goods) rots per item; a locked store halves it too.
   // Tủ lạnh mạnh hơn hầm đất, nhưng chỉ khi có điện.
-  const cellarMul = rotFactor(st.cellar, st.storage) * st.fridgeRot;
+  // Nghiên cứu "Bảo quản" giảm tốc ôi thiu 30% — trước đây hiệu ứng này chỉ có
+  // trong test, chưa bao giờ chạy trong ván.
+  const cellarMul = rotFactor(st.cellar, st.storage) * st.fridgeRot * researchBonus(s, 'rot');
   for (const [id, def] of Object.entries(ITEMS)) {
     if (!(site.stock[id] > 0) || !def.rotPerDay) continue;
     const rate = def.rotPerDay * (def.rotPerDay < 0.01 ? 1 : hot) * cellarMul;
@@ -227,7 +233,8 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
   for (const v of home) {
     if (!v.woundPart) continue;
     const cleaned = v.woundCleanedDay === day;
-    const p = cleaned ? CLEAN_SEPSIS_CHANCE : WOUND_SEPSIS_CHANCE;
+    // "Phẫu thuật" (t_surgery) hạ tỉ lệ nhiễm trùng vết thương.
+    const p = (cleaned ? CLEAN_SEPSIS_CHANCE : WOUND_SEPSIS_CHANCE) * (researchBonus(s, 'sepsis') > 1 ? 1 / researchBonus(s, 'sepsis') : 1);
     if (!v.infected && chance(s.rng, p)) {
       v.infected = true;
       v.infection = Math.max(v.infection ?? 0, 10);

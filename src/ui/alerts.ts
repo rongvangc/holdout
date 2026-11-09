@@ -185,6 +185,18 @@ export function decide(s: GameState, site: Site): Decision[] {
     });
   }
 
+  // Đoàn buôn đang đợi ở cổng: có hạn, và bỏ lỡ thì mất uy tín.
+  const caravan = (s.caravan?.list ?? []).find((c) => (c.offers?.length ?? 0) > 0);
+  if (caravan) {
+    out.push({
+      id: 'caravan',
+      level: 'warn',
+      text: `${caravan.faction} đang đợi ở cổng — còn ${Math.max(0, caravan.leaveDay - dayOf(s.t))} ngày để đổi hàng`,
+      action: 'Xem',
+      tab: 'research',
+    });
+  }
+
   // Vượt sức chứa của lãnh thổ: thêm người mà không thêm đất thì chỉ ăn mòn dự trữ.
   const herds = site.interior.rooms.filter((r) => r.herdState).map((r) => ({ state: r.herdState!, graze: site.kind === 'field' ? 1 : 0.4 }));
   const cap = siteCapacity(site, herds);

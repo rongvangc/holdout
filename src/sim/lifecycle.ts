@@ -5,6 +5,7 @@ import { stapleKcal } from '../data/staples';
 import { forfeitGear, returnGear } from './gear';
 import { addSurvivor, alert, log, mainSite, siteById, siteOf, take } from './state';
 import type { GameState, Survivor } from './types';
+import { researchBonus } from './research';
 
 export function killSurvivor(s: GameState, v: Survivor, cause: string): void {
   if (v.status !== 'alive') return;
@@ -40,7 +41,8 @@ function checkGameOver(s: GameState): void {
 
 export function noteBite(s: GameState, v: Survivor, witnessed: boolean): void {
   v.bitten = true;
-  if (chance(s.rng, 0.65)) v.infected = true;
+  // "Sơ cứu" (t_firstaid) hạ tỉ lệ nhiễm sau khi bị cắn 30%.
+  if (chance(s.rng, 0.65 * researchBonus(s, 'infection'))) v.infected = true;
   v.biteKnown = witnessed;
   if (witnessed) alert(s, `${v.name} bị cắn!`, 'bad');
 }
@@ -60,7 +62,7 @@ export function turnSurvivor(s: GameState, v: Survivor): void {
     if (chance(s.rng, 0.35)) {
       o.bitten = true;
       o.biteKnown = true;
-      if (chance(s.rng, 0.65)) o.infected = true;
+      if (chance(s.rng, 0.65 * researchBonus(s, 'infection'))) o.infected = true;
       alert(s, `${o.name} bị ${v.name} cắn.`, 'bad');
     }
   }
