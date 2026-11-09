@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { firstDayGoals } from '../onboarding';
+import { currentGoals } from '../onboarding';
 import type { GameState, Site } from '../../sim/types';
 
 const KEY = 'holdout:onboarded';
@@ -15,7 +15,7 @@ export function OnboardingPanel({ s, site }: { s: GameState; site: Site }) {
   });
   // Trên điện thoại, cả danh sách chiếm 35% màn hình — chỉ hiện mục kế tiếp.
   const [expanded, setExpanded] = useState(false);
-  const goals = firstDayGoals(s, site);
+  const { tier, goals } = currentGoals(s, site);
   const done = goals.filter((g) => g.done).length;
   const next = goals.find((g) => !g.done);
   if (!open || !goals.length) return null;
@@ -24,7 +24,7 @@ export function OnboardingPanel({ s, site }: { s: GameState; site: Site }) {
   return (
     <div className="onboarding" role="note">
       <div className="onboarding-head">
-        <span className="label">Bắt đầu · {done}/{goals.length}</span>
+        <span className="label">{tier === 1 ? 'Bắt đầu' : 'Tự chủ'} · {done}/{goals.length}</span>
         <div className="grow" />
         <button className="mini" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
           {expanded ? 'Gọn' : 'Tất cả'}

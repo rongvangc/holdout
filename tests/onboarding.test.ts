@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstDayGoals, goalProgress, showOnboarding } from '../src/ui/onboarding';
+import { currentGoals, firstDayGoals, goalProgress, nextTierGoals, showOnboarding } from '../src/ui/onboarding';
 import { newGame } from '../src/sim/state';
 import { HOUR } from '../src/core/time';
 import { makeTestWorld } from '../scripts/headless';
@@ -32,10 +32,41 @@ describe('onboarding checklist', () => {
     expect(after).toBeDefined();
   });
 
-  it('stops showing once the basics stand or the first week is over', () => {
+  it('hands over to a second tier instead of going silent after the first week', () => {
     const { s, site } = setup();
-    expect(showOnboarding(s, site)).toBe(true);
+    expect(currentGoals(s, site).tier).toBe(1);
     const late = setup(14);
-    expect(showOnboarding(late.s, late.site)).toBe(false);
+    const second = currentGoals(late.s, late.site);
+    // Sandbox without an ending: after the basics the panel keeps naming the next
+    // milestone (self-sufficiency, water buffer, a first technology, ten people).
+    expect(second.tier).toBe(2);
+    expect(second.goals.map((g) => g.id)).toContain('self-food');
+    expect(second.goals.some((g) => g.why.length > 10)).toBe(true);
+    expect(showOnboarding(late.s, late.site)).toBe(true);
+  });
+
+  it('goes quiet only when the open tier is fully met', () => {
+    const { s, site } = setup(14);
+    expect(nextTierGoals(s, site).every((g) => !g.done)).toBe(true);
+    // Satisfy every tier-2 milestone: land that feeds the colony, a water buffer, one
+    // technology, a level-2 wall plus a tower, ten people, all three switches.
+    const garden = site.interior.rooms[0];
+    garden.module = 'garden';
+    garden.moduleLevel = 1;
+    garden.area = 4000;
+    site.stock.water = 4000;
+    s.techs = ['t_mill'];
+    site.fortify.level = 2;
+    const tower = site.interior.rooms[1];
+    tower.module = 'watchtower';
+    tower.moduleLevel = 1;
+    // "Mở điểm thứ hai": thêm một điểm vào lãnh thổ.
+    s.sites.push({ ...s.sites[0], id: 'field1', kind: 'field' });
+    // Mốc "mười người sống": thêm người vào chính cộng đồng đó.
+    while (s.survivors.length < 10) s.survivors.push({ ...s.survivors[0], id: `extra${s.survivors.length}` });
+    s.survivors.forEach((v) => (v.status = 'alive'));
+    const left = nextTierGoals(s, site).filter((g) => !g.done);
+    expect(left.map((g) => g.id)).toEqual([]);
+    expect(showOnboarding(s, site)).toBe(false);
   });
 });
