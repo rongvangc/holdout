@@ -309,7 +309,11 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
   // 5) Mổ thịt: mất một con trưởng thành, thịt theo khối lượng thật.
   const want = Math.min(slaughter, Math.max(0, h.adults - 2)); // giữ lại giống
   if (want > 0) {
-    h.adults -= want;
+    // Mổ con đực trước (giữ con cái sinh sản), chỉ khi hết đực mới mổ cái.
+    for (let i = 0; i < want; i++) {
+      if (h.males > 1) h.males -= 1;
+      h.adults -= 1;
+    }
     h.males = Math.min(h.males, h.adults);
     const kg = bio.adultKg * bio.dressing * range(rng, 0.85, 1.05) * want;
     out.meat = Math.round(kg * 10) / 10;

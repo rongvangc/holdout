@@ -991,3 +991,37 @@ còn mấy ngày ăn" đều dùng `stapleKcal(stock)` nên cộng cả hai.
   kcal/người 1.000–3.000, **0 chết đói**.
 - Test `tests/staples.test.ts`: phân vùng theo vĩ độ, quy đổi kcal→kg, đội ở vùng lạnh
   nấu được bằng khoai tây, và không còn công thức nào hard-code `rawFood`.
+
+## 14. Thước đo cân bằng (`scripts/balance.ts`)
+
+Chấm PASS/FAIL thay vì đoán:
+
+```bash
+npx vite-node scripts/balance.ts -- 120 10     # 120 ngày × 10 seed
+```
+
+Tiêu chí (chốt 2026-11):
+
+| Tiêu chí | Ngưỡng |
+|---|---|
+| Sống sót | ≥ 80% ván sống ≥ 100 ngày |
+| Dân cuối | trung bình 6–14 |
+| Chết đói muộn | 0 ván chết đói sau ngày 30 |
+| Chết do tập kích | ≤ 25% tổng số chết |
+
+Mọi thay đổi cân bằng phải chạy lệnh này và ghi lại kết quả. Script in bảng từng seed (ngày, sống, chết, chết đói, chết do tập kích, thu hoạch) rồi in 4 dòng PASS/FAIL.
+
+### 14.1 Nguồn sự thật (`sim/scale.ts`)
+
+`T0` sinh học (2.250 kcal/người/ngày · 3,3 L nước · 10 h/ngày công) và `T1` năng suất (kcal/m²/ngày) là **định nghĩa**; các số còn lại **suy ra**: `M2_PER_PERSON`, `FARM_M2_ONE_WORKER`, `FARM_HOURS_PER_WORKER`, `PEOPLE_PER_FARMER`, `farmersFor()`, `siteCapacity()` (trần dân số = cây trồng + đạm gia súc có lãi), `raidBudget()` (trần tập kích theo lao động).
+
+### 14.2 Chăn nuôi có nguồn cám riêng (A1–A5)
+
+| Việc | Chi tiết |
+|---|---|
+| Cám (`cam`) | Phụ phẩm bếp: ~5% kcal nấu ăn thành cám; rơm sau thu hoạch: 0,3 kg/100 m². Bầy ăn **cám trước**, chỉ khi hết mới dùng gạo dư trên 10 ngày lương |
+| Lao động | 1 người chăm ~10 con; thiếu người → care giảm (0,4 + 0,6 × người/cần), sữa/trứng giảm |
+| Chăn thả | Chỉ có cỏ khi có bãi ≥ 5.000 m² trong 1 km; sân phố chỉ 0,3 → nuôi bò trong phố là lỗ |
+| Mổ thịt | Ưu tiên con **đực** (giữ con cái sinh sản) |
+| Hao hụt | 0,3%/ngày, 1,5%/ngày khi care < 0,3 (thay hệ dịch bệnh đã bỏ) |
+| Trần dân số | Chỉ bầy **không lỗ calo** mới cộng phần đạm vào sức chứa của điểm (kho + cảnh báo "quá tải") |

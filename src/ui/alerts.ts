@@ -14,7 +14,7 @@ import type { TabId } from './shell/TopStrip';
  * switches tab and opens the matching section.
  */
 export type DecisionLevel = 'bad' | 'warn';
-export type PanelId = 'kitchen' | 'gear' | 'power' | 'craft' | 'defence';
+export type PanelId = 'kitchen' | 'gear' | 'power' | 'craft' | 'defence' | 'modules';
 
 export interface Decision {
   id: string;

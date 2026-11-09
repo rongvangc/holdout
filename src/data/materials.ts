@@ -123,6 +123,16 @@ export const MATERIALS: Record<string, ItemDef> = {
   },
 
   // ---- Thuốc tự viết: catalog innawoods không có kháng sinh ---------------------
+  cam: {
+    label: 'Cám/phụ phẩm',
+    unit: 'kg',
+    kgPerUnit: 1,
+    category: 'material',
+    tier: 0,
+    mechanic: 'feed',
+    icon: P + 'items/nutrition/buckwheat__723.png',
+    desc: 'Phụ phẩm bếp (rau thừa, cám gạo), rơm cỏ khô từ ruộng. Cho gia súc ăn — không tranh với khẩu phần người.',
+  },
   khang_sinh: {
     label: 'Kháng sinh',
     unit: 'liều',

@@ -7,7 +7,8 @@ import { ammoFor } from '../../sim/equipment';
 import { queueRepair, repairableWeapons, stationLevel } from '../../sim/build';
 import { baseStats, present } from '../../sim/state';
 import { GEAR_SLOTS } from '../../sim/gear';
-import { HERDS, herdCapacity, herdBudget } from '../../sim/livestock';
+import { HERDS, herdCapacity, herdBudget, type HerdState } from '../../sim/livestock';
+import { siteCapacity } from '../../sim/scale';
 import type { GameState, Site } from '../../sim/types';
 import { fmtNum } from '../Game';
 import { Icon, ITEM_ICONS } from '../icons';
@@ -162,6 +163,31 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
         <span title="Gỗ sẵn trong toà nhà này — người kiếm củi lấy nhanh hơn; hết thì đi xa, chậm gấp đôi và ồn hơn">Củi sẵn trong nhà</span>
         <span>{site.salvageLeft.wood > 0 ? `${Math.round(site.salvageLeft.wood)} kg còn` : 'hết — phải đi xa'}</span>
       </div>
+      {(() => {
+        const herds: { state: HerdState; graze: number }[] = site.interior.rooms
+          .filter((r) => r.herdState)
+          .map((r) => ({ state: r.herdState as HerdState, graze: site.kind === 'field' ? 1 : 0.4 }));
+        const cap = siteCapacity(site, herds);
+        const over = here > cap.ceiling + 0.5;
+        return (
+          <>
+            <div className="dither" />
+            <div className="label" title="Số người lãnh thổ này nuôi nổi: vườn (kcal) + đạm từ bầy có lãi">
+              Sức chứa của điểm
+            </div>
+            <div className="kv">
+              <span>Vườn {Math.round(cap.gardenM2)} m² nuôi</span>
+              <span>{cap.fromCrops.toFixed(1)} người</span>
+              <span title="Chỉ bầy không lỗ calo mới cộng phần đạm">Đạm từ chăn nuôi</span>
+              <span>{cap.fromHerds.toFixed(1)} người</span>
+              <span>Tổng</span>
+              <span className={over ? 'red' : 'ok'}>
+                {here}/{cap.ceiling.toFixed(1)} người{over ? ' — quá tải' : ''}
+              </span>
+            </div>
+          </>
+        );
+      })()}
       <div className="dither" />
       <div className="label">Chăn nuôi</div>
       <div className="kv">

@@ -12,8 +12,13 @@ for (const cat of POOL_CATS) for (const [id] of gearPool(cat)) pooled.add(id);
 
 describe('catalogue coverage', () => {
   // Cổng chặn data chết: mỗi món phải có đường lấy (chế, loot tĩnh, hoặc pool theo loại nhà).
+  // Vật tư phụ sinh ra từ hoạt động (không loot, không chế): cám từ bếp/thu hoạch.
+  const BYPRODUCT = new Set(['cam']);
+
   it('every item is obtainable somehow', () => {
-    const dead = Object.keys(ITEMS).filter((id) => !craftable.has(id) && !staticLoot.has(id) && !pooled.has(id));
+    const dead = Object.keys(ITEMS).filter(
+      (id) => !BYPRODUCT.has(id) && !craftable.has(id) && !staticLoot.has(id) && !pooled.has(id),
+    );
     expect(dead, `không lấy được: ${dead.join(', ')}`).toEqual([]);
   });
 

@@ -532,6 +532,7 @@ export function BaseView({ s, site, refresh, focusPanel }: ViewProps) {
     else if (focusPanel === 'craft' || focusPanel === 'defence') setSection('craft');
     else if (focusPanel === 'modules') setSection('plan');
     else if (focusPanel === 'power') setSection('power');
+    else if (focusPanel === 'modules') setSection('modules');
   }, [focusPanel]);
   // Điện: nguồn nào đang cấp, thiết bị nào được bật, thiết bị nào bị cắt.
   const onSet = new Set(st.powerOn);
