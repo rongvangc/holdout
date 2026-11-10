@@ -1598,3 +1598,18 @@ table.grid tr.sel td {
     min-height: 44px;
   }
 }
+
+/* Very narrow phones (320-360 px): the HUD action row overflowed and pushed THOAT
+   off screen. Drop the words, keep the glyphs and the two real actions. */
+@media (max-width: 380px) {
+  .topstrip-actions button .lbl {
+    display: none;
+  }
+  .topstrip-actions button {
+    padding: 10px 9px;
+    letter-spacing: 0.04em;
+  }
+  .topstrip-main .stat {
+    padding: 6px 7px;
+  }
+}

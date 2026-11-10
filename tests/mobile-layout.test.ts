@@ -31,6 +31,14 @@ describe('phone layout', () => {
     expect(css).toMatch(/\.topstrip \.stat \.label\s*\{[^}]*font-size:\s*10px/);
   });
 
+  it('drops the words, not the buttons, on a 320 px phone', () => {
+    // Measured at 320: the action row overflowed and pushed THOAT off screen even
+    // after the stats were pinned, so the glyphs stay and the labels go.
+    expect(css).toMatch(/@media \(max-width: 380px\)[\s\S]{0,400}\.topstrip-actions button \.lbl[\s\S]{0,80}display:\s*none/);
+    const tsx = readFileSync(new URL('../src/ui/shell/TopStrip.tsx', import.meta.url), 'utf8');
+    expect(tsx.match(/className="lbl"/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
   it('pins the HUD controls instead of scrolling them off screen', () => {
     expect(css).toMatch(/\.topstrip-main > \.topstrip-stats\s*\{[^}]*overflow-x:\s*auto/);
     expect(css).toMatch(/\.topstrip-main > \.topstrip-actions\s*\{[^}]*flex:\s*0 0 auto/);

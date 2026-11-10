@@ -110,7 +110,7 @@ export function TopStrip({
               forceSound((n) => n + 1);
             }}
           >
-            {soundEnabled() ? '♪ Âm' : '♪ Tắt'}
+            ♪<span className="lbl">{soundEnabled() ? ' Âm' : ' Tắt'}</span>
           </button>
           <button
             className={hintsOn ? 'on' : ''}
@@ -118,7 +118,7 @@ export function TopStrip({
             title="Hiện giải thích dưới mỗi mục (dùng được trên điện thoại, không cần hover)"
             onClick={toggleHints}
           >
-            ? Giải thích
+            ?<span className="lbl"> Giải thích</span>
           </button>
           <button onClick={onSave}>Lưu</button>
           <button onClick={onExit}>Thoát</button>
