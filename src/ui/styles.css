@@ -1555,32 +1555,6 @@ table.grid tr.sel td {
 /* ---------- Mobile specifics (measured, not guessed) ---------- */
 
 @media (max-width: 720px) {
-  /* The base screen stacks the floor plan over the room panel. With auto rows the
-     stack grew to ~1550 px inside a 490 px stage whose overflow is hidden, so the
-     module list was clipped and unreachable on a phone. Give the grid bounded rows
-     instead: the plan gets 42vh and scrolls, the panel fills the rest and scrolls. */
-  .overlay-main {
-    display: block;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  /* Normal block flow instead of a grid with auto rows: the plan gets a fixed band
-     and the room panel follows in flow, so the stage scrolls and nothing is clipped. */
-  .baseview {
-    display: block;
-    height: auto;
-    min-height: 0;
-  }
-  .baseview .canvaswrap {
-    height: 42vh;
-    min-height: 160px;
-    overflow: auto;
-  }
-  .baseview .side-panel {
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-  }
   /* iOS Safari zooms the whole page when a focused field is under 16 px, and the
      zoom does not come back. Room renaming is the only text field in the game, and
      it was 13 px. */
@@ -1616,5 +1590,35 @@ table.grid tr.sel td {
   }
   .topstrip-main .stat {
     padding: 6px 7px;
+  }
+}
+
+/* ---------- Short or narrow: the base screen must scroll, not clip ---------- */
+
+/* The base screen stacks the floor plan over the room panel. With auto rows the stack
+   came out ~1550 px tall inside a 490 px stage whose overflow is hidden, so the module
+   list was clipped with no way to reach it. Block flow plus a scrolling stage fixes it.
+   Applies to tablets and landscape phones (844x390 is a 390 px tall viewport), not just
+   to narrow portraits. */
+@media (max-width: 1024px) {
+  .overlay-main {
+    display: block;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .baseview {
+    display: block;
+    height: auto;
+    min-height: 0;
+  }
+  .baseview .canvaswrap {
+    height: 42vh;
+    min-height: 160px;
+    overflow: auto;
+  }
+  .baseview .side-panel {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
   }
 }

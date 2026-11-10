@@ -15,9 +15,12 @@ const mobile = css.slice(css.indexOf('@media (max-width: 720px)', css.indexOf('M
 
 describe('phone layout', () => {
   it('lets the stage scroll so the room panel is reachable', () => {
-    expect(mobile).toMatch(/\.overlay-main\s*\{[^}]*overflow-y:\s*auto/);
-    expect(mobile).toMatch(/\.baseview\s*\{[^}]*display:\s*block/);
-    expect(mobile).toMatch(/\.baseview \.canvaswrap\s*\{[^}]*height:\s*42vh/);
+    // Landscape phones are 390 px TALL but 844 wide, so this has to apply to tablets
+    // too — a 720 px breakpoint missed them and the clipping came back.
+    const tablet = css.slice(css.indexOf('@media (max-width: 1024px)', css.indexOf('Short or narrow')));
+    expect(tablet).toMatch(/\.overlay-main\s*\{[^}]*overflow-y:\s*auto/);
+    expect(tablet).toMatch(/\.baseview\s*\{[^}]*display:\s*block/);
+    expect(tablet).toMatch(/\.baseview \.canvaswrap\s*\{[^}]*height:\s*42vh/);
   });
 
   it('keeps text fields at 16 px so iOS does not zoom the page on focus', () => {
