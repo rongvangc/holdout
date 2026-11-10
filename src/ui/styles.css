@@ -1607,7 +1607,12 @@ table.grid tr.sel td {
   }
   .topstrip-actions button {
     padding: 10px 9px;
+    min-width: 44px;
     letter-spacing: 0.04em;
+  }
+  /* "Cần quyết định" was the last 9 px text in the game. */
+  .decisions-label {
+    font-size: 10px;
   }
   .topstrip-main .stat {
     padding: 6px 7px;

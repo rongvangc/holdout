@@ -35,6 +35,9 @@ describe('phone layout', () => {
     // Measured at 320: the action row overflowed and pushed THOAT off screen even
     // after the stats were pinned, so the glyphs stay and the labels go.
     expect(css).toMatch(/@media \(max-width: 380px\)[\s\S]{0,400}\.topstrip-actions button \.lbl[\s\S]{0,80}display:\s*none/);
+    // Icon-only buttons still need a thumb-sized box, and the last 9 px label grew.
+    expect(css).toMatch(/@media \(max-width: 380px\)[\s\S]{0,600}min-width:\s*44px/);
+    expect(css).toMatch(/@media \(max-width: 380px\)[\s\S]{0,900}\.decisions-label\s*\{[^}]*font-size:\s*10px/);
     const tsx = readFileSync(new URL('../src/ui/shell/TopStrip.tsx', import.meta.url), 'utf8');
     expect(tsx.match(/className="lbl"/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
