@@ -965,6 +965,22 @@ table.grid tr.sel td {
 .topstrip-nav::-webkit-scrollbar-thumb {
   background: var(--line-strong);
 }
+.topstrip-main > .topstrip-stats {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.topstrip-stats > * {
+  flex: none;
+}
+.topstrip-main > .topstrip-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 .topstrip-main > * {
   flex: none;
   padding: 6px 10px;
@@ -1311,7 +1327,7 @@ table.grid tr.sel td {
   .decision { min-height: 44px; }
   .decision button.mini { min-height: 44px; min-width: 44px; padding: 4px 10px; }
   .topstrip .stat { padding: 4px 8px; }
-  .topstrip .stat .label { font-size: 8.5px; }
+  .topstrip .stat .label { font-size: 10px; letter-spacing: 0.06em; }
   .topstrip .stat .v { font-size: 12px; }
 }
 
@@ -1534,4 +1550,51 @@ table.grid tr.sel td {
   white-space: pre-wrap;
   max-height: 120px;
   overflow: auto;
+}
+
+/* ---------- Mobile specifics (measured, not guessed) ---------- */
+
+@media (max-width: 720px) {
+  /* The base screen stacks the floor plan over the room panel. With auto rows the
+     stack grew to ~1550 px inside a 490 px stage whose overflow is hidden, so the
+     module list was clipped and unreachable on a phone. Give the grid bounded rows
+     instead: the plan gets 42vh and scrolls, the panel fills the rest and scrolls. */
+  .overlay-main {
+    display: block;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Normal block flow instead of a grid with auto rows: the plan gets a fixed band
+     and the room panel follows in flow, so the stage scrolls and nothing is clipped. */
+  .baseview {
+    display: block;
+    height: auto;
+    min-height: 0;
+  }
+  .baseview .canvaswrap {
+    height: 42vh;
+    min-height: 160px;
+    overflow: auto;
+  }
+  .baseview .side-panel {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  /* iOS Safari zooms the whole page when a focused field is under 16 px, and the
+     zoom does not come back. Room renaming is the only text field in the game, and
+     it was 13 px. */
+  input {
+    font-size: 16px;
+  }
+  /* 10 px uppercase labels were the smallest text on a 320 px screen. */
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.09em;
+  }
+  /* The onboarding switches were 39 px wide — under the 44 px touch target. */
+  .onboarding .mini {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

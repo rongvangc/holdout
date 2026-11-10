@@ -57,6 +57,7 @@ export function TopStrip({
   return (
     <header className="topstrip">
       <div className="topstrip-main">
+        <div className="topstrip-stats">
         <div className="stat" title={`Ngày ${dayOf(s.t)} · ${fmtClock(s.t)}`}>
           <span className="label">Ngày</span>
           <span className="v">
@@ -97,7 +98,8 @@ export function TopStrip({
             </button>
           ))}
         </div>
-        <div className="grow topstrip-actions">
+        </div>
+        <div className="topstrip-actions">
           <span className="ok">{saved}</span>
           <button
             className={soundEnabled() ? 'on' : ''}
