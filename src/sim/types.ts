@@ -83,17 +83,17 @@ export interface Survivor {
   joinedDay: number;
 }
 
-export type ProjectKind = 'module' | 'fortify' | 'fence' | 'partition' | 'structure' | 'craft' | 'repair';
+type ProjectKind = 'module' | 'fortify' | 'fence' | 'partition' | 'structure' | 'craft' | 'repair';
 
 /** Daily walk between where someone sleeps (home) and where they work. */
-export interface Commute {
+interface Commute {
   home: string;
   work: string | null; // null = finishing the last trip home
   sec: number;
   danger: number;
 }
 
-export interface Route {
+interface Route {
   id: string;
   from: string;
   to: string;
@@ -167,7 +167,7 @@ export interface Expedition {
   occupantsSeen?: boolean;
 }
 
-export interface HordeState {
+interface HordeState {
   id: string;
   /** Ô H3 bầy đang đứng. */
   cell: string;
@@ -290,7 +290,7 @@ export interface GameState {
   caravan?: CaravanState;
 }
 
-export interface ResearchState {
+interface ResearchState {
   tech: string;
   /** 0..1 — ngày công đã tích luỹ chia cho độ dài đề tài. */
   progress: number;
@@ -312,7 +312,7 @@ export interface Caravan {
   offers: CaravanOffer[];
 }
 
-export interface CaravanState {
+interface CaravanState {
   list: Caravan[];
   rep: Record<string, number>;
 }

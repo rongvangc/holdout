@@ -154,7 +154,7 @@ export function runAuto(s: GameState, world: World): void {
  * nuôi 5 người. Test 60 ngày chỉ bật công tắc cho thấy cả nhóm chết đói ở ngày 60 vì
  * chưa bao giờ mở ruộng. Giờ công tắc này cũng lo việc claim.
  */
-export function autoClaimField(s: GameState, world: World, site: Site): string | null {
+function autoClaimField(s: GameState, world: World, site: Site): string | null {
   if (s.sites.some((x) => x.kind === 'field')) return null;
   if (s.expeditions.some((e) => e.kind === 'claim')) return null;
   const pop = s.survivors.filter((v) => v.status === 'alive').length;
@@ -187,7 +187,7 @@ export function autoClaimField(s: GameState, world: World, site: Site): string |
  * trong khi 2 người chỉ chở được ~50 kg → `planExpedition` trả "Quá tải" và chuyến đi
  * không bao giờ khởi hành (cả bot lẫn công tắc), nên không ai mở được ruộng.
  */
-export function launchClaim(s: GameState, world: World, site: Site, green: { id: string }, team: string[]): string | null {
+function launchClaim(s: GameState, world: World, site: Site, green: { id: string }, team: string[]): string | null {
   const stock = site.stock;
   const candidates: Record<string, number>[] = [
     { water: 30, seeds: 20, wood: 20, tools: 1, scrap: 10 },

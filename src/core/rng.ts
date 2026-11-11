@@ -32,12 +32,6 @@ export function weighted<T>(r: Rng, items: readonly (readonly [T, number])[]): T
   return items[items.length - 1][0];
 }
 
-/** Time until next Poisson event; Infinity when rate is 0. */
-export function expSample(r: Rng, ratePerSec: number): number {
-  if (ratePerSec <= 0) return Infinity;
-  return -Math.log(1 - next(r)) / ratePerSec;
-}
-
 export function hashString(s: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {

@@ -19,8 +19,6 @@ export interface Goal {
   done: boolean;
 }
 
-export const GOAL_COUNT = 7;
-
 export function firstDayGoals(s: GameState, site: Site): Goal[] {
   const st = baseStats(s, site);
   const here = present(s, site);

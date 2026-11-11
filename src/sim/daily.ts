@@ -43,7 +43,7 @@ const CLIMATE: [number, number, number, number, number][] = [
   [0.12, 8, 19, 26, 0.01],
 ];
 
-export function rollWeather(s: GameState, day: number): Weather {
+function rollWeather(s: GameState, day: number): Weather {
   const m = monthOf(dayOfYear(s.startDoy, day));
   const [pRain, mm, tN, tS, pStorm] = CLIMATE[m - 1];
   const k = Math.max(0, Math.min(1, (s.latitude - 11) / 9)); // 0 = South, 1 = North

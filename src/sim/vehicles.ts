@@ -96,7 +96,7 @@ export function refuel(site: Site, v: Vehicle, liters: number): number {
 }
 
 /** Sửa xe bằng sắt và linh kiện; mỗi lượt hồi 35 điểm. */
-export function repairCost(): Partial<Record<ItemId, number>> {
+function repairCost(): Partial<Record<ItemId, number>> {
   return { scrap: 4, parts: 2 };
 }
 
@@ -187,10 +187,6 @@ export function siphon(site: Site, v: Vehicle): number {
   v.fuelL -= moved;
   site.stock.fuel = (site.stock.fuel ?? 0) + moved;
   return moved;
-}
-
-export function vehicleLabel(v: Vehicle): string {
-  return `${v.label} · ${Math.round(v.condition)}% · ${v.fuelL.toFixed(0)}/${v.tankL} L`;
 }
 
 /** Xe chở được bao nhiêu kg, cộng thêm khoang của ga-ra nếu có. */

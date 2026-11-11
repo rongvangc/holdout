@@ -2,7 +2,7 @@ import type { BuildingCat } from '../world/types';
 import type { ItemId } from './items';
 
 /** [item, weight, min, max] per loot roll. */
-export type LootEntry = readonly [ItemId, number, number, number];
+type LootEntry = readonly [ItemId, number, number, number];
 
 export interface CatDef {
   label: string;

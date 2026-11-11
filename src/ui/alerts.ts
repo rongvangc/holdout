@@ -14,8 +14,8 @@ import type { TabId } from './shell/TopStrip';
  * That is why every decision carries a `tab` plus an optional `panel`: the caller
  * switches tab and opens the matching section.
  */
-export type DecisionLevel = 'bad' | 'warn';
-export type PanelId = 'kitchen' | 'gear' | 'power' | 'craft' | 'defence' | 'modules';
+type DecisionLevel = 'bad' | 'warn';
+type PanelId = 'kitchen' | 'gear' | 'power' | 'craft' | 'defence' | 'modules';
 
 export interface Decision {
   id: string;

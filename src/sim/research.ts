@@ -13,7 +13,7 @@ import { stationLevel } from './build';
  * đi lục nhà để có sách, thay vì ngồi chờ vật tư.
  */
 
-export const doneTechs = (s: GameState): string[] => s.techs ?? [];
+const doneTechs = (s: GameState): string[] => s.techs ?? [];
 export const isTechDone = (s: GameState, id: string): boolean => doneTechs(s).includes(id);
 
 /** Công thức này đã mở khoá chưa (không có tech ràng buộc = mở sẵn). */
@@ -21,12 +21,6 @@ export function recipeUnlocked(s: GameState, recipeId: string): boolean {
   const need = TECH_FOR_RECIPE[recipeId];
   return !need || isTechDone(s, need);
 }
-
-/** Công thức bị khoá bởi tech nào (null = mở sẵn). */
-export const recipeTech = (recipeId: string): TechDef | null => {
-  const id = TECH_FOR_RECIPE[recipeId];
-  return id ? (TECH_BY_ID[id] ?? null) : null;
-};
 
 export function canStart(s: GameState, site: Site, id: string): string | null {
   const t = TECH_BY_ID[id];

@@ -92,11 +92,3 @@ export function contactOf(site: Site, victim: Survivor, type: ZombieType, roll: 
     heat: z.screams ? 8 : 0,
   };
 }
-
-/** Expected damage per round for the preview/report line. */
-export function expectedContact(site: Site, type: ZombieType, members: Survivor[]): number {
-  if (!members.length) return 0;
-  const share = killShare(site, members, type);
-  const avg = members.reduce((a, m) => a + armourAgainst(m, type), 0) / members.length;
-  return ZOMBIES[type].dmg * (1 - avg) * (1 - share);
-}

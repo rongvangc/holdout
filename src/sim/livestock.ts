@@ -417,7 +417,7 @@ export function tickHerd(h: HerdState, cap: number, care: number, rng: Rng, slau
 }
 
 /** Cám/cỏ quy ra kcal: 1 kg thức ăn khô ≈ 3.000 kcal (gạo, ngô, cỏ khô). */
-export const FEED_KCAL_PER_KG = 3000;
+const FEED_KCAL_PER_KG = 3000;
 /** Cỏ khô/rau thừa rẻ hơn hạt: 1 kg chỉ 1.800 kcal, nhưng không tranh với người. */
 export const FODDER_KCAL_PER_KG = 1800;
 

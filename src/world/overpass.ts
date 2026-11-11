@@ -31,7 +31,7 @@ export function snapForPrivacy(lat: number, lon: number): [number, number] {
   return [Math.round(lat / q) * q, Math.round(lon / q) * q];
 }
 
-export function buildQuery(lat: number, lon: number, radius: number): string {
+function buildQuery(lat: number, lon: number, radius: number): string {
   const a = `(around:${Math.round(radius)},${lat.toFixed(5)},${lon.toFixed(5)})`;
   return `[out:json][timeout:90];
 (

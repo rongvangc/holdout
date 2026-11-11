@@ -7,7 +7,7 @@ import { buildGraph } from './graph';
 import type { OsmElement, OsmNode, OsmWay } from './overpass';
 import type { Building, BuildingCat, Green, LonLat, Vec, WaterPoint, World, WorldScore, ZoneCell } from './types';
 
-export const H3_RES = 9;
+const H3_RES = 9;
 
 interface Landuse {
   id: number;
@@ -203,7 +203,7 @@ export function buildWorld(
   return world;
 }
 
-export function scoreWorld(
+function scoreWorld(
   buildings: Building[],
   waterPoints: WaterPoint[],
   cells: Record<string, ZoneCell>,

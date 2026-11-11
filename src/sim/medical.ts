@@ -45,7 +45,7 @@ export function findMed(site: { stock: Record<string, number> }, kind: MedKind):
   return candidates.length ? candidates[0][0] : null;
 }
 
-export const BLEED_MAX = 3;
+const BLEED_MAX = 3;
 /** HP lost per hour per bleed step. 3 steps is ~3.6 HP/h: a day to die, not an hour. */
 export const BLEED_HP_PER_HOUR = 1.2;
 /** Chance a dirty wound turns septic, per day. */
@@ -70,7 +70,6 @@ export function bleedOf(v: Survivor): number {
 }
 
 export const isBleeding = (v: Survivor): boolean => bleedOf(v) > 0;
-export const isSeptic = (v: Survivor): boolean => v.infected;
 export const canTreatSepsis = (v: Survivor): boolean => v.infected && (v.infection ?? 0) < ANTIBIOTIC_LIMIT;
 
 /**

@@ -200,7 +200,7 @@ export const isStapleTag = (id: string) => id === STAPLE_TAG;
  * needs. Staples are stored in kg (potatoes are mostly water), so the resolved
  * quantity is converted: 3000 kcal of rice is 0.83 kg, of potatoes 3.9 kg.
  */
-export const stapleQty = (id: ItemId, kcalNeeded: number): number =>
+const stapleQty = (id: ItemId, kcalNeeded: number): number =>
   id === 'rawFood' ? kcalNeeded : kcalNeeded / Math.max(1, ITEMS[id]?.kcal ?? 3000);
 
 /**

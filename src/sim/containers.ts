@@ -1,4 +1,4 @@
-import { ITEMS, type ItemId, type Stock } from '../data/items';
+import type { Stock } from '../data/items';
 
 /**
  * Chất lỏng phải có can chứa.
@@ -46,8 +46,4 @@ export function liquidFree(stock: Partial<Stock> & Record<string, number | undef
 /** Có ít nhất một can không? Không có can thì không hút được gì. */
 export function hasContainer(stock: Partial<Stock> & Record<string, number | undefined>): boolean {
   return liquidRoom(stock) > 0;
-}
-
-export function containerLabel(id: ItemId): string {
-  return ITEMS[id]?.label ?? id;
 }

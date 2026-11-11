@@ -9,7 +9,7 @@ import type { ItemDef } from './items';
  * this pass every blade in the catalog was unbuildable, which left 74 of 75
  * weapons unobtainable.
  */
-export type WeaponClass = 'short_blade' | 'long_blade' | 'sword' | 'axe' | 'reach' | 'crowbar' | 'blunt' | 'heavy' | 'fist';
+type WeaponClass = 'short_blade' | 'long_blade' | 'sword' | 'axe' | 'reach' | 'crowbar' | 'blunt' | 'heavy' | 'fist';
 
 const SHORT = /knife|bayonet|kunai|shuriken|cleaver|scalpel|razor|dagger|stiletto|pusher|pen\b/i;
 const REACH = /spear|pitchfork|lance|\bfork\b|shovel|hoe\b|rake\b|trident|glaive|halberd|pike\b|staff/i;
@@ -22,7 +22,7 @@ const HEAVY = /sledge|maul\b|great ?axe|war ?hammer|halberd|morning ?star|flail/
  * Best-effort class for a weapon. Falls back on the subtype so nothing is ever
  * left without a bill of materials.
  */
-export function weaponClass(def: ItemDef): WeaponClass | undefined {
+function weaponClass(def: ItemDef): WeaponClass | undefined {
   if (def.cls) return def.cls as WeaponClass;
   if (def.mechanic !== 'weapon_blade' && def.mechanic !== 'weapon_blunt') return undefined;
   const name = `${def.label} ${def.subtype ?? ''}`;

@@ -18,9 +18,9 @@ const CALIBRE_RULES: [RegExp, string][] = [
 ];
 
 /** Fallback round for a gun nobody has classified. */
-export const GENERIC_CALIBRE = '9x18';
+const GENERIC_CALIBRE = '9x18';
 
-export function calibreFor(name: string): string {
+function calibreFor(name: string): string {
   for (const [re, cal] of CALIBRE_RULES) if (re.test(name)) return cal;
   return GENERIC_CALIBRE;
 }

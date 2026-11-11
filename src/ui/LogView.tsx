@@ -27,7 +27,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 const fmtAmt = (v: number) => (v >= 100 ? Math.round(v).toLocaleString('vi') : v.toFixed(1));
 
 /** Icon chips for materials gained/lost with an entry. */
-export function ItemChips({ items }: { items: StockDelta }) {
+function ItemChips({ items }: { items: StockDelta }) {
   const list = Object.entries(items).filter(([, v]) => (v ?? 0) >= 0.5);
   if (!list.length) return null;
   return (

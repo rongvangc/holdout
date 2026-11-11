@@ -44,7 +44,7 @@ export function slotFor(id: ItemId): GearSlot | null {
 }
 
 /** How good an item is in its slot — used for sorting and for auto-issue. */
-export function gearScore(id: ItemId): number {
+function gearScore(id: ItemId): number {
   const def = ITEMS[id];
   if (!def) return 0;
   const slot = slotFor(id);

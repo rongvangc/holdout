@@ -101,7 +101,7 @@ export function bestWeapon(site: Site): WeaponPick | null {
   return best;
 }
 
-export type ArmorSlotName = 'body' | 'head' | 'vest';
+type ArmorSlotName = 'body' | 'head' | 'vest';
 
 /**
  * Best body / head / vest the site owns. Armour stacks multiplicatively, then the
@@ -170,7 +170,7 @@ export const describeWeapon = (w: WeaponPick | null): string =>
     : 'tay không';
 
 /** Tools and cookware wear out on the job; until now they were free forever. */
-export const TOOL_MECHANICS = new Set(['tool', 'cookware', 'camping']);
+const TOOL_MECHANICS = new Set(['tool', 'cookware', 'camping']);
 
 export interface ToolPick {
   id: ItemId;

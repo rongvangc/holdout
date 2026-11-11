@@ -4,7 +4,7 @@ import type { StructId } from '../data/structures';
 import { bbox, pointInPolygon, polygonArea } from '../world/geo';
 import type { Vec } from '../world/types';
 
-export const CELL_VOID = 0;
+const CELL_VOID = 0;
 export const CELL_FLOOR = 1;
 export const CELL_YARD = 2;
 

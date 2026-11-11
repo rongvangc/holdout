@@ -1,6 +1,6 @@
 import type { Site } from './types';
 import { FARM_M2_PER_WORKER, TEND_H_PER_M2_DAY, CROPS } from './data';
-import { HERDS, herdBudget, type HerdState } from './livestock';
+import { herdBudget, type HerdState } from './livestock';
 
 /**
  * Một nguồn sự thật cho mọi con số quy mô.
@@ -12,13 +12,11 @@ import { HERDS, herdBudget, type HerdState } from './livestock';
 
 // --- T0: sinh học (không sửa khi cân bằng) ----------------------------------
 export const KCAL_PER_PERSON_DAY = 2250;
-export const WATER_PER_PERSON_DAY = 3.3;
 /** Ngày công thực tế của một người. */
 export const WORK_HOURS_PER_DAY = 10;
 
 // --- T1: năng suất đơn vị (lấy từ dữ liệu thực) ----------------------------
-export const RAU_KCAL_PER_M2_DAY = CROPS.rau.kcalPerM2 / CROPS.rau.days;
-export const KHOAI_KCAL_PER_M2_DAY = CROPS.khoai.kcalPerM2 / CROPS.khoai.days;
+const KHOAI_KCAL_PER_M2_DAY = CROPS.khoai.kcalPerM2 / CROPS.khoai.days;
 
 // --- T2: năng lực một người (suy ra, không đặt tay) ------------------------
 /** Nông dân chăm được bao nhiêu m² (đã khớp với TEND và ngày công). */
@@ -66,9 +64,6 @@ export function siteCapacity(site: Site, herds: { state: HerdState; graze: numbe
 /** Số nông dân cần cho diện tích vườn hiện có. */
 export const farmersFor = (gardenM2: number): number => (gardenM2 >= 20 ? Math.ceil(gardenM2 / FARM_M2_ONE_WORKER) : 0);
 
-/** Sức chứa nước uống của điểm (bể + 300 L nền). */
-export const waterStockDays = (litres: number, population: number): number => litres / Math.max(1, population) / WATER_PER_PERSON_DAY;
-
 /**
  * Ngân sách tập kích một đêm: tối đa bằng 0,9 lần "sức lao động" của điểm.
  * Trước đây sức tập kích tính theo NGÀY tuyệt đối nên nhóm 2 người vẫn phải chịu
@@ -79,8 +74,3 @@ export const raidBudget = (defenders: number, heat = 0): number => {
   return labour * 0.9 * (1 + Math.min(0.6, heat / 150));
 };
 
-/** Đạm/ngày của tất cả bầy ở điểm (phần ăn có đạm). */
-export const proteinPerDay = (herds: { state: HerdState; graze: number }[]): number =>
-  herds.reduce((a, { state, graze }) => a + Math.max(0, herdBudget(state, graze).proteinServings), 0);
-
-export { HERDS };

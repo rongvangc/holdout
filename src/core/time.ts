@@ -1,8 +1,8 @@
 export const MIN = 60;
 export const HOUR = 3600;
 export const DAY = 86400;
-export const DAWN = 6 * HOUR;
-export const DUSK = 18.5 * HOUR;
+const DAWN = 6 * HOUR;
+const DUSK = 18.5 * HOUR;
 
 export const dayOf = (t: number) => Math.floor(t / DAY) + 1;
 export const timeOfDay = (t: number) => ((t % DAY) + DAY) % DAY;
@@ -10,7 +10,7 @@ export const isNight = (t: number) => {
   const s = timeOfDay(t);
   return s < DAWN || s >= DUSK;
 };
-export const startOfDay = (t: number) => Math.floor(t / DAY) * DAY;
+const startOfDay = (t: number) => Math.floor(t / DAY) * DAY;
 
 /** Next absolute time at which the clock reads `secOfDay`, strictly after t. */
 export function nextClock(t: number, secOfDay: number): number {

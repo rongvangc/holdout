@@ -16,7 +16,7 @@ import { isActive, makeSurvivor, skill } from './survivors';
 import type { GameState, LogEntry, Site, StockDelta, Survivor } from './types';
 import { makeVehicle, migrateVehicles } from './vehicles';
 
-export const START_SURVIVORS = 5;
+const START_SURVIVORS = 5;
 const LOG_MAX = 500;
 
 /** Build a held location from a World building (base/outpost) or green polygon (field). */

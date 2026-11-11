@@ -11,14 +11,14 @@ import type { GameState, Site } from './types';
  * order instead of everything dying at once.
  */
 
-export const KW_PER_SOLAR_PANEL = 1.5;
+const KW_PER_SOLAR_PANEL = 1.5;
 /** Litres a diesel set burns per kWh delivered (small genset, partial load). */
-export const FUEL_L_PER_KWH = 0.25;
+const FUEL_L_PER_KWH = 0.25;
 /** Hours the generator runs each night. */
-export const NIGHT_HOURS = 12;
+const NIGHT_HOURS = 12;
 export const KWH_PER_BATTERY = 3;
 /** Hours of usable daylight a panel gets, before weather. */
-export const SOLAR_HOURS = 5;
+const SOLAR_HOURS = 5;
 /** kW a generator of each level puts out. */
 export const GENERATOR_KW = [4, 6, 8];
 

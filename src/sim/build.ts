@@ -13,7 +13,7 @@ import type { GameState, Project, Site, StockDelta } from './types';
 export const hasWorkshop = (s: GameState) => s.sites.some((x) => baseStats(s, x).workshop);
 
 /** Groundwater rule: a dug well this close to a latrine is a hygiene problem. */
-export const WELL_LATRINE_MIN_M = 10;
+const WELL_LATRINE_MIN_M = 10;
 
 function roomCentroid(site: Site, r: Room): [number, number] {
   const it = site.interior;
@@ -258,7 +258,7 @@ export function upgradeModule(s: GameState, site: Site, roomId: string): string 
 }
 
 /** "20 sắt, 12 gạch" — short list for error messages. */
-export function fmtCostShort(c: Partial<Stock>): string {
+function fmtCostShort(c: Partial<Stock>): string {
   return Object.entries(c)
     .filter(([, v]) => Number(v ?? 0) > 0)
     .map(([k, v]) => `${Math.round(Number(v ?? 0) * 10) / 10} ${k}`)

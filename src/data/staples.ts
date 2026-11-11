@@ -98,11 +98,6 @@ export function regionStapleAlt(latitude: number): string {
   return 'lua_mi';
 }
 
-/** Everything editable that counts as bulk calories, heaviest kcal/kg first. */
-export function stapleIds(): string[] {
-  return [...STAPLE_IDS];
-}
-
 /**
  * Total bulk calories in a store, across every staple plus the legacy bucket.
  * Every "days of food left" calculation must use this, or a colony living on

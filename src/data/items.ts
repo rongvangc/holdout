@@ -116,12 +116,7 @@ export const ITEMS: Record<string, ItemDef> = withDerivedCaliber(
   withDerivedInsulation(withDerivedAttack(withDerivedWeaponClass(withDerivedArmor({ ...BASE_ITEMS })))),
 );
 
-/** Lookup that never throws — UI falls back to the id when a def is missing. */
-export const itemDef = (id: string): ItemDef | undefined => ITEMS[id];
-
 export const itemLabel = (id: string): string => ITEMS[id]?.label ?? id;
-
-export const itemKg = (id: string): number => ITEMS[id]?.kgPerUnit ?? 0;
 
 /** Curated order for the existing stock panel; new categories render by `category`. */
 export const STOCK_ORDER: ItemId[] = [
@@ -144,7 +139,7 @@ export const STOCK_ORDER: ItemId[] = [
 ];
 
 /** Ids that always appear in a fresh stock record. */
-export const STOCK_KEYS: string[] = Object.keys(ITEMS);
+const STOCK_KEYS: string[] = Object.keys(ITEMS);
 
 export type Stock = Record<ItemId, number>;
 
@@ -164,6 +159,8 @@ export function normalizeStock(stock: Partial<Stock> | undefined): Stock {
   }
   return out;
 }
+
+const itemKg = (id: string): number => ITEMS[id]?.kgPerUnit ?? 0;
 
 export const stockWeight = (s: Partial<Stock>) =>
   Object.entries(s).reduce((w, [k, v]) => w + (v ?? 0) * itemKg(k), 0);

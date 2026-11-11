@@ -142,10 +142,4 @@ export function gearPool(cat: BuildingCat): [ItemId, number][] {
   return out;
 }
 
-/** True when the catalogue item can be found somewhere in the world. */
-export function inAnyPool(id: ItemId): boolean {
-  for (const cat of Object.keys(POOLS) as BuildingCat[]) if (gearPool(cat).some(([x]) => x === id)) return true;
-  return false;
-}
-
 export const POOL_CATS = Object.keys(POOLS) as BuildingCat[];

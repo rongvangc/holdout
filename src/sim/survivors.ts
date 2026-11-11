@@ -4,15 +4,15 @@ import type { Survivor } from './types';
 
 const LEVEL_BASE = 100;
 const LEVEL_GROWTH = 1.55;
-export const MAX_LEVEL = 10;
+const MAX_LEVEL = 10;
 
-export function xpForLevel(level: number): number {
+function xpForLevel(level: number): number {
   let total = 0;
   for (let l = 1; l <= level; l++) total += LEVEL_BASE * LEVEL_GROWTH ** (l - 1);
   return total;
 }
 
-export function levelOf(xp: number): number {
+function levelOf(xp: number): number {
   let l = 0;
   while (l < MAX_LEVEL && xp >= xpForLevel(l + 1)) l++;
   return l;
@@ -90,4 +90,3 @@ export function makeSurvivor(rng: Rng, id: string, day: number): Survivor {
 }
 
 export const isActive = (s: Survivor) => s.status === 'alive';
-export const atBase = (s: Survivor) => s.status === 'alive' && s.location === 'base';

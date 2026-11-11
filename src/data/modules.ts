@@ -38,10 +38,10 @@ export type ModuleId =
   | 'pond'
   | 'barn';
 
-export type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
+type Placement = 'indoor' | 'outdoor' | 'ground' | 'top_or_outdoor' | 'any';
 
 /** One upgrade step. levels[0] takes the station from 1 to 2, levels[1] from 2 to 3. */
-export interface ModuleLevel {
+interface ModuleLevel {
   cost: Partial<Stock>;
   workSec: number;
   /** What the new level unlocks — recipes pin `level` to this. */

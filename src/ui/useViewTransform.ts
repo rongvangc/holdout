@@ -4,9 +4,8 @@ export interface ViewTransform {
   ty: number;
 }
 
-export const MIN_SCALE = 0.4;
+const MIN_SCALE = 0.4;
 export const MAX_SCALE = 4;
-export const CELL_BASE = 24;
 
 export const IDENTITY: ViewTransform = { scale: 1, tx: 0, ty: 0 };
 

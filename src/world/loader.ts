@@ -6,7 +6,7 @@ import type { WorldRequest } from './worker';
 // Bump when the World shape changes so stale caches are regenerated.
 const WORLD_VERSION = 2;
 
-export function worldKey(lat: number, lon: number, radius: number, synthetic: boolean): string {
+function worldKey(lat: number, lon: number, radius: number, synthetic: boolean): string {
   return `v${WORLD_VERSION}:${synthetic ? 'syn' : 'osm'}:${lat.toFixed(3)},${lon.toFixed(3)}:${radius}`;
 }
 

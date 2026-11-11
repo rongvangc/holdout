@@ -24,7 +24,7 @@ export function killSurvivor(s: GameState, v: Survivor, cause: string): void {
   checkGameOver(s);
 }
 
-export function removeSurvivor(s: GameState, v: Survivor, why: string): void {
+function removeSurvivor(s: GameState, v: Survivor, why: string): void {
   forfeitGear(v); // bỏ đi thì mang theo đồ
   if (v.status !== 'alive') return;
   v.status = 'gone';
