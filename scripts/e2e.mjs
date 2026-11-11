@@ -198,6 +198,32 @@ await step('tab Bản đồ: bản đồ tải, có ô mục tiêu', async () =>
   assert(/ĐỘI ĐANG NGOÀI/i.test(await text()), 'thiếu bảng đội');
 });
 
+await pause();
+await step('chạm bản đồ: chọn được toà nhà và thấy hành động', async () => {
+  await tab('BẢN ĐỒ');
+  await page.waitForTimeout(2500);
+  const cv = page.locator('.mapview canvas').first();
+  const box = await cv.boundingBox();
+  assert(box, 'không có canvas bản đồ');
+  // Bản đồ hit-test theo tile vector: phải chờ tile tải xong. Quét lưới điểm.
+  let hit = null;
+  for (let gy = 0; gy < 8 && !hit; gy++) {
+    for (let gx = 0; gx < 8 && !hit; gx++) {
+      await page.mouse.click(box.x + 20 + ((box.width - 40) * gx) / 7, box.y + 20 + ((box.height - 40) * gy) / 7);
+      await page.waitForTimeout(120);
+      const acts = await page.evaluate(() =>
+        [...document.querySelectorAll('button')]
+          .map((b) => b.innerText.replace(/[ 	]+/g, ' ').trim())
+          .filter((t) => /^LỤC SOÁT|^CHIẾM|^ĐI TUẦN/i.test(t)),
+      );
+      if (acts.length) hit = acts;
+    }
+  }
+  assert(hit, 'chạm 64 điểm mà không chọn được toà nhà nào');
+  return hit.join(' / ').slice(0, 60);
+});
+
+
 await step('automation tự phóng chuyến (≤ 3 ngày game)', async () => {
   await tab('CĂN CỨ');
   await page.locator('button').filter({ hasText: /^240×$/ }).first().click();

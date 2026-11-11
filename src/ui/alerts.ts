@@ -93,10 +93,16 @@ export function decide(s: GameState, site: Site): Decision[] {
     });
   }
   if (water < 2) {
+    // Bể đầy nước bẩn thì giếng không bơm được nữa. Trước đây chuyện đó chỉ hiện ra
+    // dưới dạng "uống nước bẩn" trong log, còn người chơi thấy giếng đứng im mà không
+    // hiểu vì sao. Gộp vào dòng cảnh báo nước để nó không bị ngân sách 3 dòng cắt mất.
+    const tankFull = st.waterCapacity > 0 && (site.stock.dirtyWater ?? 0) >= st.waterCapacity - 50;
     out.push({
       id: 'water',
       level: 'bad',
-      text: `Nước uống còn ${water.toFixed(1)} ngày`,
+      text: tankFull
+        ? `Nước uống còn ${water.toFixed(1)} ngày · bể đầy nước bẩn nên giếng ngừng bơm — cần người lọc`
+        : `Nước uống còn ${water.toFixed(1)} ngày`,
       action: 'Lấy nước',
       tab: 'map',
     });
