@@ -172,6 +172,15 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
 
   return (
     <div className="game">
+      {pausedBy && speed === 0 && (
+        <PausedBanner
+          reason={pausedBy}
+          onResume={() => {
+            setPausedBy(null);
+            setSpeed(speedBeforePause.current || 2);
+          }}
+        />
+      )}
       <OverlayShell
         s={s}
         world={world}
@@ -199,15 +208,6 @@ export function Game({ initial, world: initialWorld, onExit }: { initial: GameSt
         {tab === 'laws' && <LawsView {...props} />}
         {tab === 'log' && <LogView {...props} />}
       </OverlayShell>
-      {pausedBy && speed === 0 && (
-        <PausedBanner
-          reason={pausedBy}
-          onResume={() => {
-            setPausedBy(null);
-            setSpeed(speedBeforePause.current || 2);
-          }}
-        />
-      )}
       {toast && (
         <div className="toast" role="status" aria-live="polite" onClick={() => setToast(null)}>
           {toast.msg}

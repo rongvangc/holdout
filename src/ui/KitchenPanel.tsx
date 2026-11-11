@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { DISHES, INGREDIENTS } from '../data/dishes';
 import { MODULES } from '../data/modules';
-import { RECIPES } from '../data/recipes';
+import { RECIPES, resolveInputs } from '../data/recipes';
 import { fmtDuration } from '../core/time';
 import { queueCraft, stationLevel } from '../sim/build';
+import { present } from '../sim/state';
 import { foodFxLabel } from '../sim/diet';
 import { canAfford } from '../sim/state';
 import { Hint } from './hints';
@@ -21,17 +23,36 @@ export interface PanelProps {
 }
 
 export function KitchenPanel({ s, site, refresh }: PanelProps) {
+  // Bếp từng bỏ qua kết quả của queueCraft: bấm Nấu mà hàng đợi từ chối (thiếu nguyên
+  // liệu, trạm đang bận) thì không có gì xảy ra và cũng không nói vì sao.
+  const [err, setErr] = useState('');
+  // Không có ai vai Bếp thì hàng đợi đứng im và người chơi không hiểu vì sao.
+  const cooks = present(s, site).filter((v) => v.role === 'cook' && v.location === 'base').length;
   const dishes = Object.entries(DISHES).map(([id, def]) => {
     const recipe = RECIPES.find((r) => r.out === id);
     const stock = site.stock[id] ?? 0;
     const lvl = recipe ? stationLevel(site, recipe.station) : 0;
     const unlocked = !!recipe && lvl >= recipe.level;
-    const afford = !!recipe && canAfford(site, Object.fromEntries(recipe.in));
+    // '@staple' phải được quy ra gạo/khoai thật trước khi hỏi kho có đủ không.
+    // Đọc thẳng recipe.in thì canAfford đi tìm stock['@staple'] = 0, nên MỌI món
+    // nấu từ lương thực đều bị khoá vĩnh viễn — engine nấu được, UI thì không cho bấm.
+    const inputs = recipe ? resolveInputs(recipe, site.stock, s.latitude) : [];
+    const afford = !!recipe && canAfford(site, Object.fromEntries(inputs));
     return { id, def, recipe, stock, unlocked, afford, level: recipe?.level ?? 1, station: recipe?.station };
   });
 
   return (
     <div className="col" style={{ gap: 6 }}>
+      {err && (
+        <div className="red" role="alert">
+          {err}
+        </div>
+      )}
+      {cooks === 0 && (
+        <div className="amber">
+          Chưa ai giữ vai <b>Bếp</b> — món vào hàng đợi nhưng không ai nấu. Sang tab Người gán một người.
+        </div>
+      )}
       <div className="label">Nguyên liệu tươi</div>
       <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
         {Object.entries(INGREDIENTS).map(([id, def]) => {
@@ -74,7 +95,7 @@ export function KitchenPanel({ s, site, refresh }: PanelProps) {
                         : 'Thiếu nguyên liệu'
                   }
                   onClick={() => {
-                    queueCraft(s, site, recipe.id);
+                    setErr(queueCraft(s, site, recipe.id) ?? '');
                     refresh();
                   }}
                 >

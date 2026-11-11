@@ -918,6 +918,7 @@ table.grid tr.sel td {
   height: 100%;
 }
 .overlay-shell {
+  grid-column: 1 / -1;
   height: 100%;
   min-height: 0;
   display: flex;
@@ -1484,19 +1485,20 @@ table.grid tr.sel td {
 }
 
 /* The clock stopped on purpose — say so, and give one button to start it again. */
+/* In the flow, under the HUD: as a fixed bar at the viewport top it covered the
+   top strip, so the one moment the player needs their numbers is the moment the
+   numbers disappeared. */
 .paused-banner {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  z-index: 40;
+  /* First row of the app grid, full width; the HUD keeps its own row underneath. */
+  grid-column: 1 / -1;
+  grid-row: 1;
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 10px calc(7px + env(safe-area-inset-top, 0px));
+  padding: 7px 10px;
   background: var(--panel);
   border-bottom: 2px solid var(--red);
-  border-top: 2px solid var(--red);
   font-size: 12px;
   line-height: 1.35;
 }
