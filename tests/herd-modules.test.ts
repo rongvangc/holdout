@@ -99,3 +99,14 @@ describe('the pasture module is actually placeable', () => {
     expect(def.maxPerSite).toBeGreaterThan(0);
   });
 });
+
+describe('the butcher module is placeable', () => {
+  it('needs the yard and a small footprint', async () => {
+    const { MODULES } = await import('../src/data/modules');
+    const { canPlace } = await import('../src/base/interior');
+    const def = MODULES.butcher;
+    expect(def.placement).toBe('outdoor');
+    expect(canPlace({ floors: 1 } as never, { id: 'r', floor: 0, outdoor: true, cells: [], area: 20 } as never, def)).toBeNull();
+    expect(canPlace({ floors: 1 } as never, { id: 'r', floor: 0, outdoor: false, cells: [], area: 20 } as never, def)).toMatch(/ngoài sân/);
+  });
+});

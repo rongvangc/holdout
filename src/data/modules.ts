@@ -4,6 +4,7 @@ export type ModuleId =
   | 'bedroom'
   | 'kitchen'
   | 'pasture'
+  | 'butcher'
   | 'storage'
   | 'workshop'
   | 'infirmary'
@@ -189,6 +190,22 @@ export const MODULES: Record<ModuleId, ModuleDef> = {
     levels: [
       { cost: { scrap: 14, cloth: 6, wood: 8 }, workSec: 4 * H, note: 'Cấp 2: 18 L/giờ' },
       { cost: { plate: 2, clay: 4, cloth: 6 }, workSec: 7 * H, note: 'Cấp 3: 24 L/giờ' },
+    ],
+  },
+  butcher: {
+    label: 'Lò mổ',
+    icon: '⚒',
+    color: '#a04a3c',
+    placement: 'outdoor',
+    minArea: 6,
+    maxArea: 60,
+    maxPerSite: 1,
+    workSec: () => 4 * H,
+    cost: () => ({ wood: 14, stone: 10, rope: 3 }),
+    desc: 'Mổ gia súc lấy thịt, và giữ lại thứ trước đây bỏ đi: da cho xưởng may, mỡ cho nến, xương cho bột bón vườn. Không có lò mổ thì chỉ mổ được thịt khi bầy quá tải.',
+    levels: [
+      { cost: { plank: 10, stone: 14, rope: 6 }, workSec: 6 * H, note: 'Cấp 2: giữ được da và mỡ' },
+      { cost: { plate: 2, lime: 6, stone: 20 }, workSec: 9 * H, note: 'Cấp 3: giữ xương, thịt +20%' },
     ],
   },
   pasture: {

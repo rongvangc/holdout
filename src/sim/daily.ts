@@ -70,7 +70,9 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     const care = need > 0 ? Math.min(1, plot.tendedToday / need) : 1;
     const cold = s.weather.tempC < 18 ? 0.6 : 1;
     const before = plot.growth;
-    const fertilised = st.barn > 0 ? 1.25 : 1; // phân từ trại chăn nuôi
+    // Phân từ trại chăn nuôi (+25%) và bột xương rắc vườn (+15%, tiêu hao dần).
+    const bonemeal = (site.stock.bot_xuong ?? 0) > 0 && take(site, 'bot_xuong', Math.min(0.05 * room.area, site.stock.bot_xuong ?? 0)) > 0;
+    const fertilised = (st.barn > 0 ? 1.25 : 1) * (bonemeal ? 1.15 : 1);
     plot.growth = Math.min(1, plot.growth + ((0.45 + 0.55 * care) / CROPS[plot.crop].days) * cold * fertilised);
     if (s.weather.storm && room.outdoor) plot.growth = Math.max(0, plot.growth - 0.15);
     plot.tendedToday = 0;
@@ -145,6 +147,13 @@ function siteDay(s: GameState, world: World, site: Site, day: number): void {
     // "Chọn giống" (t_breed): con giống tốt hơn → +12% trứng và sữa.
     if (tick.eggs) tick.eggs = tick.eggs * researchBonus(s, 'yield');
     if (tick.milk) tick.milk = tick.milk * researchBonus(s, 'yield');
+    // Mùa lạnh: bầy ngoài trời đốt năng lượng để giữ ấm nên đẻ và cho sữa kém hơn.
+    // Chuồng kín (cấp 3) hoặc lò/máy sưởi đang chạy thì không bị.
+    const chilly = s.weather.tempC < 12 && !fx.shelter && !site.warmthActive;
+    if (chilly) {
+      tick.eggs *= 0.75;
+      tick.milk *= 0.75;
+    }
     // Đêm xuống: cáo/chó hoang/người lạ bắt con. Chuồng kín (cấp 3) thì không.
     if (!fx.shelter && h.adults + h.young > 1 && chance(s.rng, nightLossChance(site.heat, s.weather.tempC < 12))) {
       const gone = takeNightLoss(h);
@@ -599,11 +608,25 @@ function defendAssault(s: GameState, site: Site, strength: number, waveTypes: Zo
       if (chance(s.rng, 0.65)) v.infected = true;
     }
   }
+  // Bầy là tài sản của sân: thua trận thì chúng cũng bị bắt hoặc giết, không chỉ kho.
+  let beastsLost = 0;
+  const herds = site.interior.rooms.filter((r) => r.herdState && (r.herdState.adults + r.herdState.young) > 1);
+  if (herds.length && chance(s.rng, 0.35 + ratio * 0.5)) {
+    const room = herds[int(s.rng, 0, herds.length - 1)];
+    const h = room.herdState!;
+    if (h.young > 0) h.young -= 1;
+    else {
+      h.adults -= 1;
+      h.males = Math.min(h.males, h.adults);
+    }
+    beastsLost = 1;
+    log(s, `${site.name}: trong đêm hỗn loạn, mất một con ${HERDS[h.kind].label.toLowerCase()} — chuồng bị phá.`, 'warn');
+  }
   const loss = ratio * (st.storage ? st.storeLoss : 0.25);
   for (const k of ['food', ...STAPLE_IDS, 'meals', 'water', 'medicine'] as const) take(site, k, site.stock[k] * loss);
   alert(
     s,
-    `${site.name}: zombie phá vào trong ${atkLabel}! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư${brokenStructs ? `, ${brokenStructs} ô công trình bị phá` : ''}.`,
+    `${site.name}: zombie phá vào trong ${atkLabel}! (${vs}) ${hurt} người bị thương, mất ${Math.round(loss * 100)}% vật tư${brokenStructs ? `, ${brokenStructs} ô công trình bị phá` : ''}${beastsLost ? ', mất một con vật nuôi' : ''}.`,
     'bad',
   );
   for (const v of shuffled.slice(0, hurt)) {

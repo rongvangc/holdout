@@ -730,7 +730,7 @@ export function BaseView({ s, world, site, refresh, focusPanel }: ViewProps) {
             </div>
             {room.module && <div className="dim">{MODULES[room.module].desc}</div>}
             {(room.herdState || room.module === 'coop' || room.module === 'barn') && (
-              <HerdPanel s={s} world={world} site={site} room={room} />
+              <HerdPanel s={s} world={world} site={site} room={room} refresh={refresh} />
             )}
             {plot && (
               <div className="kv">

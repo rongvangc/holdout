@@ -32,7 +32,7 @@ export function makeTestWorld(): World {
 }
 
 // Ruộng cỏ đứng trước chuồng/trại: không có cỏ thì bầy ăn mất lương thực của người.
-const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'pasture', 'coop', 'barn', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine'];
+const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'pasture', 'coop', 'barn', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine', 'pasture', 'pasture', 'coop', 'barn', 'butcher'];
 const WANT_FIELD: ModuleId[] = ['garden', 'garden', 'well', 'shelter', 'latrine'];
 
 

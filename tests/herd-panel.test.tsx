@@ -70,3 +70,19 @@ describe('herd panel', () => {
     expect(html(p)).toContain('Quá chỗ');
   });
 });
+
+describe('slaughter button', () => {
+  it('is disabled without a butcher and explains what it would yield with one', () => {
+    const off = setup();
+    expect(html(off)).toContain('Mổ 1 con');
+    expect(html(off)).toContain('chưa có Lò mổ');
+
+    const on = setup();
+    const b = on.site.interior.rooms[1] as Room;
+    b.module = 'butcher';
+    b.moduleLevel = 2;
+    const out = html(on);
+    expect(out).toContain('kg thịt');
+    expect(out).toContain('da');
+  });
+});

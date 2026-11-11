@@ -1,4 +1,6 @@
-import { HERDS, herdCapacity, herdNeeds, herdSummary, localHerds, pastureYield } from '../sim/livestock';
+import { HERDS, herdCapacity, herdNeeds, herdSummary, localHerds, pastureYield, slaughterYield } from '../sim/livestock';
+import { stationLevel } from '../sim/build';
+import { slaughterOne } from '../sim/slaughter';
 import type { GameState, Site } from '../sim/types';
 import type { World } from '../world/types';
 import type { Room } from '../base/interior';
@@ -20,7 +22,7 @@ function Bar({ value, warn }: { value: number; warn: number }) {
   );
 }
 
-export function HerdPanel({ s, world, site, room }: { s: GameState; world: World; site: Site; room: Room }) {
+export function HerdPanel({ s, world, site, room, refresh }: { s: GameState; world: World; site: Site; room: Room; refresh?: () => void }) {
   const h = room.herdState;
   if (!h) return null;
   const level = room.moduleLevel ?? 1;
@@ -108,6 +110,40 @@ export function HerdPanel({ s, world, site, room }: { s: GameState; world: World
         )}
         {h.pregnant > 0 && <div className="faint">{h.pregnant} con đang mang thai.</div>}
       </div>
+
+      {(() => {
+        // Mổ theo ý người chơi: chỉ khi có Lò mổ và còn ít nhất 2 con (giữ giống).
+        const lvl = stationLevel(site, 'butcher');
+        const y = slaughterYield(h.kind, lvl);
+        const canSlaughter = h.adults + h.young >= 2;
+        return (
+          <div className="col" style={{ gap: 3 }}>
+            <div className="row" style={{ gap: 6 }}>
+              <button
+                disabled={lvl < 1 || !canSlaughter}
+                title={
+                  lvl < 1
+                    ? 'Cần Lò mổ trong sân để mổ theo ý muốn'
+                    : !canSlaughter
+                      ? 'Còn một con — giữ lại làm giống'
+                      : `Mổ một con: ${y.meat.toFixed(1)} kg thịt`
+                }
+                onClick={() => {
+                  slaughterOne(s, site, room.id);
+                  refresh?.();
+                }}
+              >
+                Mổ 1 con
+              </button>
+              <span className="faint grow">
+                {lvl < 1
+                  ? 'chưa có Lò mổ'
+                  : `≈ ${y.meat.toFixed(1)} kg thịt${y.hide ? ` · ${y.hide} da` : ''}${y.fat ? ` · ${y.fat} kg mỡ` : ''}${y.bone ? ` · ${y.bone} kg xương` : ''}`}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="faint">
         Vùng này phù hợp: {HERDS[wants.coop].label.toLowerCase()} (chuồng), {HERDS[wants.barn].label.toLowerCase()} (trại)

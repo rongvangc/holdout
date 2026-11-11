@@ -37,6 +37,10 @@ const MATERIAL_RECIPES: Recipe[] = [
   { id: 'r_gear', out: 'gear', qty: 1, station: 'workshop', level: 1, in: [['scrap', 1], ['parts', 1]], workSec: HOUR, skill: 'mechanics' },
   { id: 'r_wire', out: 'wire', qty: 4, station: 'workshop', level: 1, in: [['scrap', 1]], workSec: 30 * MIN, skill: 'mechanics' },
   { id: 'r_plate', out: 'plate', qty: 1, station: 'forge', level: 2, in: [['scrap', 3], ['wood', 2]], workSec: 2 * HOUR, skill: 'crafting', note: 'Cần lò rèn cấp 2' },
+  // Phụ phẩm từ Lò mổ: da → ba lô, mỡ → nến, xương → bột bón vườn.
+  { id: 'r_cap_da', out: 'pack_backpack', qty: 1, station: 'tailor', level: 2, in: [['da', 2], ['thread', 3]], workSec: 3 * HOUR, skill: 'crafting', note: 'Cần xưởng may cấp 2 · +27 kg sức chở' },
+  { id: 'r_nen', out: 'fire_candle', qty: 2, station: 'kitchen', level: 1, in: [['mo', 0.3], ['cloth', 0.1]], workSec: 30 * MIN, skill: 'cooking', note: 'Nến: đi đêm mà không cần pin' },
+  { id: 'r_bot_xuong', out: 'bot_xuong', qty: 1, station: 'kiln', level: 2, in: [['xuong', 2]], workSec: HOUR, skill: 'crafting', note: 'Nung xương rồi nghiền' },
   { id: 'r_can', out: 'can_20l', qty: 1, station: 'workshop', level: 1, in: [['scrap', 3], ['cloth', 1]], workSec: 30 * MIN, skill: 'mechanics' },
   { id: 'r_filter_core', out: 'filter_core', qty: 1, station: 'workshop', level: 1, in: [['wood', 1], ['sand', 1], ['cloth', 1]], workSec: HOUR, skill: 'crafting' },
   { id: 'r_battery', out: 'battery', qty: 1, station: 'workshop', level: 2, in: [['scrap', 6], ['parts', 2], ['wire', 2]], workSec: 4 * HOUR, skill: 'mechanics', note: 'Cần bàn thợ cấp 2' },

@@ -529,6 +529,31 @@ export interface HerdBudget {
 
 const KCAL = { trung: 78, sua: 640, thit: 1900 };
 
+/**
+ * Một con cho ra những gì, theo cấp Lò mổ.
+ *
+ * Trước đây mổ chỉ ra thịt: da, mỡ, xương bỏ đi — nên xưởng may không có da, nến
+ * không có mỡ, vườn không có bột xương. Đây là phần nối bầy với ba hệ đó.
+ */
+export interface SlaughterYield {
+  meat: number;
+  hide: number;
+  fat: number;
+  bone: number;
+}
+
+export function slaughterYield(kind: HerdKind, butcherLevel = 0): SlaughterYield {
+  const bio = HERDS[kind];
+  const meat = bio.adultKg * bio.dressing * (butcherLevel >= 3 ? 1.2 : 1);
+  if (butcherLevel <= 0) return { meat, hide: 0, fat: 0, bone: 0 };
+  return {
+    meat,
+    hide: bio.adultKg >= 60 ? 3 : bio.adultKg >= 20 ? 2 : 1,
+    fat: Math.round(bio.adultKg * 0.06 * 10) / 10,
+    bone: butcherLevel >= 3 ? Math.round(bio.adultKg * 0.12 * 10) / 10 : 0,
+  };
+}
+
 export function herdSummary(h: HerdState, area: number, level = 1, graze = 0): HerdSummary {
   const bio = HERDS[h.kind];
   const fx = herdLevelFx(level);
