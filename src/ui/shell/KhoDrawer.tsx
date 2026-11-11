@@ -48,6 +48,7 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
   const stock = site.stock;
   const [group, setGroup] = useState<string>('all');
   const [, bump] = useState(0);
+  const [repairErr, setRepairErr] = useState('');
   const vehicles = site.vehicles ?? [];
 
   // Mọi thứ đang thực sự có trong kho, kể cả 647 món catalog (trước đây bị ẩn).
@@ -122,6 +123,11 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
           <>
             <div className="dither" />
             <div className="label">Cần bảo trì</div>
+            {repairErr && (
+              <div className="red" role="alert">
+                {repairErr}
+              </div>
+            )}
             <div className="col" style={{ gap: 3 }}>
               {worn.map((w) => (
                 <div key={w.id} className="row" style={{ gap: 6 }}>
@@ -131,7 +137,10 @@ export function KhoDrawer({ s, site }: { s: GameState; site: Site }) {
                     disabled={forgeLvl < 2}
                     title={forgeLvl < 2 ? 'Cần Lò rèn cấp 2' : 'Sửa ở lò rèn'}
                     onClick={() => {
-                      queueRepair(s, site, w.id);
+                      // queueRepair trả lý do khi từ chối; trước đây bấm Sửa mà
+                      // không có gì xảy ra và cũng không nói vì sao.
+                      setRepairErr(queueRepair(s, site, w.id) ?? '');
+                      bump((n) => n + 1);
                     }}
                   >
                     Sửa

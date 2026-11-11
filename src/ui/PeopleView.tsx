@@ -239,7 +239,9 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                   value={p.commute?.work ?? ''}
                   disabled={p.location === 'expedition' || s.sites.length < 2}
                   onChange={(e) => {
-                    setCommute(s, world, p.id, e.target.value || null);
+                    // setCommute trả lý do khi không đặt được (không có đường đi,
+                    // người đã đi viễn chinh) — trước đây UI nuốt mất.
+                    setMsg(setCommute(s, world, p.id, e.target.value || null) ?? '');
                     refresh();
                   }}
                 >
@@ -407,7 +409,9 @@ export function PeopleView({ s, world, site, refresh }: ViewProps) {
                     disabled={v.location !== 'base'}
                     title={held ? gearLabel(held) : 'Chưa cấp phát'}
                     onChange={(e) => {
-                      equip(site, v, slot, e.target.value || null);
+                      // equip trả lý do khi không cấp được (món không có trong kho,
+                      // người đang ở ngoài) — phải hiện ra chứ không nuốt.
+                      setMsg(equip(site, v, slot, e.target.value || null) ?? '');
                       refresh();
                     }}
                   >
