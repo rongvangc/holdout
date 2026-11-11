@@ -32,7 +32,7 @@ export function makeTestWorld(): World {
 }
 
 // Ruộng cỏ đứng trước chuồng/trại: không có cỏ thì bầy ăn mất lương thực của người.
-const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'pasture', 'coop', 'barn', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine', 'pasture', 'pasture', 'coop', 'barn', 'butcher'];
+const WANT_BASE: ModuleId[] = ['bedroom', 'kitchen', 'latrine', 'water_tank', 'workshop', 'storage', 'bedroom', 'filter', 'garden', 'pasture', 'coop', 'barn', 'infirmary', 'herb_garden', 'garden', 'well', 'watchtower', 'herb_garden', 'rec_room', 'bookshelf', 'bedroom', 'latrine', 'pasture', 'pasture', 'coop', 'butcher', 'barn', 'coop', 'barn'];
 const WANT_FIELD: ModuleId[] = ['garden', 'garden', 'well', 'shelter', 'latrine'];
 
 
@@ -75,37 +75,41 @@ function consolidateYard(s: GameState, base: Site): boolean {
 }
 
 function buildNext(s: GameState, site: Site, want: ModuleId[]): void {
-  // Ruộng: hạng mục vườn không bị chặn bởi một hạng mục khác đang chờ thợ.
-  if (site.projects.length && site.kind !== 'field') return;
+  // Chan theo "da co du an cho chinh module do" chu khong theo tong so du an: bot luon
+  // co tram dang xay (pond, cellar...) nen truoc day ham nay thoat gan nhu moi ngay.
+  const queuedModules = new Set(site.projects.filter((p) => p.kind === 'module').map((p) => p.module));
+  if (site.kind !== 'field' && queuedModules.size >= 2) return;
   if (site.projects.filter((p) => p.kind === 'module' && p.module === 'garden').length > 2) return;
+
   const have = site.interior.rooms.filter((r) => r.module).map((r) => r.module!);
   const counts: Record<string, number> = {};
-  let next = want.find((m) => {
+  const missing: ModuleId[] = [];
+  for (const m of want) {
     counts[m] = (counts[m] ?? 0) + 1;
-    return have.filter((h) => h === m).length < counts[m];
-  });
-  // Fields keep adding gardens while there are hands to tend them.
-  if (!next && site.kind === 'field') {
-    // Một nông dân chăm ~1.200 m²; chỉ mở thêm vườn khi diện tích hiện tại còn dưới
-    // sức của người làm nông thật (trước đây tính cả người không làm nông → 6.384 m²
-    // mà chỉ 1 nông dân và 6 khoảnh được trồng).
+    if (have.filter((h) => h === m).length < counts[m]) missing.push(m);
+  }
+  // Ruong tiep tuc mo vuon khi con tay cham (1 nong dan ~1200 m2).
+  if (!missing.length && site.kind === 'field') {
     const farmers = s.survivors.filter(
       (v) => v.status === 'alive' && (v.siteId === site.id || v.commute?.work === site.id) && v.role === 'farmer',
     ).length;
-    const covered = Math.max(1, farmers) * FARM_M2_PER_WORKER;
-    if (baseStats(s, site).gardenArea < covered) next = 'garden';
+    if (baseStats(s, site).gardenArea < Math.max(1, farmers) * FARM_M2_PER_WORKER) missing.push('garden');
   }
-  if (!next) return;
-  // Vườn cần khoảnh LỚN (năng suất thật), trạm khác thì vừa là đủ → xếp ngược lại.
-  const free = site.interior.rooms
-    .filter((r) => !r.module)
-    .sort((a, b) => (next === 'garden' ? b.area - a.area : a.area - b.area));
-  // Ruộng: chỉ xếp hạng mục trả được ngay, không để hàng đợi đầy project chết.
-  if (site.kind === 'field') {
-    const cost = MODULES[next].cost(free[0]?.area ?? 0);
-    if (!canAfford(site, cost)) return;
+
+  // Bo qua module KHONG dat duoc o day roi moi sang module ke tiep. Day chinh la cho
+  // lam bot ket: san nha khong co khoanh >=40 m2 nen "pasture" khong bao gio xep duoc,
+  // va moi thu sau no - ke ca Lo mo - khong bao gio toi luot.
+  for (const m of missing) {
+    if (queuedModules.has(m)) return;
+    const def = MODULES[m];
+    const free = site.interior.rooms
+      .filter((r) => !r.module && !canPlace(site.interior, r, def))
+      .sort((a, b) => (m === 'garden' ? b.area - a.area : a.area - b.area));
+    if (!free.length) continue;
+    if (site.kind === 'field' && !canAfford(site, def.cost(free[0].area))) return;
+    for (const r of free) if (!queueModule(s, site, r.id, m)) break;
+    return;
   }
-  for (const r of free) if (!queueModule(s, site, r.id, next)) break;
 }
 
 /**
