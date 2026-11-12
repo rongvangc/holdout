@@ -31,6 +31,20 @@ describe('production map worker', () => {
     expect(markup).toMatch(/(src|href)="\.\/assets\//);
   });
 
+  it('ships the map worker as .js, because many static hosts do not serve .mjs', () => {
+    // A module worker served as application/octet-stream is refused by the browser and
+    // the map dies with "Worker failed to load" — verified against a server that does
+    // exactly that. `.js` is in every host's MIME table.
+    const cfg = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8');
+    expect(cfg).toContain('maplibre-gl-worker');
+    expect(cfg).toContain("'assets/maplibre-worker-[hash].js'");
+    const assets = new URL('../dist/assets/', import.meta.url);
+    if (!existsSync(assets)) return;
+    const files = readdirSync(assets);
+    expect(files.some((f) => /^maplibre-worker-.*\.js$/.test(f)), 'worker must be .js in the build').toBe(true);
+    expect(files.some((f) => f.endsWith('.mjs')), 'no .mjs in the build').toBe(false);
+  });
+
   it('a built bundle, when present, contains a worker asset', () => {
     const assets = new URL('../dist/assets/', import.meta.url);
     if (!existsSync(assets)) return; // no build in this checkout — nothing to check
