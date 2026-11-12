@@ -92,12 +92,20 @@ export const TAB_IMG: Record<string, string> = {
 /** Decoded-image cache so the base-plan canvas can draw icons synchronously. */
 const cache = new Map<string, HTMLImageElement>();
 
+/**
+ * Icon paths in the data files are written as '/icons/...' — absolute from the domain
+ * root. That works when the game is hosted at '/', and 404s for every one of the ten
+ * thousand icons when it is hosted at '/holdout/'. Stripping the leading slash makes
+ * them relative to the document, which is what a relative build needs.
+ */
+const assetUrl = (src: string | undefined | null): string => (!src ? '' : src.startsWith('/') ? `.${src}` : src);
+
 export function iconImage(src: string, onReady?: () => void): HTMLImageElement {
   let img = cache.get(src);
   if (!img) {
     img = new Image();
     if (onReady) img.onload = onReady;
-    img.src = src;
+    img.src = assetUrl(src);
     cache.set(src, img);
   } else if (onReady && !img.complete) {
     img.addEventListener('load', onReady, { once: true });
@@ -105,6 +113,14 @@ export function iconImage(src: string, onReady?: () => void): HTMLImageElement {
   return img;
 }
 
-export function Icon({ src, size = 20 }: { src: string; size?: number }) {
-  return <img className="ico" src={src} width={size} height={size} alt="" loading="lazy" />;
+/**
+ * Icon paths in the data files are written as '/icons/...' — an absolute path from the
+ * domain root. That works when the game is hosted at '/', and 404s for every one of the
+ * ten thousand icons when it is hosted at '/holdout/'. Stripping the leading slash makes
+ * them relative to the document, which is what a relative build needs.
+ */
+export function Icon({ src, size = 20 }: { src?: string; size?: number }) {
+  // Không có đường dẫn thì đừng render thẻ img rỗng (nó tạo một ảnh "hỏng" trong DOM).
+  if (!src) return null;
+  return <img className="ico" src={assetUrl(src)} width={size} height={size} alt="" loading="lazy" />;
 }

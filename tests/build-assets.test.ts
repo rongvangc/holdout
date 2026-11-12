@@ -19,6 +19,18 @@ describe('production map worker', () => {
     expect(existsSync(worker)).toBe(true);
   });
 
+  it('ships relative asset paths so the game runs from a subfolder', () => {
+    // With the default base '/' every asset is requested from the domain root: hosting
+    // the build at '/holdout/' produced a blank page. './' makes the build self-relative.
+    const cfg = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8');
+    expect(cfg).toContain("base: './'");
+    const html = new URL('../dist/index.html', import.meta.url);
+    if (!existsSync(html)) return;
+    const markup = readFileSync(html, 'utf8');
+    expect(markup).not.toMatch(/(src|href)="\/assets\//);
+    expect(markup).toMatch(/(src|href)="\.\/assets\//);
+  });
+
   it('a built bundle, when present, contains a worker asset', () => {
     const assets = new URL('../dist/assets/', import.meta.url);
     if (!existsSync(assets)) return; // no build in this checkout — nothing to check
